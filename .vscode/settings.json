@@ -1,0 +1,23 @@
+{
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.svelte-kit": true,
+    "**/node_modules": true
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "args": ["-NoLogo", "-ExecutionPolicy", "Bypass"]
+    }
+  },
+  "terminal.integrated.env.windows": {
+    "Path": "C:\\OSPanel\\addons\\NVM\\nodejs;C:\\OSPanel\\addons\\NVM;C:\\OSPanel\\bin;${env:USERPROFILE}\\.pyenv\\pyenv-win\\bin;${env:USERPROFILE}\\.pyenv\\pyenv-win\\shims;${env:Path}",
+    "NVM_HOME": "C:\\OSPanel\\addons\\NVM",
+    "NVM_SYMLINK": "C:\\OSPanel\\addons\\NVM\\nodejs",
+    "PYENV": "${env:USERPROFILE}\\.pyenv\\pyenv-win",
+    "PYENV_ROOT": "${env:USERPROFILE}\\.pyenv\\pyenv-win",
+    "PYENV_HOME": "${env:USERPROFILE}\\.pyenv\\pyenv-win"
+  }
+}

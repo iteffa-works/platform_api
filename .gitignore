@@ -1,0 +1,70 @@
+# Залежності
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+env/
+
+# Збірка / кеш
+.svelte-kit/
+build/
+dist/
+out/
+.turbo/
+.cache/
+.vite/
+*.tsbuildinfo
+
+# Секрети та середовище
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Логи та тимчасові файли
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE / ОС
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Тести / покриття
+coverage/
+.nyc_output/
+
+# Локальні дані / збірки
+*.sqlite
+*.sqlite-journal
+server/data/
+desktop/dist/
+desktop/build/
+*.spec
+android/
