@@ -1,0 +1,1 @@
+export { initFomantic } from './fomantic';

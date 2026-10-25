@@ -1,0 +1,75 @@
+/* Доповнення layout поверх Fomantic UI */
+:root {
+  color-scheme: light;
+  --page-bg: #f4f6f8;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(33, 133, 208, 0.08), transparent 28%),
+    var(--page-bg);
+}
+
+.shell {
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 64px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.87);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+main.page {
+  display: grid;
+  gap: 20px;
+}
+
+.stack { display: grid; gap: 14px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+
+.card {
+  background: #fff;
+  border: 1px solid rgba(34, 36, 38, 0.15);
+  border-radius: 0.28571429rem;
+  box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15);
+  padding: 1.25rem;
+}
+
+.auth { width: min(420px, 100%); margin: 40px auto 0; }
+
+.lead { margin: 0; color: rgba(0, 0, 0, 0.6); max-width: 42rem; }
+.error { color: #db2828; margin: 0; }
+.muted { color: rgba(0, 0, 0, 0.6); }
+
+.banner {
+  border: 1px dashed rgba(34, 36, 38, 0.15);
+  border-radius: 0.28571429rem;
+  padding: 12px 14px;
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(33, 133, 208, 0.04);
+}
+
+@media (max-width: 640px) {
+  .topbar { align-items: flex-start; flex-direction: column; }
+}
