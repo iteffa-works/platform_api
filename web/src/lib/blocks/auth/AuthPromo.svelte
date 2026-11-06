@@ -27,14 +27,30 @@
     { title: 'Mail Delivery', text: 'Транзакції та розсилки', tone: '#81c784', icon: 'email' },
     { title: 'Helpdesk', text: 'Тікети, чат, база знань', tone: '#ffb74d', icon: 'support' },
   ] as const;
+
+  /** Секретний копірайт у бінарному UTF-8 */
+  const secretCopyright = 'Довгопол Микола Іванович';
+  const codePattern = [...new TextEncoder().encode(secretCopyright)]
+    .map((byte) => byte.toString(2).padStart(8, '0'))
+    .join('');
+  const codeLines = Array.from({ length: 36 }, (_, i) => {
+    const shift = (i * 11) % codePattern.length;
+    const line = codePattern.slice(shift) + codePattern.slice(0, shift);
+    return (line + line + line + line).slice(0, 96);
+  });
 </script>
 
 <aside class="promo">
+  <div class="promo__code" aria-hidden="true">
+    {#each codeLines as line}
+      <span>{line}</span>
+    {/each}
+  </div>
+
   <div class="promo__intro">
     <h1 class="promo__title">
       <span class="promo__accent">{titleAccent}</span>
       {title}
-      <span class="promo__badge">статус</span>
     </h1>
     <p class="promo__lead">{lead}</p>
   </div>
@@ -124,6 +140,8 @@
 
 <style>
   .promo {
+    position: relative;
+    isolation: isolate;
     display: grid;
     gap: 24px;
     align-content: center;
@@ -131,6 +149,69 @@
     padding: 36px 32px;
     color: #d7dce5;
     background: #0c1017;
+    overflow: hidden;
+  }
+
+  .promo__code {
+    position: absolute;
+    left: -20%;
+    top: -24%;
+    width: 150%;
+    height: 150%;
+    z-index: 0;
+    display: grid;
+    align-content: center;
+    gap: 11px;
+    pointer-events: none;
+    user-select: none;
+    font-family: ui-monospace, Cascadia Code, Consolas, monospace;
+    font-size: 10.5px;
+    font-weight: 450;
+    line-height: 1.4;
+    letter-spacing: 0.32em;
+    color: #5c6f86;
+    opacity: 0.28;
+    transform: rotate(-14deg) skewX(-3deg);
+    transform-origin: center center;
+    -webkit-mask-image:
+      radial-gradient(ellipse 78% 70% at 48% 48%, #000 10%, transparent 78%);
+    mask-image:
+      radial-gradient(ellipse 78% 70% at 48% 48%, #000 10%, transparent 78%);
+  }
+
+  .promo__code span {
+    white-space: nowrap;
+  }
+
+  .promo__code span:nth-child(odd) {
+    color: #516278;
+    transform: translateX(14px);
+  }
+
+  .promo__code span:nth-child(even) {
+    color: #6a7e96;
+    transform: translateX(-8px);
+  }
+
+  .promo__code span:nth-child(3n) {
+    opacity: 0.85;
+  }
+
+  .promo__code span:nth-child(4n) {
+    letter-spacing: 0.4em;
+    opacity: 0.65;
+  }
+
+  .promo__code span:nth-child(5n) {
+    transform: translateX(22px);
+    color: #7388a0;
+    opacity: 0.8;
+  }
+
+  .promo__intro,
+  .promo__grid {
+    position: relative;
+    z-index: 1;
   }
 
   .promo__intro { display: grid; gap: 10px; }
@@ -151,29 +232,6 @@
   .promo__accent {
     color: #8fa3c7;
     font-weight: 700;
-  }
-
-  .promo__badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 8px;
-    border-radius: 999px;
-    border: 1px solid #2a4a36;
-    background: #101a14;
-    color: #74b088;
-    font-size: 10px;
-    font-weight: 650;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .promo__badge::before {
-    content: '';
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #3f9b5f;
   }
 
   .promo__lead {
@@ -198,7 +256,8 @@
     padding: 12px 12px 12px 14px;
     border: 1px solid #1e2430;
     border-radius: 8px;
-    background: #090c12;
+    background: color-mix(in srgb, #090c12 82%, transparent);
+    backdrop-filter: blur(2px);
     overflow: hidden;
   }
 
