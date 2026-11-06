@@ -1,9 +1,9 @@
-import { sequelize } from '../../db/index.js';
-import { emit } from '../../events/index.js';
+import { sequelize } from '../../core/db/index.js';
+import { emit } from '../../core/events/index.js';
 import { encrypt } from '../../shared/crypto/index.js';
 import { HttpError } from '../../shared/http/index.js';
-import { readApiHash, readApiId, readLabel } from './accounts.validators.js';
 import { Account } from './models/account.js';
+import { readApiHash, readApiId, readLabel } from './validators.js';
 
 function present(account: Account) {
   return {
@@ -75,6 +75,7 @@ export async function deleteAccount(userId: string, id: string) {
   const wasActive = account.isActive;
   await account.destroy();
   await emit('account.deleted', { userId, accountId: id });
+
   if (wasActive) {
     const next = await Account.findOne({
       where: { userId },

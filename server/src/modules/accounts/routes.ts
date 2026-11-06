@@ -1,8 +1,8 @@
 import type { Router } from 'express';
 import { asyncRoute, HttpError } from '../../shared/http/index.js';
 import { requireUser } from '../../shared/middleware/index.js';
-import * as accountsService from './accounts.service.js';
-import { readApiHash, readApiId, readLabel } from './accounts.validators.js';
+import * as accountsService from './service.js';
+import { readApiHash, readApiId, readLabel } from './validators.js';
 
 export function accountRoutes(router: Router): void {
   router.use('/accounts', requireUser);
@@ -14,12 +14,11 @@ export function accountRoutes(router: Router): void {
 
   router.post('/accounts', asyncRoute(async (req, res) => {
     if (!req.userId) throw new HttpError(401, 'Сесія недійсна');
-    const result = await accountsService.createAccount(req.userId, {
+    res.status(201).json(await accountsService.createAccount(req.userId, {
       label: readLabel(req.body?.label),
       apiId: readApiId(req.body?.apiId),
       apiHash: readApiHash(req.body?.apiHash),
-    });
-    res.status(201).json(result);
+    }));
   }));
 
   router.patch('/accounts/:id', asyncRoute(async (req, res) => {

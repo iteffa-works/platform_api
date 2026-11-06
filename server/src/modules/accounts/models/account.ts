@@ -5,8 +5,8 @@ import {
   InferCreationAttributes,
   Model,
 } from 'sequelize';
-import { requireModel, type Models } from '../../../db/registry.js';
-import { sequelize } from '../../../db/sequelize.js';
+import { requireModel, type Models } from '../../../core/db/registry.js';
+import { sequelize } from '../../../core/db/sequelize.js';
 
 export class Account extends Model<InferAttributes<Account>, InferCreationAttributes<Account>> {
   declare id: CreationOptional<string>;
