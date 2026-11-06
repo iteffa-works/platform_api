@@ -3,7 +3,7 @@
   let {
     title = 'платформа для сервісів і зростання',
     titleAccent = 'Brand',
-    lead = 'Єдиний кабінет: compute, web apps, DNS, messaging, growth і observability. Демо: flowaxy.com',
+    lead = 'Єдиний кабінет: compute, web apps, DNS, messaging, growth і observability.',
   }: {
     title?: string;
     titleAccent?: string;
@@ -11,21 +11,24 @@
   } = $props();
 
   const features = [
-    { title: 'API Gateway', text: 'Маршрути, ключі, вебхуки', tone: '#7b93c9', icon: 'api' },
-    { title: 'Compute', text: 'Інстанси, CPU, мережа', tone: '#6ea8d9', icon: 'servers' },
-    { title: 'Web Apps', text: 'Деплой, SSL, середовища', tone: '#6bc4c4', icon: 'hosting' },
-    { title: 'DNS', text: 'Зони, записи, делегування', tone: '#8fa3c7', icon: 'domains' },
-    { title: 'Analytics', text: 'Метрики, звіти, дашборди', tone: '#7dba8f', icon: 'analytics' },
-    { title: 'Growth', text: 'UTM, воронки, кампанії', tone: '#d4a06a', icon: 'marketing' },
-    { title: 'Messaging', text: 'Чати, боти, канали', tone: '#9b86d4', icon: 'bots' },
-    { title: 'Workflows', text: 'Сценарії, черги, задачі', tone: '#c4a35a', icon: 'tools' },
-    { title: 'Observability', text: 'Алерти, uptime, логи', tone: '#d07a7a', icon: 'monitor' },
-    { title: 'Connectors', text: 'Зовнішні API та сервіси', tone: '#a78bfa', icon: 'integrations' },
-    { title: 'Identity', text: 'Ролі, політики, аудит', tone: '#5fbfb0', icon: 'security' },
-    { title: 'Object Storage', text: 'Файли, бекапи, архіви', tone: '#6a9fd4', icon: 'storage' },
-    { title: 'Edge CDN', text: 'Кеш, роздача, PoP', tone: '#64b5f6', icon: 'cdn' },
-    { title: 'Mail Delivery', text: 'Транзакції та розсилки', tone: '#81c784', icon: 'email' },
-    { title: 'Helpdesk', text: 'Тікети, чат, база знань', tone: '#ffb74d', icon: 'support' },
+    { title: 'API Gateway', text: 'Маршрути, ключі, вебхуки', tone: '#7a8aa3', icon: 'api' },
+    { title: 'Compute', text: 'Інстанси, CPU, мережа', tone: '#6f849e', icon: 'servers' },
+    { title: 'Web Apps', text: 'Деплой, SSL, середовища', tone: '#758ca3', icon: 'hosting' },
+    { title: 'DNS', text: 'Зони, записи, делегування', tone: '#8093a8', icon: 'domains' },
+    { title: 'Analytics', text: 'Метрики, звіти, дашборди', tone: '#6e8f7c', icon: 'analytics' },
+    { title: 'Growth', text: 'UTM, воронки, кампанії', tone: '#9a8668', icon: 'marketing' },
+    { title: 'Messaging', text: 'Чати, боти, канали', tone: '#7f7896', icon: 'bots' },
+    { title: 'Workflows', text: 'Сценарії, черги, задачі', tone: '#8f8260', icon: 'tools' },
+    { title: 'Observability', text: 'Алерти, uptime, логи', tone: '#957575', icon: 'monitor' },
+    { title: 'Connectors', text: 'Зовнішні API та сервіси', tone: '#7d7694', icon: 'integrations' },
+    { title: 'Identity', text: 'Ролі, політики, аудит', tone: '#6a8f88', icon: 'security' },
+    { title: 'Object Storage', text: 'Файли, бекапи, архіви', tone: '#6f84a0', icon: 'storage' },
+    { title: 'Edge CDN', text: 'Кеш, роздача, PoP', tone: '#6f89a6', icon: 'cdn' },
+    { title: 'Mail Delivery', text: 'Транзакції та розсилки', tone: '#6f9078', icon: 'email' },
+    { title: 'Helpdesk', text: 'Тікети, чат, база знань', tone: '#9a8160', icon: 'support' },
+    { title: 'Databases', text: 'Кластери, репліки, бекапи', tone: '#6a8e88', icon: 'database' },
+    { title: 'Secrets', text: 'Ключі, токени, ротація', tone: '#857994', icon: 'secrets' },
+    { title: 'Pipelines', text: 'CI/CD, релізи, артефакти', tone: '#7389a3', icon: 'pipelines' },
   ] as const;
 
   /** Секретний копірайт у бінарному UTF-8 */
@@ -122,6 +125,23 @@
             {:else if item.icon === 'email'}
               <rect x="4" y="6" width="16" height="12" rx="2"/>
               <path d="m4 8 8 5 8-5"/>
+            {:else if item.icon === 'database'}
+              <ellipse cx="12" cy="5.5" rx="7" ry="2.2"/>
+              <path d="M5 5.5v4.2c0 1.2 3.1 2.2 7 2.2s7-1 7-2.2V5.5"/>
+              <path d="M5 9.7v4.2c0 1.2 3.1 2.2 7 2.2s7-1 7-2.2V9.7"/>
+              <path d="M5 13.9v4.1c0 1.2 3.1 2.2 7 2.2s7-1 7-2.2v-4.1"/>
+            {:else if item.icon === 'secrets'}
+              <rect x="7" y="11" width="10" height="8" rx="1.5"/>
+              <path d="M9 11V8.5a3 3 0 0 1 6 0V11"/>
+              <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/>
+            {:else if item.icon === 'pipelines'}
+              <circle cx="6" cy="6" r="2"/>
+              <circle cx="12" cy="12" r="2"/>
+              <circle cx="18" cy="18" r="2"/>
+              <path d="M7.6 7.6 10.4 10.4"/>
+              <path d="M13.6 13.6 16.4 16.4"/>
+              <path d="M18 6H9.5A3.5 3.5 0 0 0 6 9.5V12"/>
+              <path d="M6 18h8.5A3.5 3.5 0 0 0 18 14.5V12"/>
             {:else}
               <circle cx="12" cy="12" r="7.5"/>
               <path d="M9.5 12h5"/>
@@ -143,10 +163,10 @@
     position: relative;
     isolation: isolate;
     display: grid;
-    gap: 24px;
-    align-content: center;
+    gap: 18px;
+    align-content: start;
     min-height: 100%;
-    padding: 36px 32px;
+    padding: 32px 32px 28px;
     color: #d7dce5;
     background: #0c1017;
     overflow: hidden;
@@ -170,8 +190,8 @@
     line-height: 1.4;
     letter-spacing: 0.32em;
     color: #5c6f86;
-    opacity: 0.28;
-    transform: rotate(-14deg) skewX(-3deg);
+    opacity: 0.18;
+    transform: rotate(-10deg);
     transform-origin: center center;
     -webkit-mask-image:
       radial-gradient(ellipse 78% 70% at 48% 48%, #000 10%, transparent 78%);
@@ -214,7 +234,7 @@
     z-index: 1;
   }
 
-  .promo__intro { display: grid; gap: 10px; }
+  .promo__intro { display: grid; gap: 6px; min-height: 3.35rem; }
 
   .promo__title {
     margin: 0;
@@ -230,16 +250,16 @@
   }
 
   .promo__accent {
-    color: #8fa3c7;
+    color: #9aabbf;
     font-weight: 700;
   }
 
   .promo__lead {
     margin: 0;
-    max-width: 48ch;
     color: #8790a0;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 12.5px;
+    line-height: 1.45;
+    white-space: nowrap;
   }
 
   .promo__grid {
@@ -253,11 +273,10 @@
     display: grid;
     gap: 8px;
     height: 100%;
-    padding: 12px 12px 12px 14px;
-    border: 1px solid #1e2430;
-    border-radius: 8px;
-    background: color-mix(in srgb, #090c12 82%, transparent);
-    backdrop-filter: blur(2px);
+    padding: 11px 12px 11px 13px;
+    border: 1px solid #1c2230;
+    border-radius: 4px;
+    background: #0a0e15;
     overflow: hidden;
   }
 
@@ -265,24 +284,24 @@
     content: '';
     position: absolute;
     left: 0;
-    top: 10px;
-    bottom: 10px;
+    top: 0;
+    bottom: 0;
     width: 2px;
-    border-radius: 2px;
     background: var(--tone);
-    opacity: 0.7;
+    opacity: 0.55;
   }
 
   .promo__card:hover {
-    border-color: #2c3444;
-    background: #0e131b;
+    border-color: #2a3344;
+    background: #0d121a;
   }
 
-  .promo__card:hover::before { opacity: 1; }
+  .promo__card:hover::before { opacity: 0.85; }
 
   .promo__card:hover .promo__icon {
-    border-color: color-mix(in srgb, var(--tone) 42%, #2a3140);
-    background: color-mix(in srgb, var(--tone) 16%, #171d28);
+    border-color: #2a3344;
+    background: #121822;
+    color: #b7c3d4;
   }
 
   .promo__head {
@@ -295,12 +314,12 @@
   .promo__icon {
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
-    flex: 0 0 28px;
-    border-radius: 7px;
-    border: 1px solid color-mix(in srgb, var(--tone) 26%, #2a3140);
-    background: color-mix(in srgb, var(--tone) 11%, #171d28);
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 3px;
+    border: 1px solid #242b38;
+    background: #10151e;
     color: var(--tone);
   }
 

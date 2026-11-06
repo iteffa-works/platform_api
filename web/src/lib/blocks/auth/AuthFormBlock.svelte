@@ -25,7 +25,7 @@
   let busy = $state(false);
 
   const endpoint = $derived(resolveAuthEndpoint(mode, '/auth/login'));
-  const submitLabel = $derived(resolveAuthSubmitLabel(mode, 'Кнопка входу'));
+  const submitLabel = $derived(resolveAuthSubmitLabel(mode, 'Увійти'));
   const extensionSlots = $derived(listAuthExtensionSlots(mode));
   const emailHints = $derived(listAuthExtensionHints('email', mode));
   const passwordHints = $derived(listAuthExtensionHints('password', mode));
@@ -59,8 +59,8 @@
 
 <form class="login" onsubmit={submit}>
   <header class="login__head">
-    <h1 class="login__title">Заголовок входу</h1>
-    <p class="login__lead">Підзаголовок: коротке пояснення до форми авторизації</p>
+    <h1 class="login__title">Вхід до кабінету</h1>
+    <p class="login__lead">Увійдіть за email і паролем, щоб керувати сервісами платформи.</p>
   </header>
 
   <div class="login__field">
@@ -110,50 +110,53 @@
   <div class="login__or"><span>або</span></div>
 
   <div class="login__alts" role="group" aria-label="Швидкий вхід">
-    <button type="button" class="login__alt" disabled={busy} title="Дія" aria-label="Дія" onclick={() => soon('Дія')}>
+    <button type="button" class="login__alt" disabled={busy} title="Passkey" aria-label="Passkey" onclick={() => soon('Passkey')}>
       <span class="login__mark" aria-hidden="true">
-        <svg viewBox="0 0 32 32">
-          <rect width="32" height="32" rx="8" fill="#0A0A0A"/>
-          <text x="16" y="20.5" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Arial,Helvetica,sans-serif">Дія</text>
-        </svg>
-      </span>
-    </button>
-    <button type="button" class="login__alt" disabled={busy} title="BankID" aria-label="BankID" onclick={() => soon('BankID')}>
-      <span class="login__mark" aria-hidden="true">
-        <svg viewBox="0 0 32 32">
-          <defs>
-            <clipPath id="bid-r"><rect width="32" height="32" rx="8"/></clipPath>
-          </defs>
-          <g clip-path="url(#bid-r)">
-            <rect width="32" height="16" fill="#0057B8"/>
-            <rect y="16" width="32" height="16" fill="#FFD700"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="translate(1.2 1.2) scale(0.9)">
+            <path stroke="#EA4335" d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+            <path stroke="#4285F4" d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+            <path stroke="#34A853" d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+            <path stroke="#FBBC05" d="M2 12a10 10 0 0 1 18-6"/>
+            <path stroke="#EA4335" d="M2 16h.01"/>
+            <path stroke="#4285F4" d="M21.8 16c.2-2 .131-5.354 0-6"/>
+            <path stroke="#34A853" d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/>
+            <path stroke="#FBBC05" d="M8.65 22c.21-.66.45-1.32.57-2"/>
+            <path stroke="#EA4335" d="M9 6.8a6 6 0 0 1 9 5.2v2"/>
           </g>
-          <circle cx="16" cy="16" r="8" fill="#061428"/>
-          <text x="16" y="19.2" text-anchor="middle" fill="#fff" font-size="9" font-weight="700" font-family="Arial,Helvetica,sans-serif" letter-spacing="0.6">ID</text>
         </svg>
       </span>
     </button>
     <button type="button" class="login__alt" disabled={busy} title="Google" aria-label="Google" onclick={() => soon('Google')}>
-      <span class="login__mark login__mark--light" aria-hidden="true">
-        <svg viewBox="0 0 32 32">
-          <rect width="32" height="32" rx="8" fill="#fff"/>
-          <g transform="translate(4 4)">
-            <path fill="#EA4335" d="M12 10.2v3.6h5.1c-.2 1.2-1.5 3.6-5.1 3.6-3.1 0-5.6-2.5-5.6-5.6S8.9 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 6.9 2.7 2.7 6.9 2.7 12S6.9 21.3 12 21.3c5.5 0 9.1-3.9 9.1-9.3 0-.6-.1-1.1-.2-1.8H12z"/>
-            <path fill="#34A853" d="M3.9 7.5 6.9 9.7C7.7 7.7 9.7 6.2 12 6.2c1.8 0 3 .7 3.7 1.4l2.5-2.4C16.7 3.7 14.5 2.7 12 2.7 8.3 2.7 5.1 4.8 3.9 7.5z"/>
-            <path fill="#4A90E2" d="M12 21.3c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8l-3 2.3C5.1 19.2 8.3 21.3 12 21.3z"/>
-            <path fill="#FBBC05" d="M6.9 14c-.2-.5-.3-1-.3-1.6s.1-1.1.3-1.6L3.9 8.5C3.3 9.6 3 10.8 3 12s.3 2.4.9 3.5L6.9 14z"/>
+      <span class="login__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <g transform="translate(2.2 2.2) scale(0.816)">
+            <path fill="#4285F4" d="M21.35 11.1H12v2.9h5.3c-.23 1.25-1.55 3.66-5.3 3.66-3.19 0-5.79-2.63-5.79-5.86S8.81 5.94 12 5.94c1.81 0 3.03.77 3.73 1.43l2.54-2.45C16.88 3.44 14.66 2.4 12 2.4 6.96 2.4 2.9 6.46 2.9 11.5S6.96 20.6 12 20.6c5.18 0 8.6-3.63 8.6-8.75 0-.59-.07-1.03-.25-.75z"/>
+            <path fill="#34A853" d="M4.75 7.74 7.7 9.9c.8-1.55 2.4-2.66 4.3-2.66 1.81 0 3.03.77 3.73 1.43l2.54-2.45C16.88 3.44 14.66 2.4 12 2.4 8.7 2.4 5.85 4.3 4.75 7.74z"/>
+            <path fill="#FBBC05" d="M12 20.6c2.45 0 4.5-.8 5.99-2.18l-2.85-2.21c-.8.54-1.86.97-3.14.97-2.4 0-4.44-1.6-5.17-3.8L3.9 15.3C5.2 18.55 8.3 20.6 12 20.6z"/>
+            <path fill="#EA4335" d="M6.83 14.38c-.2-.54-.32-1.12-.32-1.72s.12-1.18.32-1.72L3.9 8.7C3.3 9.95 2.9 11.2 2.9 12.5s.4 2.55 1 3.8l2.93-1.92z"/>
           </g>
         </svg>
       </span>
     </button>
     <button type="button" class="login__alt" disabled={busy} title="Microsoft" aria-label="Microsoft" onclick={() => soon('Microsoft')}>
-      <span class="login__mark login__mark--light" aria-hidden="true">
-        <svg viewBox="0 0 32 32">
-          <rect width="32" height="32" rx="8" fill="#fff"/>
-          <rect x="7" y="7" width="8" height="8" fill="#F25022"/>
-          <rect x="17" y="7" width="8" height="8" fill="#7FBA00"/>
-          <rect x="7" y="17" width="8" height="8" fill="#00A4EF"/>
-          <rect x="17" y="17" width="8" height="8" fill="#FFB900"/>
+      <span class="login__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <g transform="translate(3.2 3.2) scale(0.733)">
+            <path fill="#F25022" d="M1 1h10v10H1z"/>
+            <path fill="#7FBA00" d="M13 1h10v10H13z"/>
+            <path fill="#00A4EF" d="M1 13h10v10H1z"/>
+            <path fill="#FFB900" d="M13 13h10v10H13z"/>
+          </g>
+        </svg>
+      </span>
+    </button>
+    <button type="button" class="login__alt" disabled={busy} title="Facebook" aria-label="Facebook" onclick={() => soon('Facebook')}>
+      <span class="login__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <g transform="translate(3.4 2.4) scale(0.72)">
+            <path fill="#1877F2" d="M14.05 21.5v-7.2h2.42l.36-2.82h-2.78v-1.8c0-.82.23-1.37 1.42-1.37h1.52V5.72c-.26-.03-1.16-.11-2.2-.11-2.18 0-3.67 1.33-3.67 3.77v2.1H8.45v2.82h2.67v7.2h2.93z"/>
+          </g>
         </svg>
       </span>
     </button>
@@ -169,15 +172,16 @@
     color: #d7dce5;
   }
 
-  .login__head { display: grid; gap: 6px; margin-bottom: 4px; }
+  .login__head { display: grid; gap: 6px; margin-bottom: 4px; min-height: 3.35rem; }
   .login__title {
     margin: 0;
-    font-size: 1.32rem;
+    font-size: clamp(1.28rem, 1.9vw, 1.58rem);
     font-weight: 650;
+    line-height: 1.28;
     letter-spacing: -0.025em;
     color: #f3f5f8;
   }
-  .login__lead { margin: 0; font-size: 13px; color: #8790a0; line-height: 1.45; }
+  .login__lead { margin: 0; font-size: 12.5px; color: #8790a0; line-height: 1.45; }
   .login__field { display: grid; gap: 6px; }
 
   .login :global(.ui-label) {
@@ -190,11 +194,11 @@
   .login__input,
   .login :global(.ui-password__input) {
     width: 100%;
-    height: 42px;
+    height: 40px;
     padding: 0 12px;
-    border: 1px solid #1e2430 !important;
-    border-radius: 8px !important;
-    background: #0c1017 !important;
+    border: 1px solid #1c2230 !important;
+    border-radius: 4px !important;
+    background: #0a0e15 !important;
     color: #f1f3f7 !important;
     font: inherit !important;
     box-shadow: none !important;
@@ -228,13 +232,13 @@
   .login__slot :global(.captcha__refresh) { color: #9aa3b2; }
   .login__slot :global(.captcha__box),
   .login__slot :global(.captcha__input) {
-    border-color: #1e2430;
-    background: #0c1017;
+    border-color: #1c2230;
+    background: #0a0e15;
     color: #f1f3f7;
-    border-radius: 8px;
+    border-radius: 4px;
   }
-  .login__slot :global(.captcha__box) { height: 42px; }
-  .login__slot :global(.captcha__input) { height: 42px; }
+  .login__slot :global(.captcha__box) { height: 40px; }
+  .login__slot :global(.captcha__input) { height: 40px; }
   .login__slot :global(.captcha__refresh) {
     background: transparent;
     color: #8a93a3;
@@ -253,17 +257,18 @@
     justify-content: center;
     gap: 6px;
     width: 100%;
-    height: 42px;
+    height: 40px;
     border: 0;
-    border-radius: 8px;
-    background: #3d5f99;
+    border-radius: 4px;
+    background: #355486;
     color: #fff;
     font: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
+    letter-spacing: 0.01em;
     cursor: pointer;
   }
-  .login__submit:hover:not(:disabled) { background: #476bab; }
+  .login__submit:hover:not(:disabled) { background: #3d6199; }
   .login__submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .login__or {
@@ -284,7 +289,7 @@
   .login__or::before, .login__or::after {
     content: '';
     height: 1px;
-    background: linear-gradient(90deg, transparent, #2a3140 20%, #2a3140 80%, transparent);
+    background: #1c2230;
   }
 
   .login__alts {
@@ -295,16 +300,16 @@
   .login__alt {
     display: grid;
     place-items: center;
-    height: 44px;
+    height: 40px;
     padding: 0;
-    border: 1px solid #1e2430;
-    border-radius: 8px;
-    background: #0c1017;
+    border: 1px solid #1c2230;
+    border-radius: 4px;
+    background: #0a0e15;
     cursor: pointer;
   }
   .login__alt:hover:not(:disabled) {
-    background: #121722;
-    border-color: #2c3444;
+    background: #10151e;
+    border-color: #2a3344;
   }
   .login__alt:focus-visible {
     outline: 2px solid #5b7bb5;
@@ -313,26 +318,26 @@
   .login__alt:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .login__mark {
-    width: 28px;
-    height: 28px;
-    display: block;
-    border-radius: 7px;
-    overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 22px;
   }
   .login__mark svg {
-    width: 100%;
-    height: 100%;
+    width: 22px;
+    height: 22px;
     display: block;
+    overflow: visible;
   }
 
   .login__secondary {
     display: grid;
     place-items: center;
-    height: 42px;
+    height: 40px;
     margin-top: 2px;
-    border: 1px solid #1e2430;
-    border-radius: 8px;
+    border: 1px solid #1c2230;
+    border-radius: 4px;
     background: transparent;
     color: #9aa3b2;
     text-decoration: none;
@@ -340,8 +345,8 @@
     font-weight: 600;
   }
   .login__secondary:hover {
-    background: #0c1017;
-    border-color: #2c3444;
+    background: #0a0e15;
+    border-color: #2a3344;
     color: #eef1f6;
   }
 </style>

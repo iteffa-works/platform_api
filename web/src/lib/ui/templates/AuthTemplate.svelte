@@ -48,24 +48,24 @@
     width: 100%;
     min-height: 640px;
     overflow: hidden;
-    border: 1px solid #1e2430;
-    border-radius: 10px;
-    background: #0a0d12;
+    border: 1px solid #1c2230;
+    border-radius: 4px;
+    background: #090c12;
   }
 
   .ui-auth__form-pane {
     display: grid;
-    align-content: center;
-    padding: 36px 32px;
+    align-content: start;
+    padding: 32px 32px 28px;
     background: #080a0f;
-    border-left: 1px solid #1e2430;
+    border-left: 1px solid #1c2230;
   }
 
   .ui-auth__panel {
     width: 100%;
-    border: 1px solid #1e2430;
-    border-radius: 8px;
-    background: #0a0d12;
+    border: 1px solid #1c2230;
+    border-radius: 4px;
+    background: #090c12;
     padding: 28px 32px 32px;
   }
 
@@ -93,6 +93,7 @@
     .ui-auth__form-pane {
       border-left: 0;
       border-top: 1px solid #2a3140;
+      align-content: start;
       padding: 24px 18px;
     }
     .ui-auth__panel { padding: 22px 16px 26px; }
