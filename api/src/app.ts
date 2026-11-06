@@ -1,6 +1,5 @@
 import cors from 'cors';
 import express from 'express';
-import { config } from './config/index.js';
 import { errorHandler } from './shared/http/index.js';
 
 /** Platform API для web (без client-обмежень) */
@@ -12,11 +11,7 @@ export const clientApi = express.Router();
 export function createApp() {
   const app = express();
 
-  app.use(cors({
-    origin(origin, callback) {
-      callback(null, !origin || config.clientOrigins.includes(origin));
-    },
-  }));
+  app.use(cors());
   app.use(express.json({ limit: '1mb' }));
   app.use('/api/v1', platformApi);
   app.use('/api/client/v1', clientApi);

@@ -2,15 +2,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-function list(value: string | undefined, fallback: string): string[] {
-  return (value || fallback).split(',').map((item) => item.trim()).filter(Boolean);
-}
-
 export const config = {
   port: Number(process.env.PORT || 4000),
   secret: process.env.APP_SECRET || 'dev-only-change-me',
   jwtExpires: '7d' as const,
-  clientOrigins: list(process.env.CLIENT_ORIGIN, 'https://sandbox.local,https://www.sandbox.local'),
   /** Ключ для /api/client/v1 (desktop / скрипти) */
   clientApiKey: process.env.CLIENT_API_KEY || 'dev-client-key',
   /** Простий rate limit клієнтського контуру (запитів / хвилину на ключ) */
