@@ -2,19 +2,24 @@
 
 ## Platform — `/api/v1`
 
-For `web`. No client-scope limits. JWT (`Authorization: Bearer <token>`).
+Для `web`. JWT. Без client-обмежень.
 
-- `POST /auth/register`
+### Auth
+- `POST /auth/register` — перший користувач = admin
 - `POST /auth/login`
 - `GET /auth/me`
+
+### Accounts (кабінет)
 - `GET|POST|PATCH|DELETE /accounts`
+
+### Admin
+- `GET /admin/users`
+- `PATCH /admin/users/:id` — `{ role: user|admin }`
 
 ## Client — `/api/client/v1`
 
-For `desktop` / scripts. API key + rate limit. Local processing cycle.
+Для `desktop` / скриптів. API key + rate limit.
 
 - `GET /status`
-- `GET /work/next` → `{ work }`
-- `POST /work/:id/result` → `{ status: done|failed, data?, error? }`
-
-Auth: `Authorization: Bearer <CLIENT_API_KEY>` or `X-Client-Key`.
+- `GET /work/next`
+- `POST /work/:id/result`

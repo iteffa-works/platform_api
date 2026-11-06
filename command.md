@@ -12,7 +12,7 @@ platform/
   api/src/
     config/          # env
     core/            # db · events · plugins
-    modules/         # auth | accounts | client-api
+    modules/         # auth | accounts | admin | client-api
     shared/          # crypto, http, middleware, errors
     plugins/         # додаткові API-плагіни
     types/
