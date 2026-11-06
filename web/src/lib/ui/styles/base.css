@@ -1,0 +1,12 @@
+/* Базові стилі документа */
+body {
+  min-height: 100vh;
+  color: var(--ui-text);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--ui-accent) 12%, transparent), transparent 28%),
+    var(--ui-page-bg);
+}
+
+a {
+  color: inherit;
+}
