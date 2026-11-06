@@ -1,4 +1,5 @@
-import type { Check, CheckResult } from '../../models/index.js';
+import type { Check } from './models/check.js';
+import type { CheckResult } from './models/check-result.js';
 
 export function presentResult(row: CheckResult) {
   return {

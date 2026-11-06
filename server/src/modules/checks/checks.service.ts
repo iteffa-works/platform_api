@@ -1,8 +1,11 @@
 import { config } from '../../config/index.js';
-import { Account, Check, CheckResult } from '../../models/index.js';
+import { emit } from '../../events/index.js';
 import { HttpError } from '../../shared/http/index.js';
+import { Account } from '../accounts/models/account.js';
 import { parseQueries } from './checks.parsers.js';
 import { presentCheck } from './checks.presenters.js';
+import { Check } from './models/check.js';
+import { CheckResult } from './models/check-result.js';
 
 export async function createCheck(userId: string, body: { queries?: unknown; accountId?: string } | null) {
   const items = parseQueries(body?.queries);
@@ -37,6 +40,7 @@ export async function createCheck(userId: string, body: { queries?: unknown; acc
     lastSeen: null,
     checkedAt: null,
   })));
+  await emit('check.created', { userId, checkId: check.id });
   return presentCheck(check, rows);
 }
 
@@ -66,5 +70,6 @@ export async function cancelCheck(userId: string, id: string) {
     { status: 'skipped', error: 'cancelled' },
     { where: { jobId: row.id, status: 'pending' } },
   );
+  await emit('check.cancelled', { userId, checkId: id });
   return getCheck(userId, id);
 }

@@ -5,7 +5,8 @@ import {
   InferCreationAttributes,
   Model,
 } from 'sequelize';
-import { sequelize } from '../db/index.js';
+import { requireModel, type Models } from '../../../db/registry.js';
+import { sequelize } from '../../../db/sequelize.js';
 
 export class Account extends Model<InferAttributes<Account>, InferCreationAttributes<Account>> {
   declare id: CreationOptional<string>;
@@ -28,3 +29,9 @@ Account.init({
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, { sequelize, tableName: 'accounts' });
+
+export function associate(registry: Models): void {
+  const User = requireModel(registry, 'User');
+  Account.belongsTo(User, { foreignKey: 'userId' });
+  User.hasMany(Account, { foreignKey: 'userId', onDelete: 'CASCADE' });
+}

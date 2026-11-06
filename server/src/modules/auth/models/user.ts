@@ -6,9 +6,9 @@ import {
   Model,
   NonAttribute,
 } from 'sequelize';
-import { sequelize } from '../db/index.js';
-import type { Account } from './account.js';
-import type { Check } from './check.js';
+import { sequelize } from '../../../db/sequelize.js';
+import type { Account } from '../../accounts/models/account.js';
+import type { Check } from '../../checks/models/check.js';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<string>;

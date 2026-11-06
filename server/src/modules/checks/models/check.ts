@@ -6,7 +6,8 @@ import {
   Model,
   NonAttribute,
 } from 'sequelize';
-import { sequelize } from '../db/index.js';
+import { requireModel, type Models } from '../../../db/registry.js';
+import { sequelize } from '../../../db/sequelize.js';
 import type { CheckResult } from './check-result.js';
 
 export class Check extends Model<InferAttributes<Check>, InferCreationAttributes<Check>> {
@@ -29,3 +30,12 @@ Check.init({
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, { sequelize, tableName: 'checks' });
+
+export function associate(registry: Models): void {
+  const User = requireModel(registry, 'User');
+  const Account = requireModel(registry, 'Account');
+  Check.belongsTo(User, { foreignKey: 'userId' });
+  User.hasMany(Check, { foreignKey: 'userId', onDelete: 'CASCADE' });
+  Check.belongsTo(Account, { foreignKey: 'accountId' });
+  Account.hasMany(Check, { foreignKey: 'accountId', onDelete: 'SET NULL' });
+}

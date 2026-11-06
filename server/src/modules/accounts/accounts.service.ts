@@ -1,8 +1,9 @@
 import { sequelize } from '../../db/index.js';
-import { Account } from '../../models/index.js';
+import { emit } from '../../events/index.js';
 import { encrypt } from '../../shared/crypto/index.js';
 import { HttpError } from '../../shared/http/index.js';
 import { readApiHash, readApiId, readLabel } from './accounts.validators.js';
+import { Account } from './models/account.js';
 
 function present(account: Account) {
   return {
@@ -40,6 +41,7 @@ export async function createAccount(
     apiHashEnc: encrypt(input.apiHash),
     isActive: count === 0,
   });
+  await emit('account.created', { userId, accountId: account.id });
   return { account: present(account) };
 }
 
@@ -64,6 +66,7 @@ export async function updateAccount(
     await account.save();
   }
 
+  await emit('account.updated', { userId, accountId: account.id });
   return { account: present(account) };
 }
 
@@ -71,6 +74,7 @@ export async function deleteAccount(userId: string, id: string) {
   const account = await ownAccount(userId, id);
   const wasActive = account.isActive;
   await account.destroy();
+  await emit('account.deleted', { userId, accountId: id });
   if (wasActive) {
     const next = await Account.findOne({
       where: { userId },

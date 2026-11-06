@@ -1,7 +1,8 @@
 import { UniqueConstraintError } from 'sequelize';
-import { User } from '../../models/index.js';
+import { emit } from '../../events/index.js';
 import { hashPassword, signToken, verifyPassword } from '../../shared/crypto/index.js';
 import { HttpError } from '../../shared/http/index.js';
+import { User } from './models/user.js';
 
 function publicUser(user: User) {
   return { id: user.id, email: user.email };
@@ -13,6 +14,7 @@ export async function register(email: string, password: string) {
       email,
       passwordHash: await hashPassword(password),
     });
+    await emit('auth.registered', { userId: user.id });
     return { token: signToken(user.id), user: publicUser(user) };
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
@@ -27,6 +29,7 @@ export async function login(email: string, password: string) {
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     throw new HttpError(401, 'Невірний email або пароль');
   }
+  await emit('auth.logged-in', { userId: user.id });
   return { token: signToken(user.id), user: publicUser(user) };
 }
 

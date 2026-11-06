@@ -5,7 +5,8 @@ import {
   InferCreationAttributes,
   Model,
 } from 'sequelize';
-import { sequelize } from '../db/index.js';
+import { requireModel, type Models } from '../../../db/registry.js';
+import { sequelize } from '../../../db/sequelize.js';
 
 export class CheckResult extends Model<InferAttributes<CheckResult>, InferCreationAttributes<CheckResult>> {
   declare id: CreationOptional<string>;
@@ -44,3 +45,9 @@ CheckResult.init({
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, { sequelize, tableName: 'check_results' });
+
+export function associate(registry: Models): void {
+  const Check = requireModel(registry, 'Check');
+  CheckResult.belongsTo(Check, { foreignKey: 'jobId' });
+  Check.hasMany(CheckResult, { foreignKey: 'jobId', onDelete: 'CASCADE' });
+}
