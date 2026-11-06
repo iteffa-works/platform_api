@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Router } from 'express';
-import { emit, on, type EventHandler } from '../events/index.js';
+import { emit, on } from '../events/index.js';
 import { pluginDirectories } from './discover.js';
 import { registerPlugin } from './registry.js';
 import type { PluginModule } from './types.js';
@@ -42,13 +42,13 @@ export async function loadPlugins(router: Router): Promise<void> {
     mod.plugin.routes?.(router);
 
     for (const [name, handler] of Object.entries(mod.plugin.events ?? {})) {
-      on(name, handler as EventHandler);
+      on(name, handler);
     }
 
     loaded.push(mod);
   }
 
   for (const mod of loaded) await mod.plugin.init?.();
-  await emit('ready');
+  await emit('app.ready');
   started = true;
 }

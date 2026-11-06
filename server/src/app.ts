@@ -14,7 +14,6 @@ export function createApp() {
     },
   }));
   app.use(express.json({ limit: '1mb' }));
-
   app.use('/api', api);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Не знайдено' }));
   app.use(errorHandler);

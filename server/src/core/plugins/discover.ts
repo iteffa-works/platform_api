@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { disabledPlugins } from './disabled.js';
 
-const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const roots = [path.join(srcRoot, 'modules'), path.join(srcRoot, 'plugins')];
 
 export async function pluginDirectories(): Promise<string[]> {
@@ -20,7 +20,7 @@ export async function pluginDirectories(): Promise<string[]> {
     }
 
     for (const entry of entries) {
-      if (!entry.isDirectory() || disabled.has(entry.name)) continue;
+      if (!entry.isDirectory() || entry.name.startsWith('.') || disabled.has(entry.name)) continue;
       dirs.push(path.join(root, entry.name));
     }
   }

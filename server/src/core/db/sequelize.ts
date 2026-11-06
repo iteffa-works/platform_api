@@ -1,7 +1,6 @@
 import { Sequelize } from 'sequelize';
-import { config } from '../config/index.js';
+import { config } from '../../config/index.js';
 
-// MariaDB через mysql2 (Open Server)
 export const sequelize = new Sequelize(config.db.database, config.db.user, config.db.password, {
   host: config.db.host,
   port: config.db.port,
