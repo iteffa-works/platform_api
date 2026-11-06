@@ -26,4 +26,4 @@
 
 ## Роут
 
-Один catch-all: `routes/[[...slug]]` → `PageHost`.
+Один catch-all: `routes/[...slug]` → `PageHost`.

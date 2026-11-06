@@ -16,8 +16,10 @@
 <style>
   .ui-label {
     display: grid;
-    gap: 0.35rem;
-    font-size: 0.92rem;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ui-text);
   }
 
   .ui-label.is-grow {

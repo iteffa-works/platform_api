@@ -1,12 +1,37 @@
-/* Базові стилі документа */
-body {
-  min-height: 100vh;
-  color: var(--ui-text);
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--ui-accent) 12%, transparent), transparent 28%),
-    var(--ui-page-bg);
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-a {
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ui-text);
+  background: var(--ui-page-bg);
+  font-family: var(--ui-font);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+body:has(.ui-auth--dark) {
+  color-scheme: dark;
+  background: #06080c;
+}
+
+a { color: inherit; }
+
+input, button, textarea, select {
+  font: inherit;
   color: inherit;
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #5b7bb5;
+  outline-offset: 1px;
 }

@@ -9,7 +9,6 @@
 
 <style>
   .ui-auth-layout {
-    display: grid;
-    place-items: start center;
+    width: 100%;
   }
 </style>

@@ -6,3 +6,4 @@ export { default as ErrorText } from './ErrorText.svelte';
 export { default as Field } from './Field.svelte';
 export { default as LoadingText } from './LoadingText.svelte';
 export { default as PageHeader } from './PageHeader.svelte';
+export { default as PasswordField } from './PasswordField.svelte';

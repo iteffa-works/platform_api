@@ -1,21 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import 'fomantic-ui-css/semantic.min.css';
   import '../app.css';
   import { registerAllBlocks } from '$lib/blocks/register';
   import { APP_NAME, APP_ORIGIN } from '$lib/config';
-  import { initFomantic } from '$lib/core/ui';
+  import { registerAllAuthExtensions } from '$lib/domain/auth';
   import { AppShell } from '$lib/ui/layouts';
   import type { Snippet } from 'svelte';
 
   registerAllBlocks();
+  registerAllAuthExtensions();
 
   let { children }: { children: Snippet } = $props();
-
-  onMount(() => {
-    void initFomantic();
-  });
 </script>
 
 <svelte:head>

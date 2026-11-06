@@ -27,5 +27,13 @@
 
 <Label {grow}>
   {label}
-  <Input {type} bind:value {autocomplete} {inputmode} {required} {minlength} {disabled} />
+  <span class="ui-field-control">
+    <Input {type} bind:value {autocomplete} {inputmode} {required} {minlength} {disabled} />
+  </span>
 </Label>
+
+<style>
+  .ui-field-control :global(.ui-input) {
+    padding: 0.7rem 0.85rem;
+  }
+</style>

@@ -19,16 +19,10 @@ export const pages: PageDefinition[] = [
     path: '/login',
     access: 'public',
     template: 'auth',
-    title: 'Вхід',
     slots: {
       default: [{
         block: 'auth.form',
-        props: {
-          submitLabel: 'Увійти',
-          endpoint: '/auth/login',
-          altHref: '/register',
-          altText: 'Немає акаунта',
-        },
+        props: { mode: 'login' },
       }],
     },
   },
@@ -37,17 +31,8 @@ export const pages: PageDefinition[] = [
     path: '/register',
     access: 'public',
     template: 'auth',
-    title: 'Реєстрація',
     slots: {
-      default: [{
-        block: 'auth.form',
-        props: {
-          submitLabel: 'Створити акаунт',
-          endpoint: '/auth/register',
-          altHref: '/login',
-          altText: 'Вже є акаунт',
-        },
-      }],
+      default: [{ block: 'auth.register' }],
     },
   },
   {
@@ -55,11 +40,10 @@ export const pages: PageDefinition[] = [
     path: '/app',
     access: 'user',
     template: 'cabinet',
-    title: 'Кабінет',
-    banner: 'Керуйте акаунтами. Важка обробка виконується клієнтами через /api/client/v1.',
+    title: 'Dashboard',
     slots: {
       actions: [{ block: 'cabinet.admin-link' }],
-      default: [{ block: 'accounts.panel' }],
+      default: [{ block: 'cabinet.dashboard' }],
     },
   },
   {

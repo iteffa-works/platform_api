@@ -3,9 +3,8 @@ import type { BlockComponent } from './types.js';
 
 const blocks = new Map<string, BlockComponent>();
 
-/** Зареєструвати UI-блок за id */
+/** Зареєструвати UI-блок (повторний виклик безпечний для HMR) */
 export function registerBlock(id: string, component: BlockComponent): void {
-  if (blocks.has(id)) throw new Error(`Блок «${id}» уже зареєстровано`);
   blocks.set(id, component);
 }
 

@@ -1,0 +1,23 @@
+/* FlowAxy cabinet theme tokens */
+:root {
+  --cab-bg: #0f1117;
+  --cab-surface: #151821;
+  --cab-surface-2: #1a1e29;
+  --cab-border: #2a3140;
+  --cab-text: #eef1f6;
+  --cab-muted: #8b93a3;
+  --cab-link: #5b9cff;
+  --cab-accent: #6366f1;
+  --cab-accent-2: #3b82f6;
+  --cab-success: #22c55e;
+  --cab-warn: #f59e0b;
+  --cab-danger: #ef4444;
+  --cab-radius: 8px;
+  --cab-control-h: 42px;
+}
+
+body:has(.cab) {
+  color-scheme: dark;
+  background: var(--cab-bg);
+  color: var(--cab-text);
+}

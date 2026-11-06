@@ -1,11 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
-import { registerAllBlocks } from '$lib/blocks/register';
 import { findPage, guardAccess } from '$lib/constructor';
 import { loadAccounts } from '$lib/domain/accounts';
 import { loadAdminUsers } from '$lib/domain/admin';
 import type { PageLoad } from './$types';
-
-registerAllBlocks();
 
 function pathFromSlug(slug?: string | string[]): string {
   if (!slug || (Array.isArray(slug) && slug.length === 0) || slug === '') return '/';

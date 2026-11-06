@@ -5,9 +5,15 @@ export function fetchMe() {
   return api<{ user: User }>('/auth/me');
 }
 
-export function postAuth(endpoint: string, email: string, password: string) {
+/** Login/register з додатковими полями від extensions */
+export function postAuth(
+  endpoint: string,
+  email: string,
+  password: string,
+  extra: Record<string, unknown> = {},
+) {
   return api<{ token: string; user: User }>(endpoint, {
     method: 'POST',
-    body: { email, password },
+    body: { email, password, ...extra },
   });
 }

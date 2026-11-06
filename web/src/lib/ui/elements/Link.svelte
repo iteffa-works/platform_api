@@ -17,12 +17,13 @@
 
 <style>
   .ui-link {
-    color: var(--ui-text);
+    color: var(--ui-link);
     text-decoration: none;
+    font-weight: 500;
   }
 
-  .ui-link.is-active,
-  .ui-link:hover {
-    color: var(--ui-accent);
+  .ui-link:hover,
+  .ui-link.is-active {
+    text-decoration: underline;
   }
 </style>
