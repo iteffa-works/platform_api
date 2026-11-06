@@ -4,9 +4,6 @@ import { defineConfig } from 'vite';
 // Dev за Nginx Open Server: https://sandbox.local → :5173
 export default defineConfig({
   plugins: [sveltekit()],
-  optimizeDeps: {
-    include: ['jquery', 'fomantic-ui-css/semantic.min.js'],
-  },
   server: {
     host: '127.0.0.1',
     port: 5173,

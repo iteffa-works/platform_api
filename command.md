@@ -15,15 +15,14 @@ platform/
     modules/         # auth | accounts | admin | client-api
     shared/          # crypto, http, middleware, errors
     plugins/         # додаткові API-плагіни
-    types/
   web/src/lib/
     config/
     core/            # api (/api/v1), session
     ui/              # elements | components | patterns | layouts | templates
     constructor/     # pages[] + registry блоків
     blocks/          # підставляються за id
-    domain/          # auth | accounts | admin (логіка)
-    shared/          # types, utils
+    domain/          # auth | accounts | admin
+    shared/
   web/src/routes/
     [...slug]/        # єдиний роут-конструктор
   desktop/
@@ -41,7 +40,7 @@ platform/
 
 | Контур | URL | Хто |
 |--------|-----|-----|
-| Platform | `/api/v1` | `web` (без обмежень) |
+| Platform | `/api/v1` | `web` |
 | Client | `/api/client/v1` | `desktop`, скрипти (ключ + rate limit) |
 
 ---
@@ -61,11 +60,11 @@ osp node list
 osp use Node-24.22.1
 ```
 
-Hosts (має бути): `127.0.1.32 sandbox.local www.sandbox.local`
+Hosts: `127.0.1.32 sandbox.local www.sandbox.local`
 
 ---
 
-## Кореневий npm (з `D:\Projects\platform`)
+## Кореневий npm (`D:\Projects\platform`)
 
 ```bat
 npm install
@@ -75,14 +74,23 @@ npm run start
 npm run typecheck
 ```
 
+Production після `npm run build`:
+
+```bat
+npm run start
+npm run start -w web
+```
+
 Окремо:
 
 ```bat
 npm run dev -w api
+npm run build -w api
 npm run start -w api
 npm run typecheck -w api
 npm run dev -w web
 npm run build -w web
+npm run start -w web
 npm run check -w web
 npm run preview -w web
 ```
@@ -91,12 +99,11 @@ Cursor: **Run Task → `dev`** · **Run and Debug → `API`**
 
 ---
 
-## Перевірка Node / API / сайт
+## Перевірка
 
 ```bat
 node -v
 npm -v
-where node
 curl -k https://sandbox.local/
 curl -k https://sandbox.local/login
 curl http://127.0.0.1:4000/api/v1/auth/me
@@ -115,7 +122,7 @@ User: usr_internal
 DB:   db_sandbox
 ```
 
-Налаштування в `api/.env` (пароль у лапках, бо є `#`).
+Налаштування в `api/.env` (пароль у лапках, якщо є `#`):
 
 ```bat
 copy api\.env.example api\.env
@@ -125,16 +132,16 @@ copy api\.env.example api\.env
 
 ## Windows-клієнт (`desktop/`)
 
-### Активувати venv
-
 ```powershell
 cd D:\Projects\platform\desktop
 Set-ExecutionPolicy -Scope Process Bypass
 .\.venv\Scripts\Activate.ps1
 python -V
+python main.py
+pytest -q
 ```
 
-### Створити venv заново (Python 3.12.10)
+Новий venv (Python 3.12.10):
 
 ```powershell
 cd D:\Projects\platform\desktop
@@ -143,21 +150,6 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
-```
-
-### Запуск / тести / збірка exe
-
-```powershell
-python main.py
-python -m app
-pytest -q
-pyinstaller --onefile main.py
-```
-
-### Деактивувати venv
-
-```powershell
-deactivate
 ```
 
 ---
@@ -170,5 +162,4 @@ deactivate
 | Vite | http://127.0.0.1:5173 |
 | Platform API | http://127.0.0.1:4000/api/v1 |
 | Client API | http://127.0.0.1:4000/api/client/v1 |
-| Client status | http://127.0.0.1:4000/api/client/v1/status |
 | MariaDB | 127.0.1.19:3306 |

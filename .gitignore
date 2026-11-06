@@ -1,11 +1,11 @@
-# Залежності
+# Dependencies
 node_modules/
 .pnpm-store/
 .venv/
 venv/
 env/
 
-# Збірка / кеш
+# Build / cache
 .svelte-kit/
 build/
 dist/
@@ -15,13 +15,13 @@ out/
 .vite/
 *.tsbuildinfo
 
-# Секрети та середовище
+# Secrets / env
 .env
 .env.*
 !.env.example
 !**/.env.example
 
-# Логи та тимчасові файли
+# Logs / temp
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -44,7 +44,7 @@ __pycache__/
 .coverage
 htmlcov/
 
-# IDE / ОС
+# IDE / OS
 .idea/
 .vscode/*
 !.vscode/settings.json
@@ -56,11 +56,11 @@ htmlcov/
 Thumbs.db
 Desktop.ini
 
-# Тести / покриття
+# Coverage
 coverage/
 .nyc_output/
 
-# Локальні дані / збірки
+# Local data / packaging
 *.sqlite
 *.sqlite-journal
 api/data/

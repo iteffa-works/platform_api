@@ -1,32 +1,31 @@
 # Platform
 
-Monorepo: web cabinet, REST API, client SDKs, and Windows desktop client.
+Monorepo: web-кабінет, REST API, SDK клієнтів і Windows desktop.
 
-| Package | Stack |
-|---------|--------|
+| Пакет | Стек |
+|-------|------|
 | `api` | Node.js, Express, Sequelize, MariaDB, JWT |
-| `web` | SvelteKit, TypeScript, Fomantic UI → `/api/v1` |
+| `web` | SvelteKit, TypeScript → `/api/v1` |
 | `desktop` | Python 3.12, httpx → `/api/client/v1` |
-| `clients/` | Thin JS/Python SDKs for Client API |
+| `clients/` | Тонкі JS/Python SDK для Client API |
 
-**Domain (Open Server):** https://sandbox.local/
+**Домен (Open Server):** https://sandbox.local/  
+Команди: [command.md](command.md)
 
-Ukrainian guide: [README.uk.md](README.uk.md) · Commands: [command.md](command.md)
+## Контури API
 
-## API contours
+| Контур | Префікс | Хто | Обмеження |
+|--------|---------|-----|-----------|
+| Platform | `/api/v1` | `web` | без client-лімітів |
+| Client | `/api/client/v1` | `desktop`, скрипти | API key + rate limit |
 
-| Contour | Prefix | Who | Limits |
-|---------|--------|-----|--------|
-| Platform | `/api/v1` | `web` | none (full platform) |
-| Client | `/api/client/v1` | `desktop`, scripts | API key + rate limit; fetch → process locally → report |
+## Вимоги
 
-## Requirements
+- Open Server (Nginx, MariaDB, Node через NVM)
+- Node.js 24+ (див. `.nvmrc`)
+- Python 3.12.10 (pyenv) для `desktop`
 
-- Open Server (Nginx, MariaDB, Node via NVM addon)
-- Node.js 24+
-- Python 3.12.10 (pyenv) for `desktop`
-
-## Quick start
+## Швидкий старт
 
 ```bat
 copy api\.env.example api\.env
@@ -34,7 +33,12 @@ npm install
 npm run dev
 ```
 
-API: `http://127.0.0.1:4000/api/v1` · Client: `http://127.0.0.1:4000/api/client/v1` · Site: https://sandbox.local/
+| Що | URL |
+|----|-----|
+| Site | https://sandbox.local |
+| Vite | http://127.0.0.1:5173 |
+| Platform API | http://127.0.0.1:4000/api/v1 |
+| Client API | http://127.0.0.1:4000/api/client/v1 |
 
 ```powershell
 cd desktop
@@ -42,25 +46,31 @@ cd desktop
 python main.py
 ```
 
-## Structure
+## Структура
 
 ```
 platform/
-  api/src/      config · core · modules · shared · plugins
-  web/src/lib/  core · features · shared
-  desktop/app/  api · services · ui · workers
-  clients/      js · python
+  api/src/       config · core · modules · shared · plugins
+  web/src/lib/   config · core · ui · constructor · blocks · domain · shared
+  web/src/routes/[...slug]/   єдиний роут-конструктор
+  desktop/app/   api · services · ui · workers
+  clients/       js · python
+  docs/          outline API
 ```
 
-## Scripts
+Auth на API/web зібрано як **ядро + extensions** (`api/.../auth/extensions`, `web/.../auth/extensions`).
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | API + web |
-| `npm run typecheck` | TypeScript / svelte-check |
-| `npm run build` | Build web |
-| `npm run start` | Start API |
+## Скрипти
 
+| Команда | Опис |
+|---------|------|
+| `npm run dev` | API (tsx watch) + web (Vite) |
+| `npm run build` | `api` → `dist/` + `web` → `build/` (adapter-node) |
+| `npm run start` | API з `dist/` |
+| `npm run start -w web` | Web з `build/` |
+| `npm run typecheck` | tsc + svelte-check |
+
+Production: `npm run build`, далі окремо `npm run start` (API) і `npm run start -w web`.
 ## License
 
 Private.
