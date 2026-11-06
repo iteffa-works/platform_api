@@ -1,5 +1,5 @@
 import { UniqueConstraintError } from 'sequelize';
-import { emit } from '../../events/index.js';
+import { emit } from '../../core/events/index.js';
 import { hashPassword, signToken, verifyPassword } from '../../shared/crypto/index.js';
 import { HttpError } from '../../shared/http/index.js';
 import { User } from './models/user.js';

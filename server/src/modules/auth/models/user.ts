@@ -4,11 +4,8 @@ import {
   InferAttributes,
   InferCreationAttributes,
   Model,
-  NonAttribute,
 } from 'sequelize';
-import { sequelize } from '../../../db/sequelize.js';
-import type { Account } from '../../accounts/models/account.js';
-import type { Check } from '../../checks/models/check.js';
+import { sequelize } from '../../../core/db/sequelize.js';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<string>;
@@ -16,8 +13,6 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare passwordHash: string;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
-  declare accounts?: NonAttribute<Account[]>;
-  declare checks?: NonAttribute<Check[]>;
 }
 
 User.init({
