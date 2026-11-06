@@ -19,8 +19,13 @@ platform/
   web/src/lib/
     config/
     core/            # api (/api/v1), session
-    features/        # auth | accounts | …
-    shared/          # ui, layout, types, utils
+    ui/              # elements | components | patterns | layouts | templates
+    constructor/     # pages[] + registry блоків
+    blocks/          # підставляються за id
+    domain/          # auth | accounts | admin (логіка)
+    shared/          # types, utils
+  web/src/routes/
+    [...slug]/        # єдиний роут-конструктор
   desktop/
     app/             # api (client/v1), services, ui, workers
     tests/
