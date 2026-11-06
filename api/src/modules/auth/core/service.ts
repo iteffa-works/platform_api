@@ -1,11 +1,11 @@
 import { UniqueConstraintError } from 'sequelize';
-import { emit } from '../../core/events/index.js';
-import { hashPassword, signToken, verifyPassword } from '../../shared/crypto/index.js';
-import { HttpError } from '../../shared/http/index.js';
-import { User, type UserRole } from './models/user.js';
+import { emit } from '../../../core/events/index.js';
+import { hashPassword, signToken, verifyPassword } from '../../../shared/crypto/index.js';
+import { HttpError } from '../../../shared/http/index.js';
+import { User, type UserRole } from '../models/user.js';
 
 /** Публічні поля користувача */
-function publicUser(user: User) {
+export function publicUser(user: User) {
   return { id: user.id, email: user.email, role: user.role as UserRole };
 }
 

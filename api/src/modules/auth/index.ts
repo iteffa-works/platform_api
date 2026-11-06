@@ -1,12 +1,26 @@
+import type { Router } from 'express';
 import type { Plugin } from '../../core/plugins/index.js';
-import { authRoutes } from './routes.js';
+import { coreAuthRoutes } from './core/index.js';
+import { listAuthExtensions, loadAuthExtensions } from './extensions/index.js';
 
-/** Плагін platform-auth */
+await loadAuthExtensions();
+
+function mountAuthExtensionRoutes(router: Router): void {
+  for (const extension of listAuthExtensions()) {
+    extension.routes?.(router);
+  }
+}
+
+/** Плагін platform-auth: ядро + розширення */
 export const plugin: Plugin = {
   name: 'auth',
   contour: 'platform',
-  routes: authRoutes,
+  routes(router) {
+    coreAuthRoutes(router);
+    mountAuthExtensionRoutes(router);
+  },
 };
 
-export { login, me, register } from './service.js';
-export { authRoutes };
+export { authConfig } from './config.js';
+export { login, me, register } from './core/index.js';
+export { listAuthExtensions, loadAuthExtensions, runAuthHooks } from './extensions/index.js';

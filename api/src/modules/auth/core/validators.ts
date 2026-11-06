@@ -1,4 +1,4 @@
-import { HttpError } from '../../shared/http/index.js';
+import { HttpError } from '../../../shared/http/index.js';
 
 /** Валідація email і пароля */
 export function readCredentials(body: unknown) {
