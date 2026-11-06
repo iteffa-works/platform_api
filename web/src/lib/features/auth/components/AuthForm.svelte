@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** Форма входу / реєстрації */
   import { goto } from '$app/navigation';
   import { postAuth } from '$lib/features/auth/api';
   import { loadMe, loginWithToken } from '$lib/features/auth/store';

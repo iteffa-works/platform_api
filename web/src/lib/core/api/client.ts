@@ -2,8 +2,10 @@ import { getToken } from '$lib/core/session';
 
 type ApiOptions = { method?: string; body?: unknown };
 
+/** Префікс platform-контуру для веб-кабінету */
 const PLATFORM_PREFIX = '/api/v1';
 
+/** HTTP-клієнт кабінету / адмінки */
 export async function api<T = unknown>(path: string, { method = 'GET', body }: ApiOptions = {}): Promise<T> {
   const headers: Record<string, string> = {};
   const token = getToken();

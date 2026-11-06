@@ -15,12 +15,14 @@
   <nav class="nav">
     {#if $isAuthenticated}
       <span class="muted">{$user?.email || ''}</span>
-      <a href="/app">Кабінет</a>
+      <a href="/app" class:active={$page.url.pathname === '/app'}>Кабінет</a>
+      {#if $user?.role === 'admin'}
+        <a href="/admin" class:active={$page.url.pathname.startsWith('/admin')}>Адмінка</a>
+      {/if}
       <button class="ghost" type="button" onclick={onLogout}>Вийти</button>
     {:else}
       <a href="/login" class:active={$page.url.pathname === '/login'}>Вхід</a>
       <a href="/register" class:active={$page.url.pathname === '/register'}>Реєстрація</a>
-      <a class="btn ghost" href="/app">Кабінет</a>
     {/if}
   </nav>
 </header>
