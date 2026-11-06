@@ -63,7 +63,7 @@ coverage/
 # Локальні дані / збірки
 *.sqlite
 *.sqlite-journal
-server/data/
+api/data/
 desktop/dist/
 desktop/build/
 *.spec

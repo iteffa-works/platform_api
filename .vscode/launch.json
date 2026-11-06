@@ -5,7 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "API",
-      "cwd": "${workspaceFolder}/server",
+      "cwd": "${workspaceFolder}/api",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["tsx", "watch", "src/index.ts"],
       "skipFiles": ["<node_internals>/**"],

@@ -2,13 +2,15 @@ import { getToken } from '$lib/core/session';
 
 type ApiOptions = { method?: string; body?: unknown };
 
+const PLATFORM_PREFIX = '/api/v1';
+
 export async function api<T = unknown>(path: string, { method = 'GET', body }: ApiOptions = {}): Promise<T> {
   const headers: Record<string, string> = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${PLATFORM_PREFIX}${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,

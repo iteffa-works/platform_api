@@ -1,4 +1,4 @@
-# HTTP-клієнт до /api
+# HTTP-клієнт до /api/client/v1
 from __future__ import annotations
 
 from typing import Any
@@ -15,17 +15,18 @@ class ApiError(Exception):
 
 
 class ApiClient:
-    def __init__(self, base_url: str | None = None, token: str | None = None) -> None:
+    def __init__(
+        self,
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ) -> None:
         self.base_url = (base_url or settings.api_base).rstrip("/")
-        self.token = token
+        self.api_key = api_key if api_key is not None else settings.client_api_key
         self._client = httpx.Client(
             base_url=self.base_url,
             timeout=settings.request_timeout,
             verify=False,
         )
-
-    def set_token(self, token: str | None) -> None:
-        self.token = token
 
     def close(self) -> None:
         self._client.close()
@@ -38,8 +39,9 @@ class ApiClient:
 
     def request(self, method: str, path: str, **kwargs: Any) -> Any:
         headers = dict(kwargs.pop("headers", {}) or {})
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+            headers["X-Client-Key"] = self.api_key
         response = self._client.request(method, path, headers=headers, **kwargs)
         if response.status_code == 204:
             return None
@@ -49,5 +51,5 @@ class ApiClient:
             raise ApiError(message or "Помилка запиту", response.status_code)
         return data
 
-    def health(self) -> dict[str, Any]:
-        return self.request("GET", "/health")
+    def status(self) -> dict[str, Any]:
+        return self.request("GET", "/status")

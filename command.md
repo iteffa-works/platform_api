@@ -1,7 +1,7 @@
 # Команди платформи
 
 Домен: **https://sandbox.local/**  
-Стек: TypeScript (`server`, `web`) · Python (`desktop`) · MariaDB · Open Server
+Стек: TypeScript (`api`, `web`) · Python (`desktop`, `clients/python`) · MariaDB · Open Server
 
 ---
 
@@ -9,23 +9,35 @@
 
 ```
 platform/
-  server/src/
+  api/src/
     config/          # env
-    db/              # Sequelize
-    models/          # сутності + associations
-    modules/         # auth | accounts | checks | health
+    core/            # db · events · plugins
+    modules/         # auth | accounts | client-api
     shared/          # crypto, http, middleware, errors
+    plugins/         # додаткові API-плагіни
     types/
   web/src/lib/
     config/
-    core/            # api, session
-    features/        # auth | accounts | checks
+    core/            # api (/api/v1), session
+    features/        # auth | accounts | …
     shared/          # ui, layout, types, utils
   desktop/
-    app/             # api, services, ui, workers
+    app/             # api (client/v1), services, ui, workers
     tests/
     main.py
+  clients/
+    js/              # SDK Client API
+    python/          # SDK Client API
 ```
+
+---
+
+## Контури API
+
+| Контур | URL | Хто |
+|--------|-----|-----|
+| Platform | `/api/v1` | `web` (без обмежень) |
+| Client | `/api/client/v1` | `desktop`, скрипти (ключ + rate limit) |
 
 ---
 
@@ -61,9 +73,9 @@ npm run typecheck
 Окремо:
 
 ```bat
-npm run dev -w server
-npm run start -w server
-npm run typecheck -w server
+npm run dev -w api
+npm run start -w api
+npm run typecheck -w api
 npm run dev -w web
 npm run build -w web
 npm run check -w web
@@ -82,8 +94,8 @@ npm -v
 where node
 curl -k https://sandbox.local/
 curl -k https://sandbox.local/login
-curl -k https://sandbox.local/api/health
-curl http://127.0.0.1:4000/api/health
+curl http://127.0.0.1:4000/api/v1/auth/me
+curl -H "Authorization: Bearer dev-client-key" http://127.0.0.1:4000/api/client/v1/status
 curl http://127.0.0.1:5173/
 ```
 
@@ -98,10 +110,10 @@ User: usr_internal
 DB:   db_sandbox
 ```
 
-Налаштування в `server/.env` (пароль у лапках, бо є `#`).
+Налаштування в `api/.env` (пароль у лапках, бо є `#`).
 
 ```bat
-copy server\.env.example server\.env
+copy api\.env.example api\.env
 ```
 
 ---
@@ -151,6 +163,7 @@ deactivate
 |----|-----|
 | Сайт | https://sandbox.local |
 | Vite | http://127.0.0.1:5173 |
-| API | http://127.0.0.1:4000/api |
-| Health | https://sandbox.local/api/health |
+| Platform API | http://127.0.0.1:4000/api/v1 |
+| Client API | http://127.0.0.1:4000/api/client/v1 |
+| Client status | http://127.0.0.1:4000/api/client/v1/status |
 | MariaDB | 127.0.1.19:3306 |

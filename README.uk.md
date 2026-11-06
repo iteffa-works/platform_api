@@ -1,16 +1,24 @@
 # Платформа
 
-Монорепозиторій: веб-кабінет, REST API та Windows-клієнт для перевірок контактів у Telegram.
+Монорепозиторій: веб-кабінет, REST API, клієнтські SDK та Windows-клієнт.
 
 | Пакет | Стек |
 |-------|------|
-| `server` | Node.js, Express, Sequelize, MariaDB, JWT |
-| `web` | SvelteKit, TypeScript, Fomantic UI |
-| `desktop` | Python 3.12, httpx, CustomTkinter (заглушка), Telethon (план) |
+| `api` | Node.js, Express, Sequelize, MariaDB, JWT |
+| `web` | SvelteKit, TypeScript, Fomantic UI → `/api/v1` |
+| `desktop` | Python 3.12, httpx → `/api/client/v1` |
+| `clients/` | Тонкі JS/Python SDK для Client API |
 
 **Домен (Open Server):** https://sandbox.local/
 
 English: [README.md](README.md) · Команди: [command.md](command.md)
+
+## Контури API
+
+| Контур | Префікс | Хто | Обмеження |
+|--------|---------|-----|-----------|
+| Platform | `/api/v1` | `web` | немає (повний доступ платформи) |
+| Client | `/api/client/v1` | `desktop`, скрипти | API key + rate limit; отримати → обробити локально → відзвітувати |
 
 ## Вимоги
 
@@ -21,12 +29,12 @@ English: [README.md](README.md) · Команди: [command.md](command.md)
 ## Швидкий старт
 
 ```bat
-copy server\.env.example server\.env
+copy api\.env.example api\.env
 npm install
 npm run dev
 ```
 
-API: `http://127.0.0.1:4000/api` · Сайт: https://sandbox.local/
+API: `http://127.0.0.1:4000/api/v1` · Client: `http://127.0.0.1:4000/api/client/v1` · Сайт: https://sandbox.local/
 
 ```powershell
 cd desktop
@@ -38,9 +46,10 @@ python main.py
 
 ```
 platform/
-  server/src/   config · db · models · modules · shared
+  api/src/      config · core · modules · shared · plugins
   web/src/lib/  core · features · shared
   desktop/app/  api · services · ui · workers
+  clients/      js · python
 ```
 
 ## Скрипти

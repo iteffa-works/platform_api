@@ -1,12 +1,12 @@
 {
   "name": "platform",
   "private": true,
-  "workspaces": ["server", "web"],
+  "workspaces": ["api", "web"],
   "scripts": {
-    "dev": "concurrently -k -n server,web -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w web\"",
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
     "build": "npm run build -w web",
-    "start": "npm run start -w server",
-    "typecheck": "npm run typecheck -w server && npm run check -w web"
+    "start": "npm run start -w api",
+    "typecheck": "npm run typecheck -w api && npm run check -w web"
   },
   "engines": { "node": ">=24" },
   "devDependencies": { "concurrently": "^9.1.2" }

@@ -9,8 +9,8 @@ from app.ui.app import build_app
 def run() -> None:
     with ApiClient() as client:
         try:
-            health = client.health()
-            print(f"API {settings.api_base} → {health}")
+            status = client.status()
+            print(f"Client API {settings.api_base} → {status}")
         except Exception as err:  # noqa: BLE001
-            print(f"API недоступне: {err}")
+            print(f"Client API недоступне: {err}")
     build_app()

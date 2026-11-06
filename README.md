@@ -1,16 +1,24 @@
 # Platform
 
-Monorepo: web cabinet, REST API, and Windows desktop client for Telegram contact checks.
+Monorepo: web cabinet, REST API, client SDKs, and Windows desktop client.
 
 | Package | Stack |
 |---------|--------|
-| `server` | Node.js, Express, Sequelize, MariaDB, JWT |
-| `web` | SvelteKit, TypeScript, Fomantic UI |
-| `desktop` | Python 3.12, httpx, CustomTkinter (stub), Telethon (planned) |
+| `api` | Node.js, Express, Sequelize, MariaDB, JWT |
+| `web` | SvelteKit, TypeScript, Fomantic UI → `/api/v1` |
+| `desktop` | Python 3.12, httpx → `/api/client/v1` |
+| `clients/` | Thin JS/Python SDKs for Client API |
 
 **Domain (Open Server):** https://sandbox.local/
 
 Ukrainian guide: [README.uk.md](README.uk.md) · Commands: [command.md](command.md)
+
+## API contours
+
+| Contour | Prefix | Who | Limits |
+|---------|--------|-----|--------|
+| Platform | `/api/v1` | `web` | none (full platform) |
+| Client | `/api/client/v1` | `desktop`, scripts | API key + rate limit; fetch → process locally → report |
 
 ## Requirements
 
@@ -21,12 +29,12 @@ Ukrainian guide: [README.uk.md](README.uk.md) · Commands: [command.md](command.
 ## Quick start
 
 ```bat
-copy server\.env.example server\.env
+copy api\.env.example api\.env
 npm install
 npm run dev
 ```
 
-API: `http://127.0.0.1:4000/api` · Site: https://sandbox.local/
+API: `http://127.0.0.1:4000/api/v1` · Client: `http://127.0.0.1:4000/api/client/v1` · Site: https://sandbox.local/
 
 ```powershell
 cd desktop
@@ -38,9 +46,10 @@ python main.py
 
 ```
 platform/
-  server/src/   config · db · models · modules · shared
+  api/src/      config · core · modules · shared · plugins
   web/src/lib/  core · features · shared
   desktop/app/  api · services · ui · workers
+  clients/      js · python
 ```
 
 ## Scripts
