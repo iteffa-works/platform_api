@@ -7,8 +7,8 @@
   } from '$lib/domain/auth/extensions/account-type';
 
   const options: Array<{ id: AccountKind; title: string; description: string }> = [
-    { id: 'client', title: 'Тип 1', description: 'Опис типу акаунта' },
-    { id: 'business', title: 'Тип 2', description: 'Опис типу акаунта' },
+    { id: 'client', title: 'Особистий', description: 'Для індивідуального використання' },
+    { id: 'business', title: 'Компанія', description: 'Для команди та бізнес-сервісів' },
   ];
 
   let kind = $state(getAccountKind());
@@ -19,7 +19,7 @@
 </script>
 
 <section class="kind">
-  <h2 class="kind__title">Заголовок типу акаунта</h2>
+  <h2 class="kind__title">Тип акаунта</h2>
   <div class="kind__grid">
     {#each options as item (item.id)}
       <button

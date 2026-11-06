@@ -9,7 +9,7 @@ export const forgotPasswordExtension: AuthClientExtension = {
       id: 'forgot-password',
       zone: 'password',
       href: '/login',
-      label: 'Підказка пароля',
+      label: 'Забули пароль?',
       modes: ['login'],
       order: 10,
     },

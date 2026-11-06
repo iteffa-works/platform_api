@@ -22,7 +22,7 @@
 
   const mode = 'register' as const;
   const endpoint = $derived(resolveAuthEndpoint(mode, '/auth/register'));
-  const submitLabel = $derived(resolveAuthSubmitLabel(mode, 'Кнопка реєстрації'));
+  const submitLabel = $derived(resolveAuthSubmitLabel(mode, 'Зареєструватися'));
   const extensionSlots = $derived(listAuthExtensionSlots(mode));
 
   async function submit(event: Event) {
@@ -49,12 +49,12 @@
 </script>
 
 <form class="reg" onsubmit={submit}>
-  <a class="reg__back" href="/login">← Посилання на вхід</a>
+  <a class="reg__back" href="/login">← Назад до входу</a>
 
   <header class="reg__head">
-    <h1 class="reg__title">Заголовок реєстрації</h1>
+    <h1 class="reg__title">Створити акаунт</h1>
     <p class="reg__lead">
-      Підзаголовок: коротке пояснення до форми реєстрації та наступних кроків підтвердження.
+      Заповніть дані нижче — після реєстрації відкриється кабінет платформи.
     </p>
   </header>
 
@@ -68,12 +68,12 @@
       Email
       <input class="reg__input" type="email" bind:value={email} autocomplete="email" required placeholder="your@email.com" />
     </Label>
-    <p class="reg__hint">Підказка до поля email</p>
+    <p class="reg__hint">На цю адресу надійде підтвердження</p>
   </div>
 
   <div class="reg__field">
     <PasswordField label="Пароль" bind:value={password} autocomplete="new-password" required minlength={8} />
-    <p class="reg__hint">Підказка до поля пароля</p>
+    <p class="reg__hint">Мінімум 8 символів</p>
   </div>
 
   {#each extensionSlots.filter((s) => s.id !== 'verification') as slot (slot.id)}

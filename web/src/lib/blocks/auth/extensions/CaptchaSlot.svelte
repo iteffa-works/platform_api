@@ -58,7 +58,7 @@
 </script>
 
 <div class="captcha">
-  <label class="captcha__label" for="auth-captcha-answer">Підпис капчі</label>
+  <label class="captcha__label" for="auth-captcha-answer">Код з зображення</label>
 
   <div class="captcha__box">
     <div class="captcha__preview" class:is-loading={loading}>
@@ -90,7 +90,7 @@
     autocomplete="off"
     spellcheck="false"
     maxlength={8}
-    placeholder="Поле коду капчі"
+    placeholder="Введіть код"
     bind:value={answer}
     disabled={loading}
     required

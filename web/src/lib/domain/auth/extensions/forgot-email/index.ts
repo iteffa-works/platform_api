@@ -9,7 +9,7 @@ export const forgotEmailExtension: AuthClientExtension = {
       id: 'forgot-email',
       zone: 'email',
       href: '/login',
-      label: 'Підказка email',
+      label: 'Забули email?',
       modes: ['login'],
       order: 10,
     },

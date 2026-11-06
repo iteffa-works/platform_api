@@ -15,9 +15,9 @@
     available: boolean;
     glyph: string;
   }> = [
-    { id: 'email', title: 'Спосіб 1', description: 'Опис способу верифікації', available: true, glyph: '✉' },
-    { id: 'phone', title: 'Спосіб 2', description: 'Опис способу верифікації', available: false, glyph: '▣' },
-    { id: 'invite', title: 'Спосіб 3', description: 'Опис способу верифікації', available: true, glyph: '◈' },
+    { id: 'email', title: 'Email', description: 'Підтвердження через пошту', available: true, glyph: '✉' },
+    { id: 'phone', title: 'Телефон', description: 'SMS-код (скоро)', available: false, glyph: '▣' },
+    { id: 'invite', title: 'Запрошення', description: 'Код від адміністратора', available: true, glyph: '◈' },
   ];
 
   let method = $state(getVerificationMethod());
@@ -28,8 +28,8 @@
 </script>
 
 <section class="verify">
-  <h2 class="verify__title">Заголовок верифікації</h2>
-  <p class="verify__lead">Підзаголовок блоку вибору способу підтвердження</p>
+  <h2 class="verify__title">Підтвердження</h2>
+  <p class="verify__lead">Оберіть, як підтвердити акаунт після реєстрації</p>
 
   <div class="verify__grid">
     {#each methods as item (item.id)}
@@ -50,11 +50,11 @@
 
   {#if method === 'invite'}
     <label class="verify__field">
-      Поле коду запрошення
+      Код запрошення
       <input class="verify__input" type="text" bind:value={invite} placeholder="CODE-XXXX" autocomplete="off" />
     </label>
   {:else if method === 'email'}
-    <div class="verify__note">Шаблонне повідомлення про наступний крок підтвердження.</div>
+    <div class="verify__note">Після реєстрації надішлемо лист із посиланням для підтвердження.</div>
   {/if}
 </section>
 

@@ -20,16 +20,16 @@
 </script>
 
 <section class="contacts">
-  <h2 class="contacts__title">Заголовок контактів</h2>
-  <p class="contacts__lead">Підзаголовок блоку контактів</p>
+  <h2 class="contacts__title">Контакти</h2>
+  <p class="contacts__lead">За потреби вкажіть телефон або месенджер для звʼязку</p>
 
   <label class="contacts__field">
-    Поле телефону
-    <input class="contacts__input" type="tel" bind:value={phone} placeholder="+000…" autocomplete="tel" />
+    Телефон
+    <input class="contacts__input" type="tel" bind:value={phone} placeholder="+380…" autocomplete="tel" />
   </label>
 
   <label class="contacts__field">
-    Поле месенджера
+    Месенджер
     <input class="contacts__input" type="text" bind:value={messenger} placeholder="@username" autocomplete="off" />
   </label>
 </section>
