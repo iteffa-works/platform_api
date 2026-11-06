@@ -18,6 +18,5 @@ export const config = {
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'db_sandbox',
   },
-  maxContacts: 500,
   isProduction: process.env.NODE_ENV === 'production',
 };
