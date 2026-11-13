@@ -1,11 +1,12 @@
 import type { Request, Router } from 'express';
+import type { PublicUser } from '../core/service.js';
 
 /** Контекст хука auth-розширення */
 export type AuthHookContext = {
   email: string;
   body: Record<string, unknown>;
   req: Request;
-  user?: { id: string; email: string; role: string };
+  user?: PublicUser;
   result?: unknown;
 };
 

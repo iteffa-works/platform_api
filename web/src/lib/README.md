@@ -18,7 +18,8 @@
 {
   id: 'admin',
   path: '/admin',
-  access: 'admin',         // public | user | admin
+  access: 'user',          // public | user
+  permission: ['admin.panel', 'view'],  // рівень права ролі (необовʼязково)
   template: 'admin',       // landing | auth | cabinet | admin
   load: loadAdminUsers,    // дані сторінки (необовʼязково)
   slots: { default: [{ block: 'admin.users' }] },  // default | actions

@@ -9,9 +9,7 @@
   let { page }: { page: PageDefinition } = $props();
 
   const slots = $derived(page.slots ?? {});
-  const cabinetSubtitle = $derived(
-    `${$user?.email || ''} · ${$user?.role === 'admin' ? 'адміністратор' : 'користувач'}`,
-  );
+  const cabinetSubtitle = $derived(`${$user?.email || ''} · ${$user?.role.name || ''}`);
 </script>
 
 {#if page.template === 'landing'}

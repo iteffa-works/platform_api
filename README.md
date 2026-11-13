@@ -55,6 +55,7 @@ platform/
 ```
 
 Auth на API/web зібрано як **ядро + extensions** (`api/.../auth/extensions`, `web/.../auth/extensions`).
+Ролі — рівні прав без змін у коді: [docs/roles-plan.md](docs/roles-plan.md).
 
 ## Скрипти
 
@@ -65,6 +66,9 @@ Auth на API/web зібрано як **ядро + extensions** (`api/.../auth/e
 | `npm run start` | API з `dist/` |
 | `npm run start -w web` | Web з `build/` |
 | `npm run typecheck` | tsc + svelte-check |
+| `npm test -w api` | unit-тести (vitest) |
+| `npm run migrate -w api` | міграції БД (`-- down` — відкат останньої); при старті API застосовуються автоматично |
+| `npm run roles:set-developer -w api -- <email>` | аварійна передача ролі розробника |
 
 Production: `npm run build`, далі окремо `npm run start` (API) і `npm run start -w web`.
 

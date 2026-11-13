@@ -5,17 +5,21 @@
 
 ---
 
-## Як зараз
+## Статус
+
+Етапи 1–2 реалізовано: ролі в БД, рівні прав, `requirePermission`, міграції, web на `can()`.
+Далі — етап 3 (UI ролей в адмінці) і 4 (аудит).
+
+Ключові файли:
 
 | Де | Що |
 |----|----|
-| `api/.../auth/models/user.ts` | `users.role` — рядок `'user' \| 'admin'` |
-| `api/.../auth/core/service.ts` | перший зареєстрований стає `admin` |
-| `api/src/shared/middleware/require-admin.ts` | доступ = `role === 'admin'` |
-| `api/.../admin/service.ts` | зміна ролі, захист «останній admin» |
-| `web/.../constructor/guard.ts`, `Topbar`, `AdminLinkBlock` | перевірки `role === 'admin'` |
-
-Проблема: ролі зашиті в код. Нова роль = правки в API, web і перевірках доступу.
+| `api/src/core/access` | рівні, `can`, `isWithin`, каталог ресурсів (+ unit-тести) |
+| `api/src/modules/auth/models/role.ts` | модель `Role`, системні `developer` / `user` |
+| `api/src/modules/auth/access.ts` | `requirePermission(resource, level)`, `permissionsOf(req)` |
+| `api/src/modules/auth/migrations` | `users`, перенесення `users.role` → `roles` |
+| `api/src/modules/admin` | ресурси адмінки, користувачі, CRUD ролей |
+| `web/src/lib/domain/auth/access.ts` | `can(user, resource, level)` |
 
 ---
 
@@ -58,7 +62,7 @@ export const plugin: Plugin = {
 Роль — це назва + набір «ресурс → рівень». Код ролей не знає, лише перевіряє рівні:
 
 ```json
-{ "key": "support", "name": "Підтримка",
+{ "slug": "support", "name": "Підтримка",
   "permissions": { "admin.panel": "view", "users": "view" } }
 ```
 
@@ -128,28 +132,31 @@ router.get('/admin/users', requirePermission('users', 'view'), …);
 
 ### Етап 1 — Основа в API (без UI ролей)
 
-- [ ] Міграції замість `sync({ alter: true })` (umzug) — потрібні для переносу даних ролей
-- [ ] Модель `Role` (`key`, `name`, `description`, `isSystem`, `permissions` JSON) і `users.roleId`
-- [ ] Каталог ресурсів: поле `permissions` у `Plugin`, збір у loader
-- [ ] Seed системних ролей `developer` і `user`
-- [ ] `can()` + `requirePermission()`; `requireAdmin` видаляється
-- [ ] Реєстрація: перший → `developer`, решта → роль за замовчуванням
-- [ ] `/auth/me` повертає роль і права
-- [ ] Unit-тести для `can()` і правил ескалації (vitest)
+- [x] Міграції замість `sync({ alter: true })` (umzug) — потрібні для переносу даних ролей
+- [x] Модель `Role` (`slug`, `name`, `description`, `isSystem`, `permissions` JSON) і `users.roleId`
+- [x] Каталог ресурсів: поле `permissions` у `Plugin`, збір у loader
+- [x] Seed системних ролей `developer` і `user`
+- [x] `can()` + `requirePermission()`; `requireAdmin` видаляється
+- [x] Реєстрація: перший → `developer`, решта → роль за замовчуванням
+- [x] `/auth/me` повертає роль і права
+- [x] Unit-тести для `can()` і правил ескалації (vitest)
+- [x] CRUD ролей і призначення в API (`/admin/roles`, `/admin/users/:id`)
+- [x] CLI: `npm run migrate -w api [-- down]`, `npm run roles:set-developer -w api -- <email>`
 
 **Міграція даних:** найраніший `admin` → `developer`; інші `admin` → нова звичайна роль «Адміністратор»
 (`admin.panel: view`, `users: manage`, `roles: manage`); `user` → `user`. Потім колонка `users.role` видаляється.
 
 ### Етап 2 — Web на правах
 
-- [ ] `can()` у `domain/auth`, тип `User` з `role` і `permissions`
-- [ ] `permission` у сторінках конструктора і в `guardAccess`
-- [ ] Прибрати всі перевірки `role === 'admin'`
+- [x] `can()` у `domain/auth`, тип `User` з `role` і `permissions`
+- [x] `permission` у сторінках конструктора і в `guardAccess`
+- [x] Прибрати всі перевірки `role === 'admin'`
 
 ### Етап 3 — Адмінка ролей (разом з новою адмінкою)
 
+- [x] Призначення ролі користувачу (вибір у списку користувачів)
 - [ ] Список ролей, створення / редагування: матриця «ресурс × рівень»
-- [ ] Призначення ролі користувачу, переназначення при видаленні ролі
+- [ ] Переназначення користувачів при видаленні ролі
 - [ ] Налаштування «роль за замовчуванням»
 - [ ] Передача ролі розробника
 
@@ -167,8 +174,8 @@ router.get('/admin/users', requirePermission('users', 'view'), …);
 - Користувач не може видати права вищі за власні.
 - Зміна ролі діє з наступного запиту.
 
-## Відкриті питання
+## Рішення за замовчуванням (можна переглянути)
 
-1. Назва базової ролі для нових реєстрацій: `user` чи інша (наприклад, «Клієнт»)?
-2. Чи бачить розробника в списку користувачів адмінки хтось, крім нього самого?
-3. Чи потрібні колись кілька ролей на користувача (тоді права = максимум по ролях)?
+1. Базова роль нових реєстрацій — `user` («Користувач»).
+2. Розробника в списку користувачів бачать усі з доступом до адмінки (змінити його не може ніхто).
+3. Одна роль на користувача.

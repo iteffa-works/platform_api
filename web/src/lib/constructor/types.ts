@@ -1,7 +1,11 @@
 /** Типи конструктора сторінок */
 import type { Component } from 'svelte';
+import type { GrantLevel } from '$lib/shared/types';
 
-export type AccessLevel = 'public' | 'user' | 'admin';
+export type AccessLevel = 'public' | 'user';
+
+/** Потрібне право: [ресурс, рівень] */
+export type PagePermission = [resource: string, level: GrantLevel];
 
 export type TemplateId = 'landing' | 'auth' | 'cabinet' | 'admin';
 
@@ -21,6 +25,7 @@ export type PageDefinition = {
   id: string;
   path: string;
   access: AccessLevel;
+  permission?: PagePermission;
   template: TemplateId;
   title?: string;
   subtitle?: string;

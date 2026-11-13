@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { subdirectories } from '../../shared/fs/index.js';
+import { readDirSafe, subdirectories } from '../../shared/fs/index.js';
 import { disabledPlugins } from './disabled.js';
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -18,4 +18,26 @@ export async function pluginDirectories(): Promise<string[]> {
   }
 
   return dirs.sort((left, right) => path.basename(left).localeCompare(path.basename(right)));
+}
+
+function isSourceFile(name: string, names: ReadonlySet<string>): boolean {
+  if (name.startsWith('.') || name.endsWith('.d.ts') || /\.(test|spec)\.[jt]s$/.test(name)) return false;
+  if (name.endsWith('.ts')) return true;
+  // dist: лише .js без .ts-двійника
+  return name.endsWith('.js') && !names.has(name.replace(/\.js$/, '.ts'));
+}
+
+/** Файли підтеки `subdir` усіх плагінів, відсортовані за іменем файлу */
+export async function pluginFiles(subdir: string): Promise<string[]> {
+  const files: string[] = [];
+
+  for (const dir of await pluginDirectories()) {
+    const entries = (await readDirSafe(path.join(dir, subdir))).map((entry) => entry.name);
+    const names = new Set(entries);
+    for (const name of entries) {
+      if (isSourceFile(name, names)) files.push(path.join(dir, subdir, name));
+    }
+  }
+
+  return files.sort((left, right) => path.basename(left).localeCompare(path.basename(right)));
 }

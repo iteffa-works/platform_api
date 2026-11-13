@@ -2,6 +2,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Router } from 'express';
 import { findEntrypoint } from '../../shared/fs/index.js';
+import { registerResources } from '../access/index.js';
 import { emit, on } from '../events/index.js';
 import { pluginDirectories } from './discover.js';
 import type { PluginModule } from './types.js';
@@ -28,6 +29,7 @@ export async function loadPlugins(routers: PluginRouters): Promise<void> {
     if (loaded.has(mod.plugin.name)) throw new Error(`Плагін «${mod.plugin.name}» уже зареєстровано`);
     loaded.set(mod.plugin.name, mod);
 
+    registerResources(mod.plugin.permissions ?? {});
     const router = mod.plugin.contour === 'client' ? routers.client : routers.platform;
     mod.plugin.routes?.(router);
 

@@ -1,12 +1,12 @@
-import { loadModels } from './load-models.js';
-import { models } from './registry.js';
+import { migrateUp } from './migrate.js';
 import { sequelize } from './sequelize.js';
 
-export { models, sequelize };
+export { sequelize };
+export type { MigrationContext } from './migrate.js';
 
-/** Підключення БД і синхронізація моделей */
+/** Підключення БД і застосування нових міграцій */
 export async function connectDb(): Promise<void> {
-  await loadModels();
   await sequelize.authenticate();
-  await sequelize.sync({ alter: true });
+  const applied = await migrateUp();
+  if (applied.length) console.log(`[db] міграції: ${applied.join(', ')}`);
 }

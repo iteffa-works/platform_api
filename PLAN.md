@@ -29,7 +29,8 @@
 - [x] Auth UI (login/register), captcha, extensions
 - [x] JWT login/register/me, admin users
 - [x] Open Server → Vite `:5173`, API `:4000`
-- [ ] Стабільний `api/.env` з MariaDB, міграції/sync моделей задокументовані
+- [ ] Стабільний `api/.env` з MariaDB
+- [x] Міграції (umzug) замість `sync({ alter: true })`
 - [ ] `npm run build` + `npm run start` (API dist + web adapter-node) перевірені локально
 - [ ] Чекліст smoke: register → login → `/app` → `/admin`
 

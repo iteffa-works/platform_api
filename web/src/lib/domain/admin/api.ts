@@ -1,13 +1,17 @@
 import { api } from '$lib/core/api';
-import type { User } from '$lib/shared/types';
+import type { AdminUser, Role } from '$lib/shared/types';
 
 export function fetchUsers() {
-  return api<{ users: User[] }>('/admin/users');
+  return api<{ users: AdminUser[] }>('/admin/users');
 }
 
-export function patchUserRole(id: string, role: User['role']) {
-  return api<{ user: User }>(`/admin/users/${id}`, {
+export function fetchRoles() {
+  return api<{ roles: Role[] }>('/admin/roles');
+}
+
+export function patchUserRole(id: string, roleId: string) {
+  return api<{ user: AdminUser }>(`/admin/users/${id}`, {
     method: 'PATCH',
-    body: { role },
+    body: { roleId },
   });
 }

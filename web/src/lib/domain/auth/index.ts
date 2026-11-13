@@ -1,3 +1,4 @@
+export { can, DEVELOPER_ROLE } from './access.js';
 export type { AuthMode } from './config.js';
 export { postAuth } from './api.js';
 export {

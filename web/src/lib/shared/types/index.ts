@@ -1,6 +1,35 @@
-/** Користувач платформи */
+/** Рівні прав (дзеркало api/src/core/access) */
+export type GrantLevel = 'view' | 'edit' | 'manage';
+
+/** Права ролі: ресурс → рівень; `*` — усі ресурси (розробник) */
+export type Permissions = Record<string, GrantLevel>;
+
+export type RoleRef = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
+/** Поточний користувач платформи */
 export type User = {
   id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: RoleRef;
+  permissions: Permissions;
+};
+
+/** Рядок списку користувачів в адмінці */
+export type AdminUser = {
+  id: string;
+  email: string;
+  role: RoleRef;
+  createdAt: string;
+};
+
+/** Роль у списку адмінки */
+export type Role = RoleRef & {
+  description: string | null;
+  isSystem: boolean;
+  permissions: Permissions;
+  users: number;
 };

@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Верхня навігація внутрішніх сторінок (адмінка) */
   import { page } from '$app/stores';
-  import { signOut, user } from '$lib/domain/auth';
+  import { can, signOut, user } from '$lib/domain/auth';
   import { Brand, Button, Link, Text } from '$lib/ui/elements';
 </script>
 
@@ -10,7 +10,7 @@
   <nav class="ui-topbar__nav">
     <Text as="span" tone="muted">{$user?.email || ''}</Text>
     <Link href="/app" active={$page.url.pathname === '/app'}>Кабінет</Link>
-    {#if $user?.role === 'admin'}
+    {#if can($user, 'admin.panel', 'view')}
       <Link href="/admin" active={$page.url.pathname.startsWith('/admin')}>Адмінка</Link>
     {/if}
     <Button variant="ghost" onclick={signOut}>Вийти</Button>

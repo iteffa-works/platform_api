@@ -5,14 +5,19 @@
 Для `web`. JWT. Без client-обмежень.
 
 ### Auth
-- `POST /auth/register` — перший користувач = admin
+- `POST /auth/register` — перший користувач = `developer`
 - `POST /auth/login`
-- `GET /auth/me`
+- `GET /auth/me` — `{ user: { id, email, role, permissions } }`
 - `GET /auth/captcha` — SVG-капча; `{ enabled: false }`, якщо `AUTH_CAPTCHA=false`
 
-### Admin
-- `GET /admin/users`
-- `PATCH /admin/users/:id` — `{ role: user|admin }`
+### Admin (права ролі, див. [roles-plan.md](roles-plan.md))
+- `GET /admin/users` — `users: view`
+- `PATCH /admin/users/:id` — `{ roleId }`, `users: manage`
+- `GET /admin/permissions` — каталог ресурсів і рівнів, `roles: view`
+- `GET /admin/roles` — ролі з кількістю користувачів
+- `POST /admin/roles` — `{ slug, name, description?, permissions }`, `roles: manage`
+- `PATCH /admin/roles/:id` — `roles: manage`
+- `DELETE /admin/roles/:id` — `{ reassignTo }`, `roles: manage`
 
 ## Client — `/api/client/v1`
 

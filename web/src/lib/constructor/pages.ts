@@ -50,7 +50,8 @@ export const pages: PageDefinition[] = [
   {
     id: 'admin',
     path: '/admin',
-    access: 'admin',
+    access: 'user',
+    permission: ['admin.panel', 'view'],
     template: 'admin',
     title: 'Адмінка',
     subtitle: 'Керування користувачами платформи',
