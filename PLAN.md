@@ -60,7 +60,7 @@
 
 | Сервіс | Local MVP |
 |--------|-----------|
-| Identity | Ролі, сесії, audit log (таблиця + admin UI) |
+| Identity | Ролі ([план ролей і рівнів прав](docs/roles-plan.md)), сесії, audit log (таблиця + admin UI) |
 | Secrets | CRUD секретів у БД (шифрування `APP_SECRET`), без HashiCorp спочатку |
 | Observability | Health `/api/v1/health`, прості логи в файл/БД |
 | Helpdesk | Тикети CRUD у кабінеті (stub) |
