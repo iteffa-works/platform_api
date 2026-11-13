@@ -4,8 +4,7 @@ import { authConfig } from '../../config.js';
 import type { AuthExtension, AuthHookContext } from '../types.js';
 import { createCaptchaChallenge, verifyCaptchaAnswer } from './service.js';
 
-async function verifyCaptcha(ctx: AuthHookContext): Promise<void> {
-  if (!authConfig.captcha) return;
+function verifyCaptcha(ctx: AuthHookContext): void {
   verifyCaptchaAnswer(
     String(ctx.body.captchaToken ?? ''),
     String(ctx.body.captchaAnswer ?? ''),
@@ -22,9 +21,12 @@ function captchaRoutes(router: Router): void {
   }));
 }
 
+/**
+ * Завжди підключене: при AUTH_CAPTCHA=false маршрут віддає `enabled: false`,
+ * а перевірка пропускається — web ховає поле без помилки 404.
+ */
 export const extension: AuthExtension = {
   name: 'captcha',
-  enabled: authConfig.captcha,
   routes: captchaRoutes,
   beforeRegister: verifyCaptcha,
   beforeLogin: verifyCaptcha,

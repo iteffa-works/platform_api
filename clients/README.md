@@ -7,7 +7,7 @@
 | Пакет | Мова |
 |-------|------|
 | `js/` | JavaScript (ESM) |
-| `python/` | Python 3.12 + httpx |
+| `python/` | Python 3.12 + httpx (`pip install -e clients/python`; його використовує `desktop`) |
 
 Ключ: `CLIENT_API_KEY` (заголовок `Authorization: Bearer …` або `X-Client-Key`).
 

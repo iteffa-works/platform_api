@@ -8,4 +8,3 @@ export const plugin: Plugin = {
 };
 
 export { claimNext, clientStatus, enqueueDemo, submitResult } from './service.js';
-export { clientApiRoutes };

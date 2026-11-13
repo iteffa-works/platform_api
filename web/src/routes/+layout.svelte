@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import '../app.css';
+  import '$lib/ui/styles/index.css';
   import { registerAllBlocks } from '$lib/blocks/register';
   import { APP_NAME, APP_ORIGIN } from '$lib/config';
   import { registerAllAuthExtensions } from '$lib/domain/auth';

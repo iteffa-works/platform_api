@@ -2,7 +2,6 @@
   /** Світла картка входу і реєстрації */
   import type { Snippet } from 'svelte';
   import { Brand } from '$lib/ui/elements';
-  import { AuthLayout } from '$lib/ui/layouts';
 
   let {
     title = '',
@@ -13,17 +12,15 @@
   } = $props();
 </script>
 
-<AuthLayout>
-  <section class="ui-auth-panel">
-    <div class="ui-auth-panel__brand">
-      <Brand href="/" image />
-    </div>
-    {#if title}
-      <h1 class="ui-auth-panel__title">{title}</h1>
-    {/if}
-    {@render children()}
-  </section>
-</AuthLayout>
+<section class="ui-auth-panel">
+  <div class="ui-auth-panel__brand">
+    <Brand href="/" image />
+  </div>
+  {#if title}
+    <h1 class="ui-auth-panel__title">{title}</h1>
+  {/if}
+  {@render children()}
+</section>
 
 <style>
   .ui-auth-panel {

@@ -1,6 +1,6 @@
 import type { Router } from 'express';
-import { asyncRoute, HttpError } from '../../shared/http/index.js';
-import { requireAdmin, requireUser } from '../../shared/middleware/index.js';
+import { asyncRoute } from '../../shared/http/index.js';
+import { requireAdmin, requireUser, userIdOf } from '../../shared/middleware/index.js';
 import * as adminService from './service.js';
 import { readRole } from './validators.js';
 
@@ -13,7 +13,6 @@ export function adminRoutes(router: Router): void {
   }));
 
   router.patch('/admin/users/:id', asyncRoute(async (req, res) => {
-    if (!req.userId) throw new HttpError(401, 'Сесія недійсна');
-    res.json(await adminService.setUserRole(req.params.id, readRole(req.body), req.userId));
+    res.json(await adminService.setUserRole(req.params.id, readRole(req.body), userIdOf(req)));
   }));
 }

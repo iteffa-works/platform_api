@@ -26,8 +26,9 @@ export type PageDefinition = {
   title?: string;
   subtitle?: string;
   lead?: string;
-  banner?: string;
   slots?: PageSlots;
+  /** Дані сторінки (виконується в load після перевірки доступу) */
+  load?: () => Promise<unknown>;
 };
 
 export type BlockComponent = Component<any>;

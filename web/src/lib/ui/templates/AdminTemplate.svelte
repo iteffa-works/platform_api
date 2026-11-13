@@ -2,7 +2,7 @@
   /** Шаблон адмінки */
   import type { Snippet } from 'svelte';
   import { Card, ErrorText, PageHeader } from '$lib/ui/components';
-  import { PageLayout } from '$lib/ui/layouts';
+  import { Stack } from '$lib/ui/patterns';
 
   let {
     title,
@@ -19,7 +19,7 @@
   } = $props();
 </script>
 
-<PageLayout>
+<Stack gap="lg">
   <Card>
     <PageHeader {title} {subtitle}>
       {#snippet actions()}
@@ -29,4 +29,4 @@
     <ErrorText message={error} />
   </Card>
   {@render children()}
-</PageLayout>
+</Stack>

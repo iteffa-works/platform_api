@@ -7,7 +7,12 @@ import {
 } from 'sequelize';
 import { sequelize } from '../../../core/db/sequelize.js';
 
-export type UserRole = 'user' | 'admin';
+export const USER_ROLES = ['user', 'admin'] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
+export function isUserRole(value: unknown): value is UserRole {
+  return USER_ROLES.includes(value as UserRole);
+}
 
 /** Модель користувача платформи */
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {

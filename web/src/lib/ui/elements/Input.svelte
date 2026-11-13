@@ -36,7 +36,8 @@
 <style>
   .ui-input {
     width: 100%;
-    padding: 0.55rem 0.7rem;
+    height: var(--ui-control-h);
+    padding: 0 12px;
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius);
     background: var(--ui-surface);

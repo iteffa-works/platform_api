@@ -3,7 +3,7 @@ import type { WorkResult } from './service.js';
 
 export function readWorkResult(body: unknown): WorkResult {
   const data = (body ?? {}) as { status?: unknown; data?: unknown; error?: unknown };
-  const status = String(data.status || '');
+  const status = data.status;
   if (status !== 'done' && status !== 'failed') {
     throw new HttpError(400, 'status має бути done або failed');
   }

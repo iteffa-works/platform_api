@@ -6,5 +6,4 @@ export {
   addAccount,
   loadAccounts,
   removeAccount,
-  selectedAccountId,
 } from './store.js';

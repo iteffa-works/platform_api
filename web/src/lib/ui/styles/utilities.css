@@ -1,4 +1,0 @@
-/* Утиліти макету (лише для legacy/допомоги; переважно patterns) */
-.ui-muted { color: var(--ui-muted); }
-.ui-lead { margin: 0; color: var(--ui-muted); max-width: 42rem; }
-.ui-error { color: var(--ui-danger); margin: 0; }

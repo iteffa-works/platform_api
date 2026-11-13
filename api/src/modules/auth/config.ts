@@ -11,6 +11,3 @@ export const authConfig = {
   /** Форма email+пароль (login/register endpoints) */
   form: flag('AUTH_FORM', true),
 } as const;
-
-export type AuthConfig = typeof authConfig;
-export type AuthExtensionName = keyof AuthConfig;

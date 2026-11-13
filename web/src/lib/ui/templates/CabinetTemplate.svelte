@@ -1,21 +1,18 @@
 <script lang="ts">
   /** Кабінет FlowAxy: shell + контент */
-  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import type { Snippet } from 'svelte';
-  import { logout, user } from '$lib/domain/auth';
+  import { signOut, user } from '$lib/domain/auth';
 
   let {
     title = 'Dashboard',
     subtitle = '',
-    banner = '',
     error = '',
     actions,
     children,
   }: {
     title?: string;
     subtitle?: string;
-    banner?: string;
     error?: string;
     actions?: Snippet;
     children: Snippet;
@@ -27,11 +24,6 @@
     { href: '/app#domains', label: 'Custom domains' },
     { href: '/app#handlers', label: 'Notification handlers' },
   ] as const;
-
-  function onLogout() {
-    logout();
-    goto('/login');
-  }
 </script>
 
 <div class="cab">
@@ -64,13 +56,12 @@
       {#if actions}
         <div class="cab__actions">{@render actions()}</div>
       {/if}
-      <button class="cab__tool" type="button" onclick={onLogout}>Вийти</button>
+      <button class="cab__tool" type="button" onclick={signOut}>Вийти</button>
     </div>
   </header>
 
   <main class="cab__main">
     {#if title}<h1 class="cab__sr-only">{title}</h1>{/if}
-    {#if banner}<p class="cab__banner">{banner}</p>{/if}
     {#if error}<p class="cab__error">{error}</p>{/if}
     {@render children()}
   </main>
@@ -185,16 +176,6 @@
   .cab__main {
     display: grid;
     gap: 16px;
-  }
-
-  .cab__banner {
-    margin: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--cab-border);
-    border-radius: 6px;
-    background: var(--cab-surface);
-    color: var(--cab-muted);
-    font-size: 13px;
   }
 
   .cab__error {

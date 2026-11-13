@@ -1,4 +1,6 @@
 /** Каталог сторінок — збірка екранів масивом */
+import { loadAccounts } from '$lib/domain/accounts';
+import { loadAdminUsers } from '$lib/domain/admin';
 import type { PageDefinition } from './types.js';
 
 export const pages: PageDefinition[] = [
@@ -20,10 +22,7 @@ export const pages: PageDefinition[] = [
     access: 'public',
     template: 'auth',
     slots: {
-      default: [{
-        block: 'auth.form',
-        props: { mode: 'login' },
-      }],
+      default: [{ block: 'auth.form', props: { mode: 'login' } }],
     },
   },
   {
@@ -32,7 +31,7 @@ export const pages: PageDefinition[] = [
     access: 'public',
     template: 'auth',
     slots: {
-      default: [{ block: 'auth.register' }],
+      default: [{ block: 'auth.form', props: { mode: 'register' } }],
     },
   },
   {
@@ -41,6 +40,7 @@ export const pages: PageDefinition[] = [
     access: 'user',
     template: 'cabinet',
     title: 'Dashboard',
+    load: loadAccounts,
     slots: {
       actions: [{ block: 'cabinet.admin-link' }],
       default: [{ block: 'cabinet.dashboard' }],
@@ -53,6 +53,7 @@ export const pages: PageDefinition[] = [
     template: 'admin',
     title: 'Адмінка',
     subtitle: 'Керування користувачами платформи',
+    load: loadAdminUsers,
     slots: {
       actions: [{ block: 'admin.cabinet-link' }],
       default: [{ block: 'admin.users' }],

@@ -1,7 +1,7 @@
-import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Model, type ModelStatic } from 'sequelize';
+import { readDirSafe } from '../../shared/fs/index.js';
 import { pluginDirectories } from '../plugins/discover.js';
 import { models, type Models } from './registry.js';
 
@@ -32,14 +32,7 @@ export async function loadModels(): Promise<void> {
     const files: string[] = [];
 
     for (const dir of await pluginDirectories()) {
-      let entries: string[];
-      try {
-        entries = await readdir(path.join(dir, 'models'));
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
-        throw error;
-      }
-
+      const entries = (await readDirSafe(path.join(dir, 'models'))).map((entry) => entry.name);
       const names = new Set(entries);
       for (const name of entries) {
         if (!isModelFile(name, names)) continue;

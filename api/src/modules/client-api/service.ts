@@ -41,9 +41,6 @@ export async function claimNext(): Promise<WorkItem | null> {
 export async function submitResult(id: string, result: WorkResult): Promise<{ ok: true; id: string }> {
   const item = claimed.get(id);
   if (!item) throw new HttpError(404, 'Завдання не знайдено або вже закрите');
-  if (result.status !== 'done' && result.status !== 'failed') {
-    throw new HttpError(400, 'status має бути done або failed');
-  }
   claimed.delete(id);
   await emit('client.work.completed', { workId: id, status: result.status });
   return { ok: true, id };

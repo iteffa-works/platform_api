@@ -8,7 +8,7 @@
 - `POST /auth/register` — перший користувач = admin
 - `POST /auth/login`
 - `GET /auth/me`
-- `GET /auth/captcha` — SVG-капча (якщо `AUTH_CAPTCHA`)
+- `GET /auth/captcha` — SVG-капча; `{ enabled: false }`, якщо `AUTH_CAPTCHA=false`
 
 ### Accounts (кабінет)
 - `GET|POST|PATCH|DELETE /accounts`

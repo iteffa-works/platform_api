@@ -1,14 +1,8 @@
 <script lang="ts">
   /** Верхня навігація застосунку */
-  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { isAuthenticated, logout, user } from '$lib/domain/auth';
+  import { isAuthenticated, signOut, user } from '$lib/domain/auth';
   import { Brand, Button, Link, Text } from '$lib/ui/elements';
-
-  function onLogout() {
-    logout();
-    goto('/login');
-  }
 </script>
 
 <header class="ui-topbar">
@@ -20,7 +14,7 @@
       {#if $user?.role === 'admin'}
         <Link href="/admin" active={$page.url.pathname.startsWith('/admin')}>Адмінка</Link>
       {/if}
-      <Button variant="ghost" onclick={onLogout}>Вийти</Button>
+      <Button variant="ghost" onclick={signOut}>Вийти</Button>
     {:else}
       <Link href="/login" active={$page.url.pathname === '/login'}>Вхід</Link>
       <Link href="/register" active={$page.url.pathname === '/register'}>Реєстрація</Link>

@@ -4,11 +4,13 @@
   import { api } from '$lib/core/api';
   import {
     onCaptchaRefreshRequest,
-    resetCaptchaAnswer,
     setCaptchaAnswer,
+    setCaptchaEnabled,
     setCaptchaToken,
   } from '$lib/domain/auth/extensions/captcha';
+  import { errorMessage } from '$lib/shared/utils';
 
+  let enabled = $state(true);
   let image = $state('');
   let answer = $state('');
   let loading = $state(false);
@@ -17,29 +19,16 @@
   async function loadChallenge() {
     loading = true;
     loadError = '';
+    answer = '';
     try {
-      const data = await api<{
-        enabled: boolean;
-        captchaToken: string;
-        image: string;
-      }>('/auth/captcha');
-
-      if (!data.enabled) {
-        setCaptchaToken('disabled');
-        setCaptchaAnswer('disabled');
-        image = '';
-        answer = '';
-        return;
-      }
-
+      const data = await api<{ enabled: boolean; captchaToken: string; image: string }>('/auth/captcha');
+      enabled = data.enabled;
       image = data.image;
+      setCaptchaEnabled(data.enabled);
       setCaptchaToken(data.captchaToken);
-      answer = '';
-      resetCaptchaAnswer();
     } catch (err) {
-      loadError = err instanceof Error ? err.message : 'Не вдалося завантажити капчу';
+      loadError = errorMessage(err, 'Не вдалося завантажити капчу');
       setCaptchaToken('');
-      resetCaptchaAnswer();
     } finally {
       loading = false;
     }
@@ -52,54 +41,56 @@
   onMount(() => {
     void loadChallenge();
     return onCaptchaRefreshRequest(() => {
-      void loadChallenge();
+      if (enabled) void loadChallenge();
     });
   });
 </script>
 
-<div class="captcha">
-  <label class="captcha__label" for="auth-captcha-answer">Код з зображення</label>
+{#if enabled}
+  <div class="captcha">
+    <label class="captcha__label" for="auth-captcha-answer">Код з зображення</label>
 
-  <div class="captcha__box">
-    <div class="captcha__preview" class:is-loading={loading}>
-      {#if image}
-        <img class="captcha__image" src={image} alt="" />
-      {:else}
-        <span class="captcha__empty">{loading ? '…' : '—'}</span>
-      {/if}
+    <div class="captcha__box">
+      <div class="captcha__preview" class:is-loading={loading}>
+        {#if image}
+          <img class="captcha__image" src={image} alt="" />
+        {:else}
+          <span class="captcha__empty">{loading ? '…' : '—'}</span>
+        {/if}
+      </div>
+      <button
+        class="captcha__refresh"
+        type="button"
+        aria-label="Оновити код"
+        title="Оновити"
+        disabled={loading}
+        onclick={() => void loadChallenge()}
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5a5 5 0 0 1-8.66 3.44l-1.42 1.42A6.97 6.97 0 0 0 19 12c0-1.93-.78-3.68-2.05-4.95ZM6 12c0-1.1.3-2.14.83-3.04l-1.5-1.3A6.97 6.97 0 0 0 5 12c0 3.53 2.61 6.43 6 6.92V21l5-5-5-5v2.1A5.01 5.01 0 0 1 6 12Z"/>
+        </svg>
+      </button>
     </div>
-    <button
-      class="captcha__refresh"
-      type="button"
-      aria-label="Оновити код"
-      title="Оновити"
+
+    <input
+      id="auth-captcha-answer"
+      class="captcha__input"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      spellcheck="false"
+      maxlength={8}
+      placeholder="Введіть код"
+      bind:value={answer}
       disabled={loading}
-      onclick={() => void loadChallenge()}
-    >
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5a5 5 0 0 1-8.66 3.44l-1.42 1.42A6.97 6.97 0 0 0 19 12c0-1.93-.78-3.68-2.05-4.95ZM6 12c0-1.1.3-2.14.83-3.04l-1.5-1.3A6.97 6.97 0 0 0 5 12c0 3.53 2.61 6.43 6 6.92V21l5-5-5-5v2.1A5.01 5.01 0 0 1 6 12Z"/>
-      </svg>
-    </button>
+      required
+    />
+
+    {#if loadError}
+      <p class="captcha__error">{loadError}</p>
+    {/if}
   </div>
-
-  <input
-    id="auth-captcha-answer"
-    class="captcha__input"
-    type="text"
-    inputmode="text"
-    autocomplete="off"
-    spellcheck="false"
-    maxlength={8}
-    placeholder="Введіть код"
-    bind:value={answer}
-    disabled={loading}
-    required
-  />
-
-  {#if loadError}
-    <p class="captcha__error">{loadError}</p>
-  {/if}
-</div>
+{/if}
 
 <style>
   .captcha {

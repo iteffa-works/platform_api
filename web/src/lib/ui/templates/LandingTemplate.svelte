@@ -2,7 +2,7 @@
   /** Шаблон головної сторінки */
   import type { Snippet } from 'svelte';
   import { Card } from '$lib/ui/components';
-  import { Stack } from '$lib/ui/patterns';
+  import { Text } from '$lib/ui/elements';
 
   let {
     title,
@@ -18,12 +18,10 @@
 </script>
 
 <Card>
-  <Stack>
-    <h1>{title}</h1>
-    <p class="ui-lead">{lead}</p>
-    {#if meta}{@render meta()}{/if}
-    <div class="ui-landing-actions">{@render actions()}</div>
-  </Stack>
+  <h1>{title}</h1>
+  <Text tone="lead">{lead}</Text>
+  {#if meta}{@render meta()}{/if}
+  <div class="ui-landing-actions">{@render actions()}</div>
 </Card>
 
 <style>

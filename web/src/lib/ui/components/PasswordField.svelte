@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Пароль з показом/приховуванням */
-  import { Label } from '$lib/ui/elements';
+  import { Input, Label } from '$lib/ui/elements';
 
   let {
     label = 'Пароль',
@@ -24,15 +24,7 @@
 <Label>
   {label}
   <div class="ui-password">
-    <input
-      class="ui-password__input"
-      type={visible ? 'text' : 'password'}
-      bind:value
-      {autocomplete}
-      {required}
-      {minlength}
-      {disabled}
-    />
+    <Input type={visible ? 'text' : 'password'} bind:value {autocomplete} {required} {minlength} {disabled} />
     <button
       class="ui-password__toggle"
       type="button"
@@ -53,15 +45,8 @@
     position: relative;
   }
 
-  .ui-password__input {
-    width: 100%;
-    height: var(--ui-control-h);
-    padding: 0 40px 0 12px;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
-    background: var(--ui-surface);
-    font: inherit;
-    box-shadow: none;
+  .ui-password :global(.ui-input) {
+    padding-right: 40px;
   }
 
   .ui-password__toggle {

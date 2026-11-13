@@ -150,20 +150,7 @@ npm run start -w web   # SvelteKit adapter-node
 
 ## Локальний контур (щоденна робота)
 
-```bat
-copy api\.env.example api\.env
-npm install
-npm run dev
-```
-
-| Що | URL |
-|----|-----|
-| UI | https://sandbox.local або http://127.0.0.1:5173 |
-| Platform API | http://127.0.0.1:4000/api/v1 |
-| Client API | http://127.0.0.1:4000/api/client/v1 |
-| MariaDB | з `api/.env` |
-
-Команди: [command.md](command.md) · API outline: [docs/openapi-outline.md](docs/openapi-outline.md)
+Запуск і адреси — [README.md](README.md), команди — [command.md](command.md), API outline — [docs/openapi-outline.md](docs/openapi-outline.md).
 
 Опційно для хвилі B:
 

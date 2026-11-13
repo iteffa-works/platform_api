@@ -40,18 +40,14 @@ npm run dev
 | Platform API | http://127.0.0.1:4000/api/v1 |
 | Client API | http://127.0.0.1:4000/api/client/v1 |
 
-```powershell
-cd desktop
-.\.venv\Scripts\Activate.ps1
-python main.py
-```
+Desktop (`desktop/`, SDK `clients/python` ставиться через `requirements.txt`) — див. [command.md](command.md).
 
 ## Структура
 
 ```
 platform/
   api/src/       config · core · modules · shared · plugins
-  web/src/lib/   config · core · ui · constructor · blocks · domain · shared
+  web/src/lib/   config · core · ui · constructor · blocks · domain · shared  (див. web/src/lib/README.md)
   web/src/routes/[...slug]/   єдиний роут-конструктор
   desktop/app/   api · services · ui · workers
   clients/       js · python
@@ -71,6 +67,7 @@ Auth на API/web зібрано як **ядро + extensions** (`api/.../auth/e
 | `npm run typecheck` | tsc + svelte-check |
 
 Production: `npm run build`, далі окремо `npm run start` (API) і `npm run start -w web`.
+
 ## License
 
 Private.

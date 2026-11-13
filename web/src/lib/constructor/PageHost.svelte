@@ -32,7 +32,6 @@
   <CabinetTemplate
     title={page.title || ''}
     subtitle={cabinetSubtitle}
-    banner={page.banner || ''}
     error={$accountsError}
   >
     {#snippet actions()}

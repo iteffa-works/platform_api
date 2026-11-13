@@ -1,36 +1,17 @@
-import { get, writable } from 'svelte/store';
+import { writable } from 'svelte/store';
 import type { Account } from '$lib/shared/types';
+import { createRunner } from '$lib/shared/utils';
 import * as accountsApi from './api.js';
 
 export const accounts = writable<Account[]>([]);
-export const selectedAccountId = writable('');
 export const accountsBusy = writable(false);
 export const accountsError = writable('');
 
-function pickAccount(list: Account[]): string {
-  return list.find((item) => item.isActive)?.id || list[0]?.id || '';
-}
+const run = createRunner(accountsBusy, accountsError);
 
-export async function loadAccounts(): Promise<Account[]> {
+export async function loadAccounts(): Promise<void> {
   const data = await accountsApi.fetchAccounts();
   accounts.set(data.accounts);
-  const current = get(selectedAccountId);
-  if (!current || !data.accounts.some((item) => item.id === current)) {
-    selectedAccountId.set(pickAccount(data.accounts));
-  }
-  return data.accounts;
-}
-
-async function run(action: () => Promise<void>): Promise<void> {
-  accountsError.set('');
-  accountsBusy.set(true);
-  try {
-    await action();
-  } catch (err) {
-    accountsError.set(err instanceof Error ? err.message : 'Помилка');
-  } finally {
-    accountsBusy.set(false);
-  }
 }
 
 export function addAccount(label: string, apiId: number, apiHash: string) {

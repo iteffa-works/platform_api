@@ -1,22 +1,17 @@
 import { HttpError } from '../../shared/http/index.js';
+import { publicUser } from '../auth/core/index.js';
 import { User, type UserRole } from '../auth/models/user.js';
 
 /** Список користувачів для адмінки */
 export async function listUsers() {
   const rows = await User.findAll({ order: [['createdAt', 'ASC']] });
   return {
-    users: rows.map((user) => ({
-      id: user.id,
-      email: user.email,
-      role: user.role as UserRole,
-      createdAt: user.createdAt,
-    })),
+    users: rows.map((user) => ({ ...publicUser(user), createdAt: user.createdAt })),
   };
 }
 
 /** Зміна ролі користувача */
 export async function setUserRole(id: string, role: UserRole, actorId: string) {
-  if (role !== 'user' && role !== 'admin') throw new HttpError(400, 'Некоректна роль');
   const user = await User.findByPk(id);
   if (!user) throw new HttpError(404, 'Користувача не знайдено');
 
@@ -31,5 +26,5 @@ export async function setUserRole(id: string, role: UserRole, actorId: string) {
 
   user.role = role;
   await user.save();
-  return { user: { id: user.id, email: user.email, role: user.role as UserRole } };
+  return { user: publicUser(user) };
 }

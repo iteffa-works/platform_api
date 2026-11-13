@@ -21,10 +21,7 @@ export class ClientApi {
   }
 
   async request(method, path, body) {
-    const headers = {
-      Authorization: `Bearer ${this.apiKey}`,
-      'X-Client-Key': this.apiKey,
-    };
+    const headers = { Authorization: `Bearer ${this.apiKey}` };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
 
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, {

@@ -28,10 +28,7 @@ class ClientApi:
         self._client = httpx.Client(
             base_url=self.base_url,
             timeout=timeout,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "X-Client-Key": api_key,
-            },
+            headers={"Authorization": f"Bearer {api_key}"},
             verify=False,
         )
 

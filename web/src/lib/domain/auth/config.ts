@@ -1,7 +1,6 @@
-/** Клієнтські прапорці auth-розширень (дзеркало api/auth/config) */
+/** Клієнтські прапорці auth-розширень (стан капчі уточнює GET /auth/captcha) */
 export const authConfig = {
   captcha: true,
-  form: true,
 } as const;
 
 export type AuthMode = 'login' | 'register';

@@ -9,4 +9,3 @@ export const plugin: Plugin = {
 };
 
 export { createAccount, deleteAccount, listAccounts, updateAccount } from './service.js';
-export { accountRoutes };

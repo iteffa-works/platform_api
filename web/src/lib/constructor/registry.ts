@@ -14,8 +14,3 @@ export function getBlock(id: string): BlockComponent {
   if (!component) throw new Error(`Блок «${id}» не знайдено`);
   return component;
 }
-
-/** Список id блоків (для дебагу) */
-export function listBlocks(): string[] {
-  return [...blocks.keys()].sort();
-}

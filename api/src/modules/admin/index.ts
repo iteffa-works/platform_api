@@ -9,4 +9,3 @@ export const plugin: Plugin = {
 };
 
 export { listUsers, setUserRole } from './service.js';
-export { adminRoutes };

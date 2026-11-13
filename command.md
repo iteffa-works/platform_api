@@ -1,47 +1,6 @@
 # Команди платформи
 
-Домен: **https://sandbox.local/**  
-Стек: TypeScript (`api`, `web`) · Python (`desktop`, `clients/python`) · MariaDB · Open Server
-
----
-
-## Структура
-
-```
-platform/
-  api/src/
-    config/          # env
-    core/            # db · events · plugins
-    modules/         # auth | accounts | admin | client-api
-    shared/          # crypto, http, middleware, errors
-    plugins/         # додаткові API-плагіни
-  web/src/lib/
-    config/
-    core/            # api (/api/v1), session
-    ui/              # elements | components | patterns | layouts | templates
-    constructor/     # pages[] + registry блоків
-    blocks/          # підставляються за id
-    domain/          # auth | accounts | admin
-    shared/
-  web/src/routes/
-    [...slug]/        # єдиний роут-конструктор
-  desktop/
-    app/             # api (client/v1), services, ui, workers
-    tests/
-    main.py
-  clients/
-    js/              # SDK Client API
-    python/          # SDK Client API
-```
-
----
-
-## Контури API
-
-| Контур | URL | Хто |
-|--------|-----|-----|
-| Platform | `/api/v1` | `web` |
-| Client | `/api/client/v1` | `desktop`, скрипти (ключ + rate limit) |
+Огляд, структура, контури API й адреси — у [README.md](README.md).
 
 ---
 
@@ -151,15 +110,3 @@ python -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
 ```
-
----
-
-## Адреси
-
-| Що | URL |
-|----|-----|
-| Сайт | https://sandbox.local |
-| Vite | http://127.0.0.1:5173 |
-| Platform API | http://127.0.0.1:4000/api/v1 |
-| Client API | http://127.0.0.1:4000/api/client/v1 |
-| MariaDB | 127.0.1.19:3306 |

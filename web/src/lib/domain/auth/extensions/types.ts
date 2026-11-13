@@ -14,16 +14,6 @@ export type AuthExtensionSlot = {
   modes?: AuthMode[];
 };
 
-export type AuthExtensionHint = {
-  id: string;
-  zone: 'email' | 'password' | 'footer';
-  href: string;
-  label: string;
-  tone?: 'default' | 'soft';
-  modes?: AuthMode[];
-  order?: number;
-};
-
 export type AuthClientExtension = {
   name: string;
   enabled?: boolean;
@@ -31,7 +21,6 @@ export type AuthClientExtension = {
   modes?: AuthMode[];
   fields?: () => AuthExtensionField[];
   slots?: () => AuthExtensionSlot[];
-  hints?: () => AuthExtensionHint[];
   validate?: () => string | void;
   submitLabel?: (mode: AuthMode) => string | undefined;
   endpoint?: (mode: AuthMode) => string | undefined;
