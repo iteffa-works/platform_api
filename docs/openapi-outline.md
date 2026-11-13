@@ -10,6 +10,9 @@
 - `GET /auth/me` — `{ user: { id, email, role, permissions } }`
 - `GET /auth/captcha` — SVG-капча; `{ enabled: false }`, якщо `AUTH_CAPTCHA=false`
 
+### Cabinet (будь-який користувач)
+- `GET /cabinet/profile` — `{ user, access: [{ key, label, level }] }`
+
 ### Admin (права ролі, див. [roles-plan.md](roles-plan.md))
 - `GET /admin/users` — `users: view`
 - `PATCH /admin/users/:id` — `{ roleId }`, `users: manage`

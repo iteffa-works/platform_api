@@ -1,4 +1,4 @@
-/* FlowAxy cabinet theme tokens */
+/* Темна тема кабінету */
 :root {
   --cab-bg: #0f1117;
   --cab-surface: #151821;
@@ -12,12 +12,27 @@
   --cab-success: #22c55e;
   --cab-warn: #f59e0b;
   --cab-danger: #ef4444;
-  --cab-radius: 8px;
-  --cab-control-h: 42px;
+}
+
+/* Усередині кабінету UI-kit бере темні значення токенів */
+.cab {
+  color-scheme: dark;
+  --ui-page-bg: var(--cab-bg);
+  --ui-surface: var(--cab-surface);
+  --ui-surface-muted: var(--cab-surface-2);
+  --ui-text: var(--cab-text);
+  --ui-muted: var(--cab-muted);
+  --ui-border: var(--cab-border);
+  --ui-border-strong: #3a4456;
+  --ui-link: var(--cab-link);
+  --ui-accent: var(--cab-accent-2);
+  --ui-accent-soft: rgba(59, 130, 246, 0.16);
+  --ui-success: var(--cab-success);
+  --ui-danger: #fca5a5;
+  --ui-radius: 8px;
+  color: var(--ui-text);
 }
 
 body:has(.cab) {
-  color-scheme: dark;
   background: var(--cab-bg);
-  color: var(--cab-text);
 }

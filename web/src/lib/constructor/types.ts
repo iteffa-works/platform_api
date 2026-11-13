@@ -1,4 +1,4 @@
-/** Типи конструктора сторінок */
+/** Типи конструктора сторінок і web-плагінів */
 import type { Component } from 'svelte';
 import type { GrantLevel } from '$lib/shared/types';
 
@@ -34,4 +34,26 @@ export type PageDefinition = {
   load?: () => Promise<unknown>;
 };
 
+/** Сторінка в реєстрі: знає свій плагін (для навігації) */
+export type RegisteredPage = PageDefinition & { plugin: string };
+
 export type BlockComponent = Component<any>;
+
+/** Пункт навігації плагіна; ховається, якщо немає права */
+export type NavItem = {
+  href: string;
+  label: string;
+  permission?: PagePermission;
+};
+
+/**
+ * Web-плагін: свої сторінки, блоки й навігація.
+ * Підключається одним рядком у `$lib/plugins`.
+ */
+export type WebPlugin = {
+  name: string;
+  /** id блоку → компонент; id мають бути унікальні між плагінами */
+  blocks?: Record<string, BlockComponent>;
+  pages?: PageDefinition[];
+  nav?: NavItem[];
+};

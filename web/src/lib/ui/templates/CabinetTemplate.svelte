@@ -1,203 +1,107 @@
 <script lang="ts">
-  /** Кабінет FlowAxy: shell + контент */
-  import { page } from '$app/stores';
+  /** Кабінет: темна оболонка з навігацією плагіна */
   import type { Snippet } from 'svelte';
   import { signOut, user } from '$lib/domain/auth';
+  import { Brand } from '$lib/ui/elements';
+  import { NavTabs, Stack } from '$lib/ui/patterns';
+
+  type Item = { href: string; label: string };
 
   let {
-    title = 'Dashboard',
-    subtitle = '',
-    actions,
+    title = '',
+    nav = [],
+    current,
+    adminHref = null,
     children,
   }: {
     title?: string;
-    subtitle?: string;
-    actions?: Snippet;
+    nav?: Item[];
+    current: string;
+    adminHref?: string | null;
     children: Snippet;
   } = $props();
-
-  const nav = [
-    { href: '/app', label: 'Dashboard' },
-    { href: '/app#websites', label: 'Websites' },
-    { href: '/app#domains', label: 'Custom domains' },
-    { href: '/app#handlers', label: 'Notification handlers' },
-  ] as const;
 </script>
 
 <div class="cab">
   <header class="cab__top">
-    <div class="cab__brand">
-      <img class="cab__logo" src="/brand/logo_light.png" alt="FlowAxy" />
-    </div>
-
-    <nav class="cab__nav" aria-label="Cabinet">
-      {#each nav as item (item.label)}
-        <a
-          class="cab__nav-link"
-          class:is-active={item.href === '/app' && $page.url.pathname === '/app' && !item.href.includes('#')}
-          href={item.href}
-        >
-          {item.label}
-        </a>
-      {/each}
-    </nav>
-
-    <div class="cab__tools">
-      <button class="cab__tool" type="button" title="Theme">💡</button>
-      <button class="cab__tool" type="button" title="Language">EN</button>
-      <span class="cab__balance">00.00 ₴</span>
-      <button class="cab__tool" type="button" title="Notifications">🔔</button>
-      <div class="cab__user" title={subtitle || $user?.email || ''}>
-        <span class="cab__uid">ID: {$user?.id ?? 1}</span>
-        <span class="cab__avatar" aria-hidden="true"></span>
+    <div class="cab__bar">
+      <Brand href="/app" />
+      <NavTabs items={nav} {current} />
+      <div class="cab__user">
+        <span class="cab__who">{$user?.email}<small>{$user?.role.name}</small></span>
+        {#if adminHref}<a class="cab__link" href={adminHref}>Адмінка</a>{/if}
+        <button class="cab__link" type="button" onclick={signOut}>Вийти</button>
       </div>
-      {#if actions}
-        <div class="cab__actions">{@render actions()}</div>
-      {/if}
-      <button class="cab__tool" type="button" onclick={signOut}>Вийти</button>
     </div>
   </header>
 
   <main class="cab__main">
-    {#if title}<h1 class="cab__sr-only">{title}</h1>{/if}
-    {@render children()}
+    <Stack gap="lg">
+      {#if title}<h1 class="cab__title">{title}</h1>{/if}
+      {@render children()}
+    </Stack>
   </main>
-
-  <footer class="cab__foot">Demo · flowaxy.com</footer>
 </div>
 
 <style>
   .cab {
-    width: min(1180px, calc(100% - 32px));
-    margin: 0 auto;
-    padding: 18px 0 28px;
-    display: grid;
-    gap: 18px;
+    min-height: 100vh;
+    background: var(--ui-page-bg);
   }
 
   .cab__top {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 18px;
-    align-items: center;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--cab-border);
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-surface);
   }
 
-  .cab__logo {
-    height: 24px;
-    width: auto;
-    display: block;
+  .cab__bar,
+  .cab__main {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
   }
 
-  .cab__nav {
+  .cab__bar {
     display: flex;
-    gap: 16px;
-    align-items: center;
     flex-wrap: wrap;
-  }
-
-  .cab__nav-link {
-    color: var(--cab-muted);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 6px 0;
-    border-bottom: 2px solid transparent;
-  }
-  .cab__nav-link:hover { color: var(--cab-text); }
-  .cab__nav-link.is-active {
-    color: var(--cab-text);
-    border-bottom-color: var(--cab-text);
-  }
-
-  .cab__tools {
-    display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .cab__tool {
-    height: 32px;
-    min-width: 32px;
-    padding: 0 8px;
-    border: 1px solid var(--cab-border);
-    border-radius: 6px;
-    background: var(--cab-surface);
-    color: var(--cab-muted);
-    font: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .cab__tool:hover {
-    color: var(--cab-text);
-    border-color: #3a4456;
-  }
-
-  .cab__balance {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--cab-text);
-    padding: 0 4px;
+    gap: 12px 32px;
+    min-height: 60px;
   }
 
   .cab__user {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-left: 4px;
-  }
-  .cab__uid {
-    font-size: 12px;
-    color: var(--cab-muted);
-    font-weight: 600;
-  }
-  .cab__avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    background:
-      linear-gradient(135deg, #22c55e 0 50%, transparent 50%),
-      linear-gradient(315deg, #e2e8f0 0 50%, #16a34a 50%);
-    border: 1px solid #2a3140;
+    gap: 16px;
+    margin-left: auto;
+    font-size: 14px;
   }
 
-  .cab__actions :global(a),
-  .cab__actions :global(button) {
-    font-size: 12px;
+  .cab__who {
+    display: grid;
+    text-align: right;
+  }
+
+  .cab__who small {
+    color: var(--ui-muted);
+  }
+
+  .cab__link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ui-link);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
   }
 
   .cab__main {
-    display: grid;
-    gap: 16px;
+    padding: 28px 0 64px;
   }
 
-  .cab__sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-  }
-
-  .cab__foot {
-    margin-top: 8px;
-    padding-top: 14px;
-    border-top: 1px solid var(--cab-border);
-    color: #667084;
-    font-size: 12px;
-  }
-
-  @media (max-width: 900px) {
-    .cab__top {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
+  .cab__title {
+    margin: 0;
+    font-size: 1.5rem;
   }
 </style>

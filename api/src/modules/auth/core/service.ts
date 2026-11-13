@@ -58,7 +58,7 @@ export async function login(email: string, password: string) {
 }
 
 /** Поточний користувач за JWT */
-export async function me(userId: string) {
+export async function me(userId: number) {
   const user = await findUserWithRole(userId);
   if (!user) throw new HttpError(401, 'Сесія недійсна');
   return { user: publicUser(user) };

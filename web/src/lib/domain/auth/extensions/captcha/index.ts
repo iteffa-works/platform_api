@@ -1,4 +1,4 @@
-import CaptchaSlot from '$lib/blocks/auth/extensions/CaptchaSlot.svelte';
+import CaptchaSlot from '$lib/plugins/auth/CaptchaSlot.svelte';
 import { authConfig } from '../../config.js';
 import type { AuthClientExtension } from '../types.js';
 import { getCaptchaAnswer, getCaptchaToken, isCaptchaEnabled } from './state.js';

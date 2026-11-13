@@ -24,7 +24,7 @@ export async function listUsers() {
  * Призначити роль користувачу.
  * Не можна: змінити власну роль, торкатися розробника, видати чи зняти права вищі за власні.
  */
-export async function assignRole(userId: string, roleId: string, actorId: string, actor: Permissions) {
+export async function assignRole(userId: number, roleId: number, actorId: number, actor: Permissions) {
   if (userId === actorId) throw new HttpError(400, 'Не можна змінити власну роль');
 
   const user = await findUserWithRole(userId);

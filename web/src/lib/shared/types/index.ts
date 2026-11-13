@@ -5,14 +5,14 @@ export type GrantLevel = 'view' | 'edit' | 'manage';
 export type Permissions = Record<string, GrantLevel>;
 
 export type RoleRef = {
-  id: string;
+  id: number;
   slug: string;
   name: string;
 };
 
 /** Поточний користувач платформи */
 export type User = {
-  id: string;
+  id: number;
   email: string;
   role: RoleRef;
   permissions: Permissions;
@@ -20,7 +20,7 @@ export type User = {
 
 /** Рядок списку користувачів в адмінці */
 export type AdminUser = {
-  id: string;
+  id: number;
   email: string;
   role: RoleRef;
   createdAt: string;

@@ -1,10 +1,10 @@
 import type { Router } from 'express';
-import { asyncRoute } from '../../shared/http/index.js';
+import { asyncRoute, readIdParam } from '../../shared/http/index.js';
 import { requireUser, userIdOf } from '../../shared/middleware/index.js';
 import { permissionsOf, requirePermission } from '../auth/access.js';
 import * as roles from './roles.js';
 import * as users from './service.js';
-import { readNewRole, readRoleId, readRolePatch } from './validators.js';
+import { readNewRole, readReassignTo, readRoleId, readRolePatch } from './validators.js';
 
 /** Маршрути адмінки: доступ визначають рівні прав ролі */
 export function adminRoutes(router: Router): void {
@@ -16,7 +16,8 @@ export function adminRoutes(router: Router): void {
 
   router.patch('/admin/users/:id', requirePermission('users', 'manage'), asyncRoute(async (req, res) => {
     const actor = await permissionsOf(req);
-    res.json(await users.assignRole(req.params.id, readRoleId(req.body), userIdOf(req), actor));
+    const userId = readIdParam(req.params.id, 'Користувача не знайдено');
+    res.json(await users.assignRole(userId, readRoleId(req.body), userIdOf(req), actor));
   }));
 
   router.get('/admin/permissions', requirePermission('roles', 'view'), asyncRoute(async (_req, res) => {
@@ -33,12 +34,13 @@ export function adminRoutes(router: Router): void {
   }));
 
   router.patch('/admin/roles/:id', requirePermission('roles', 'manage'), asyncRoute(async (req, res) => {
-    res.json(await roles.updateRole(req.params.id, readRolePatch(req.body), await permissionsOf(req)));
+    const roleId = readIdParam(req.params.id, 'Роль не знайдено');
+    res.json(await roles.updateRole(roleId, readRolePatch(req.body), await permissionsOf(req)));
   }));
 
   router.delete('/admin/roles/:id', requirePermission('roles', 'manage'), asyncRoute(async (req, res) => {
-    const reassignTo = (req.body as { reassignTo?: unknown } | undefined)?.reassignTo;
-    await roles.deleteRole(req.params.id, reassignTo, await permissionsOf(req));
+    const roleId = readIdParam(req.params.id, 'Роль не знайдено');
+    await roles.deleteRole(roleId, readReassignTo(req.body), await permissionsOf(req));
     res.status(204).end();
   }));
 }

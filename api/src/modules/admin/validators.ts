@@ -1,5 +1,5 @@
 import { parsePermissions, type Permissions } from '../../core/access/index.js';
-import { HttpError } from '../../shared/http/index.js';
+import { HttpError, parseId } from '../../shared/http/index.js';
 
 type Body = Record<string, unknown>;
 
@@ -15,10 +15,15 @@ function readString(value: unknown, field: string, min: number, max: number): st
   return text;
 }
 
-export function readRoleId(value: unknown): string {
-  const roleId = body(value).roleId;
-  if (typeof roleId !== 'string' || !roleId) throw new HttpError(400, 'Не вказано roleId');
+export function readRoleId(value: unknown): number {
+  const roleId = parseId(body(value).roleId);
+  if (roleId === null) throw new HttpError(400, 'Не вказано roleId');
   return roleId;
+}
+
+/** reassignTo для видалення ролі; null — не вказано */
+export function readReassignTo(value: unknown): number | null {
+  return parseId(body(value).reassignTo);
 }
 
 export type RoleInput = {

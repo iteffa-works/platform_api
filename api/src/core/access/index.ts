@@ -25,10 +25,6 @@ export type PermissionCatalog = Record<string, ResourceDefinition>;
 
 const catalog: PermissionCatalog = {};
 
-export function isLevel(value: unknown): value is PermissionLevel {
-  return LEVELS.includes(value as PermissionLevel);
-}
-
 function rank(level: PermissionLevel | undefined): number {
   return LEVELS.indexOf(level ?? 'none');
 }
@@ -50,6 +46,15 @@ export function permissionCatalog(): Readonly<PermissionCatalog> {
 export function can(permissions: Permissions, resource: string, level: GrantLevel): boolean {
   if (permissions[ALL]) return true;
   return rank(permissions[resource]) >= rank(level);
+}
+
+/** Найвищий рівень з `levels`, доступний на ресурс; `undefined` — доступу немає */
+export function effectiveLevel(
+  permissions: Permissions,
+  resource: string,
+  levels: readonly GrantLevel[],
+): GrantLevel | undefined {
+  return [...levels].reverse().find((level) => can(permissions, resource, level));
 }
 
 /** Чи всі права `granted` не перевищують права `actor` (захист від ескалації) */

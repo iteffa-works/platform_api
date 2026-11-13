@@ -47,7 +47,7 @@ Desktop (`desktop/`, SDK `clients/python` ставиться через `require
 ```
 platform/
   api/src/       config · core · modules · shared · plugins
-  web/src/lib/   config · core · ui · constructor · blocks · domain · shared  (див. web/src/lib/README.md)
+  web/src/lib/   config · core · ui · constructor · plugins · domain · shared  (див. web/src/lib/README.md)
   web/src/routes/[...slug]/   єдиний роут-конструктор
   desktop/app/   api (SDK clients/python) · ui
   clients/       js · python

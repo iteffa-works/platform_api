@@ -2,6 +2,14 @@ import type { GrantLevel, User } from '$lib/shared/types';
 
 const LEVELS = ['none', 'view', 'edit', 'manage'] as const;
 
+/** Підписи рівнів для UI */
+export const LEVEL_LABELS: Record<GrantLevel | 'none', string> = {
+  none: 'Немає',
+  view: 'Перегляд',
+  edit: 'Редагування',
+  manage: 'Керування',
+};
+
 /** Розробник: роль з усіма правами */
 export const DEVELOPER_ROLE = 'developer';
 

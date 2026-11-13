@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Блок таблиці користувачів з призначенням ролі */
-  import { adminBusy, adminRoles, adminUsers, changeUserRole } from '$lib/domain/admin';
+  import { adminBusy, adminRoles, adminUsers, changeUserRole } from './store.js';
   import { can, DEVELOPER_ROLE, user } from '$lib/domain/auth';
   import type { AdminUser } from '$lib/shared/types';
   import { Card, DataTable, EmptyState } from '$lib/ui/components';
@@ -14,13 +14,12 @@
   }
 
   function onChange(row: AdminUser, event: Event) {
-    const roleId = (event.currentTarget as HTMLSelectElement).value;
+    const roleId = Number((event.currentTarget as HTMLSelectElement).value);
     if (roleId !== row.role.id) void changeUserRole(row.id, roleId);
   }
 </script>
 
 <Card>
-  <h2>Користувачі</h2>
   {#if $adminUsers.length === 0}
     <EmptyState text="Користувачів немає." />
   {:else}

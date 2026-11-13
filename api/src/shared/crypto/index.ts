@@ -10,14 +10,14 @@ export function verifyPassword(password: string, passwordHash: string): Promise<
   return bcrypt.compare(password, passwordHash);
 }
 
-export function signToken(userId: string): string {
-  return jwt.sign({ sub: userId }, config.secret, { expiresIn: config.jwtExpires });
+/** JWT: `sub` — id користувача (рядком, як вимагає специфікація) */
+export function signToken(userId: number): string {
+  return jwt.sign({ sub: String(userId) }, config.secret, { expiresIn: config.jwtExpires });
 }
 
-export function readToken(token: string): { sub: string } {
+export function readToken(token: string): { userId: number } {
   const payload = jwt.verify(token, config.secret);
-  if (typeof payload === 'string' || typeof payload.sub !== 'string') {
-    throw new Error('Недійсний токен');
-  }
-  return { sub: payload.sub };
+  const userId = typeof payload === 'string' ? NaN : Number(payload.sub);
+  if (!Number.isSafeInteger(userId) || userId <= 0) throw new Error('Недійсний токен');
+  return { userId };
 }

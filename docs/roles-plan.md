@@ -8,7 +8,7 @@
 ## Статус
 
 Етапи 1–2 реалізовано: ролі в БД, рівні прав, `requirePermission`, міграції, web на `can()`.
-Далі — етап 3 (UI ролей в адмінці) і 4 (аудит).
+Етап 3 — простий UI ролей в адмінці (`/admin/roles`); лишились налаштування ролі за замовчуванням і передача ролі розробника.
 
 Ключові файли:
 
@@ -17,7 +17,7 @@
 | `api/src/core/access` | рівні, `can`, `isWithin`, каталог ресурсів (+ unit-тести) |
 | `api/src/modules/auth/models/role.ts` | модель `Role`, системні `developer` / `user` |
 | `api/src/modules/auth/access.ts` | `requirePermission(resource, level)`, `permissionsOf(req)` |
-| `api/src/modules/auth/migrations` | `users`, перенесення `users.role` → `roles` |
+| `api/src/modules/auth/migrations` | `roles` (+ системні ролі), `users` — INT id |
 | `api/src/modules/admin` | ресурси адмінки, користувачі, CRUD ролей |
 | `web/src/lib/domain/auth/access.ts` | `can(user, resource, level)` |
 
@@ -143,8 +143,8 @@ router.get('/admin/users', requirePermission('users', 'view'), …);
 - [x] CRUD ролей і призначення в API (`/admin/roles`, `/admin/users/:id`)
 - [x] CLI: `npm run migrate -w api [-- down]`, `npm run roles:set-developer -w api -- <email>`
 
-**Міграція даних:** найраніший `admin` → `developer`; інші `admin` → нова звичайна роль «Адміністратор»
-(`admin.panel: view`, `users: manage`, `roles: manage`); `user` → `user`. Потім колонка `users.role` видаляється.
+**Схема:** `roles` і `users` з `INT UNSIGNED AUTO_INCREMENT` id, `users.roleId` → `roles.id`
+(міграції `auth/migrations/20261113-01-roles`, `-02-users`). JWT `sub` — id користувача рядком.
 
 ### Етап 2 — Web на правах
 
@@ -155,8 +155,8 @@ router.get('/admin/users', requirePermission('users', 'view'), …);
 ### Етап 3 — Адмінка ролей (разом з новою адмінкою)
 
 - [x] Призначення ролі користувачу (вибір у списку користувачів)
-- [ ] Список ролей, створення / редагування: матриця «ресурс × рівень»
-- [ ] Переназначення користувачів при видаленні ролі
+- [x] Список ролей, створення / редагування: матриця «ресурс × рівень»
+- [x] Переназначення користувачів при видаленні ролі (поки — на базову роль `user`)
 - [ ] Налаштування «роль за замовчуванням»
 - [ ] Передача ролі розробника
 

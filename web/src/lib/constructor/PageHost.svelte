@@ -1,15 +1,20 @@
 <script lang="ts">
-  /** Хост: шаблон + слоти з масиву сторінки */
-  import { adminError } from '$lib/domain/admin';
-  import { user } from '$lib/domain/auth';
+  /** Хост: шаблон + слоти сторінки + навігація її плагіна */
+  import { page as route } from '$app/stores';
+  import { can, user } from '$lib/domain/auth';
+  import { adminError } from '$lib/plugins/admin/store';
   import { AdminTemplate, AuthTemplate, CabinetTemplate, LandingTemplate } from '$lib/ui/templates';
   import BlockSlot from './BlockSlot.svelte';
-  import type { PageDefinition } from './types.js';
+  import { allowedNav, entryOf } from './nav.js';
+  import { navOf } from './registry.js';
+  import type { RegisteredPage } from './types.js';
 
-  let { page }: { page: PageDefinition } = $props();
+  let { page }: { page: RegisteredPage } = $props();
 
   const slots = $derived(page.slots ?? {});
-  const cabinetSubtitle = $derived(`${$user?.email || ''} · ${$user?.role.name || ''}`);
+  const current = $derived($route.url.pathname);
+  const nav = $derived(allowedNav(navOf(page.plugin), $user));
+  const adminHref = $derived(can($user, 'admin.panel', 'view') ? entryOf(navOf('admin'), $user) : null);
 </script>
 
 {#if page.template === 'landing'}
@@ -24,14 +29,11 @@
     <BlockSlot items={slots.default} />
   </AuthTemplate>
 {:else if page.template === 'cabinet'}
-  <CabinetTemplate title={page.title || ''} subtitle={cabinetSubtitle}>
-    {#snippet actions()}
-      <BlockSlot items={slots.actions} />
-    {/snippet}
+  <CabinetTemplate title={page.title} {nav} {current} {adminHref}>
     <BlockSlot items={slots.default} />
   </CabinetTemplate>
 {:else if page.template === 'admin'}
-  <AdminTemplate title={page.title || ''} subtitle={page.subtitle || ''} error={$adminError}>
+  <AdminTemplate title={page.title || ''} subtitle={page.subtitle} error={$adminError} {nav} {current}>
     <BlockSlot items={slots.default} />
   </AdminTemplate>
 {/if}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, isWithin, parsePermissions, type PermissionCatalog } from './index.js';
+import { can, effectiveLevel, isWithin, parsePermissions, type PermissionCatalog } from './index.js';
 
 const catalog: PermissionCatalog = {
   users: { label: 'Користувачі', levels: ['view', 'manage'] },
@@ -59,5 +59,14 @@ describe('parsePermissions', () => {
 
   it('відхиляє не-обʼєкт', () => {
     expect(() => parsePermissions(['users'], catalog)).toThrow(TypeError);
+  });
+});
+
+describe('effectiveLevel', () => {
+  it('повертає найвищий доступний рівень ресурсу', () => {
+    expect(effectiveLevel({ users: 'manage' }, 'users', ['view', 'manage'])).toBe('manage');
+    expect(effectiveLevel({ users: 'edit' }, 'users', ['view', 'manage'])).toBe('view');
+    expect(effectiveLevel({}, 'users', ['view', 'manage'])).toBeUndefined();
+    expect(effectiveLevel({ '*': 'manage' }, 'roles', ['view'])).toBe('view');
   });
 });

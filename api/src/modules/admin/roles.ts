@@ -31,7 +31,7 @@ async function assertSlugFree(slug: string): Promise<void> {
 }
 
 /** Роль, яку можна змінювати (усі, крім розробника) */
-async function findEditable(id: string): Promise<Role> {
+async function findEditable(id: number): Promise<Role> {
   const role = await Role.findByPk(id);
   if (!role) throw new HttpError(404, 'Роль не знайдено');
   if (role.isDeveloper) throw new HttpError(403, 'Роль розробника незмінна');
@@ -53,7 +53,7 @@ export async function listRoles() {
       attributes: ['roleId', [fn('COUNT', col('id')), 'total']],
       group: ['roleId'],
       raw: true,
-    }) as unknown as Promise<Array<{ roleId: string; total: number | string }>>,
+    }) as unknown as Promise<Array<{ roleId: number; total: number | string }>>,
   ]);
   const usersByRole = new Map(counts.map((row) => [row.roleId, Number(row.total)]));
   return { roles: roles.map((role) => present(role, usersByRole.get(role.id) ?? 0)) };
@@ -72,7 +72,7 @@ export async function createRole(input: NewRoleInput, actor: Permissions) {
 }
 
 /** Зміна ролі: стара й нова версія прав мають бути в межах прав актора */
-export async function updateRole(id: string, input: RoleInput, actor: Permissions) {
+export async function updateRole(id: number, input: RoleInput, actor: Permissions) {
   const role = await findEditable(id);
   assertWithin(role.permissions, actor);
   if (input.permissions) assertWithin(input.permissions, actor);
@@ -91,7 +91,7 @@ export async function updateRole(id: string, input: RoleInput, actor: Permission
 }
 
 /** Видалення ролі; її користувачі переходять на `reassignTo` */
-export async function deleteRole(id: string, reassignTo: unknown, actor: Permissions) {
+export async function deleteRole(id: number, reassignTo: number | null, actor: Permissions) {
   const role = await findEditable(id);
   if (role.isSystem) throw new HttpError(400, 'Системну роль не можна видалити');
   assertWithin(role.permissions, actor);
@@ -99,7 +99,7 @@ export async function deleteRole(id: string, reassignTo: unknown, actor: Permiss
   await sequelize.transaction(async (transaction) => {
     const users = await User.count({ where: { roleId: role.id }, transaction });
     if (users > 0) {
-      if (typeof reassignTo !== 'string' || reassignTo === role.id) {
+      if (reassignTo === null || reassignTo === role.id) {
         throw new HttpError(400, 'Роль має користувачів — вкажіть reassignTo');
       }
       const target = await Role.findByPk(reassignTo, { transaction });

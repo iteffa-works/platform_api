@@ -15,7 +15,7 @@ export const DEFAULT_ROLE = 'user';
 
 /** Роль = набір «ресурс → рівень»; створюється й редагується в адмінці */
 export class Role extends Model<InferAttributes<Role>, InferCreationAttributes<Role>> {
-  declare id: CreationOptional<string>;
+  declare id: CreationOptional<number>;
   declare slug: string;
   declare name: string;
   declare description: CreationOptional<string | null>;
@@ -30,7 +30,7 @@ export class Role extends Model<InferAttributes<Role>, InferCreationAttributes<R
 }
 
 Role.init({
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   slug: { type: DataTypes.STRING(32), allowNull: false, unique: true },
   name: { type: DataTypes.STRING(80), allowNull: false },
   description: { type: DataTypes.STRING(255), allowNull: true },

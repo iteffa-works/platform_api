@@ -5,30 +5,49 @@
 | `config/` | публічні константи (origin, назва) |
 | `core/` | HTTP-клієнт `/api/v1`, токен сесії |
 | `ui/` | UI-kit: `elements` → `components` → `patterns` → `layouts` → `templates`, `styles` |
-| `constructor/` | каталог сторінок `pages.ts` + реєстр блоків |
-| `blocks/` | UI-блоки, що підставляються за id |
-| `domain/` | клієнтська логіка модулів (`auth`, `admin`) |
+| `constructor/` | реєстр сторінок / блоків / навігації з плагінів, `PageHost`, перевірка доступу |
+| `plugins/` | web-плагіни: `site`, `auth`, `cabinet`, `admin` |
+| `domain/auth` | сесія, поточний користувач, `can()`, auth-розширення форми |
 | `shared/` | типи і утиліти |
 
-## Конструктор сторінок
+## Web-плагіни
 
-Один catch-all роут `routes/[...slug]` → `PageHost`. Нова сторінка — запис у `pages[]`, без файлу в `routes/`:
+Плагін — тека в `plugins/` з `index.ts`, що експортує `WebPlugin`, і рядок у `plugins/index.ts`.
+Окремих файлів у `routes/` не потрібно: один catch-all `routes/[...slug]` → `PageHost`.
 
 ```ts
-{
-  id: 'admin',
-  path: '/admin',
-  access: 'user',          // public | user
-  permission: ['admin.panel', 'view'],  // рівень права ролі (необовʼязково)
-  template: 'admin',       // landing | auth | cabinet | admin
-  load: loadAdminUsers,    // дані сторінки (необовʼязково)
-  slots: { default: [{ block: 'admin.users' }] },  // default | actions
-}
+export const admin: WebPlugin = {
+  name: 'admin',
+  blocks: { 'admin.roles': RolesPanelBlock },          // id блоку → компонент
+  nav: [                                              // вкладки шаблону; ховаються без права
+    { href: '/admin/roles', label: 'Ролі', permission: ['roles', 'view'] },
+  ],
+  pages: [{
+    id: 'admin-roles',
+    path: '/admin/roles',
+    access: 'user',                                   // public | user
+    permission: ['roles', 'view'],                    // рівень права ролі (необовʼязково)
+    template: 'admin',                                // landing | auth | cabinet | admin
+    title: 'Ролі',
+    load: loadRolesPage,                              // дані сторінки (необовʼязково)
+    slots: { default: [{ block: 'admin.roles' }] },   // default | actions
+  }],
+};
 ```
 
-Новий блок: компонент у `blocks/` + `registerBlock('id', Cmp)` у `blocks/register.ts`.
+| Плагін | Сторінки | Доступ |
+|--------|----------|--------|
+| `site` | `/` | публічно |
+| `auth` | `/login`, `/register` | публічно |
+| `cabinet` | `/app`, `/app/profile` | будь-який користувач |
+| `admin` | `/admin`, `/admin/roles` | `users: view`, `roles: view` |
 
-Головна (`/`) — шаблон `landing` + секції `site.hero`, `site.features`, `site.workflow`, `site.cta`.
+Кабінет — темна тема: `.cab` перевизначає токени `--ui-*`, тож блоки використовують звичайний UI-kit.
+
+## Сесія
+
+Токен у `localStorage`, тому захищені сторінки перевіряються лише в браузері (SSR віддає порожню оболонку).
+Після переходу сесії на cookie це обмеження прибирається — див. `routes/[...slug]/+page.ts`.
 
 ## Auth extensions
 

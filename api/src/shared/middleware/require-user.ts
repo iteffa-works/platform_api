@@ -11,7 +11,7 @@ export function requireUser(req: Request, _res: Response, next: NextFunction): v
     return;
   }
   try {
-    req.userId = readToken(token).sub;
+    req.userId = readToken(token).userId;
     next();
   } catch {
     next(new HttpError(401, 'Сесія недійсна'));
@@ -19,7 +19,7 @@ export function requireUser(req: Request, _res: Response, next: NextFunction): v
 }
 
 /** id користувача після requireUser */
-export function userIdOf(req: Request): string {
+export function userIdOf(req: Request): number {
   if (!req.userId) throw new HttpError(401, 'Сесія недійсна');
   return req.userId;
 }

@@ -12,7 +12,7 @@ import { Role } from './role.js';
 
 /** Модель користувача платформи */
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
-  declare id: CreationOptional<string>;
+  declare id: CreationOptional<number>;
   declare email: string;
   declare passwordHash: string;
   declare roleId: ForeignKey<Role['id']>;
@@ -22,7 +22,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
 }
 
 User.init({
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
   email: { type: DataTypes.STRING, allowNull: false, unique: true },
   passwordHash: { type: DataTypes.STRING, allowNull: false },
   createdAt: DataTypes.DATE,
@@ -33,6 +33,6 @@ User.belongsTo(Role, { as: 'role', foreignKey: { name: 'roleId', allowNull: fals
 Role.hasMany(User, { foreignKey: 'roleId' });
 
 /** Користувач разом з роллю (для перевірки прав) */
-export function findUserWithRole(id: string) {
+export function findUserWithRole(id: number) {
   return User.findByPk(id, { include: [{ model: Role, as: 'role' }] });
 }
