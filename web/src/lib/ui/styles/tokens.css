@@ -20,8 +20,6 @@
   --ui-shadow: none;
   --ui-shell: min(960px, calc(100% - 32px));
   --ui-auth-width: 380px;
-  --ui-auth-login-width: 1120px;
-  --ui-auth-register-width: 820px;
   --ui-gap: 12px;
   --ui-gap-lg: 18px;
   --ui-control-h: 42px;

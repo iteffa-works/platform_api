@@ -142,7 +142,6 @@
     height: 36px;
     object-fit: contain;
     object-position: left center;
-    animation: auth-fade 0.35s ease both;
   }
 
   .captcha__empty {

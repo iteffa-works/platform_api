@@ -7,7 +7,6 @@
 
   const path = $derived($page.url.pathname);
   const isAuth = $derived(path === '/login' || path === '/register');
-  const isRegister = $derived(path === '/register');
   const isCabinet = $derived(path === '/app' || path.startsWith('/app/'));
   const hideChrome = $derived(isAuth || isCabinet);
 </script>
@@ -15,7 +14,6 @@
 <div
   class="ui-shell"
   class:is-auth={isAuth}
-  class:is-register={isRegister}
   class:is-cabinet={isCabinet}
 >
   {#if !hideChrome}
@@ -32,15 +30,8 @@
   }
 
   .ui-shell.is-auth {
-    width: min(1120px, calc(100% - 32px));
-    min-height: 100vh;
-    padding: 28px 16px;
-    display: grid;
-    align-content: center;
-  }
-
-  .ui-shell.is-register {
-    width: min(820px, calc(100% - 32px));
+    width: min(var(--ui-auth-width), calc(100% - 32px));
+    padding-top: 48px;
   }
 
   .ui-shell.is-cabinet {

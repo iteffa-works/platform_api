@@ -1,4 +1,4 @@
-/** SVG-капча під dark auth: м’які символи, легкий шум */
+/** SVG-капча: темні символи на світлому тлі */
 
 function escapeXml(value: string): string {
   return value
@@ -12,7 +12,7 @@ function rand(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-const FILLS = ['#8fa3c7', '#9aa3b2', '#a7b0be', '#7d8aa0', '#b0b8c6'] as const;
+const FILLS = ['#1a1d21', '#1f4e79', '#3d4a5c', '#1f6fb2', '#4a5568'] as const;
 
 /** Згенерувати SVG-зображення для коду */
 export function renderCaptchaSvg(code: string): string {
@@ -27,13 +27,13 @@ export function renderCaptchaSvg(code: string): string {
     const y1 = rand(6, height - 6).toFixed(1);
     const y2 = rand(6, height - 6).toFixed(1);
     const op = (0.12 + i * 0.04).toFixed(2);
-    return `<path d="M${rand(8, 24).toFixed(1)} ${y1} Q${(width / 2).toFixed(1)} ${rand(4, height - 4).toFixed(1)} ${rand(width - 24, width - 8).toFixed(1)} ${y2}" fill="none" stroke="#5a6578" stroke-width="1" opacity="${op}"/>`;
+    return `<path d="M${rand(8, 24).toFixed(1)} ${y1} Q${(width / 2).toFixed(1)} ${rand(4, height - 4).toFixed(1)} ${rand(width - 24, width - 8).toFixed(1)} ${y2}" fill="none" stroke="#b8c0cc" stroke-width="1" opacity="${op}"/>`;
   }).join('');
 
   const dots = Array.from({ length: 8 }, () => {
     const cx = rand(10, width - 10).toFixed(1);
     const cy = rand(4, height - 4).toFixed(1);
-    return `<circle cx="${cx}" cy="${cy}" r="0.8" fill="#5a6578" opacity="0.35"/>`;
+    return `<circle cx="${cx}" cy="${cy}" r="0.8" fill="#b8c0cc" opacity="0.7"/>`;
   }).join('');
 
   const letters = chars

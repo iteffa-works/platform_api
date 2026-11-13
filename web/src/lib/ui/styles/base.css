@@ -17,11 +17,6 @@ body {
   line-height: 1.45;
 }
 
-body:has(.ui-auth--dark) {
-  color-scheme: dark;
-  background: #06080c;
-}
-
 a { color: inherit; }
 
 input, button, textarea, select {
@@ -32,6 +27,6 @@ input, button, textarea, select {
 input:focus-visible,
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #5b7bb5;
+  outline: 2px solid var(--ui-focus);
   outline-offset: 1px;
 }

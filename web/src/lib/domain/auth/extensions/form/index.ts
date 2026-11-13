@@ -8,6 +8,3 @@ export const formExtension: AuthClientExtension = {
   endpoint: (mode: AuthMode) => (mode === 'register' ? '/auth/register' : '/auth/login'),
   submitLabel: (mode: AuthMode) => (mode === 'register' ? 'Зареєструватися' : 'Увійти'),
 };
-
-/** Підпис кнопки login у split-макеті */
-export const loginSubmitLabel = 'Увійти';

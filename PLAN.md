@@ -177,12 +177,12 @@ docker compose up -d
 
 ## Порядок робіт (найближчі 2–4 тижні)
 
-1. **Закрити Фазу 0** — smoke auth + build/start  
-2. **Фаза 1.5–1.6** — rate limit, збереження terms/accountType у БД  
-3. **Хвиля A** — Identity audit + Secrets CRUD + Helpdesk stub  
-4. **Mailhog + forgot password**  
-5. **OAuth Google** (один провайдер end-to-end)  
-6. **docker-compose**: MinIO → Object Storage UI  
+1. **Закрити Фазу 0** — smoke auth + build/start
+2. **Фаза 1.5–1.6** — rate limit, збереження terms/accountType у БД
+3. **Хвиля A** — Identity audit + Secrets CRUD + Helpdesk stub
+4. **Mailhog + forgot password**
+5. **OAuth Google** (один провайдер end-to-end)
+6. **docker-compose**: MinIO → Object Storage UI
 7. Лише після цього — чорновий деплой на VPS (Фаза 4)
 
 ---
