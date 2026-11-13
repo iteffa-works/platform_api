@@ -4,7 +4,6 @@
   import { registerAllBlocks } from '$lib/blocks/register';
   import { APP_NAME, APP_ORIGIN } from '$lib/config';
   import { registerAllAuthExtensions } from '$lib/domain/auth';
-  import { AppShell } from '$lib/ui/layouts';
   import type { Snippet } from 'svelte';
 
   registerAllBlocks();
@@ -18,6 +17,4 @@
   <link rel="canonical" href="{APP_ORIGIN}{$page.url.pathname}" />
 </svelte:head>
 
-<AppShell>
-  {@render children()}
-</AppShell>
+{@render children()}

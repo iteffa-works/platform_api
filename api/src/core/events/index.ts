@@ -8,15 +8,8 @@ export function on(name: string, handler: EventHandler): void {
   listeners.set(name, current);
 }
 
-export function off(name: string, handler: EventHandler): void {
-  listeners.get(name)?.delete(handler);
-}
-
 export async function emit(name: string, payload?: unknown): Promise<void> {
-  const current = listeners.get(name);
-  if (!current) return;
-
-  for (const handler of current) {
+  for (const handler of listeners.get(name) ?? []) {
     try {
       await handler(payload);
     } catch (error) {

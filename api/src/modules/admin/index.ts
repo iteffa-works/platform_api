@@ -7,5 +7,3 @@ export const plugin: Plugin = {
   contour: 'platform',
   routes: adminRoutes,
 };
-
-export { listUsers, setUserRole } from './service.js';

@@ -10,9 +10,6 @@
 - `GET /auth/me`
 - `GET /auth/captcha` — SVG-капча; `{ enabled: false }`, якщо `AUTH_CAPTCHA=false`
 
-### Accounts (кабінет)
-- `GET|POST|PATCH|DELETE /accounts`
-
 ### Admin
 - `GET /admin/users`
 - `PATCH /admin/users/:id` — `{ role: user|admin }`

@@ -6,5 +6,3 @@ export const plugin: Plugin = {
   contour: 'client',
   routes: clientApiRoutes,
 };
-
-export { claimNext, clientStatus, enqueueDemo, submitResult } from './service.js';

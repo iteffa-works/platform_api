@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { emit } from '../../core/events/index.js';
 import { HttpError } from '../../shared/http/index.js';
 
@@ -15,20 +14,9 @@ export type WorkResult = {
   error?: string;
 };
 
-/** In-memory черга для скелета (далі — БД / модулі) */
+/** In-memory черга скелета; наповнення — разом із реальними work-items (PLAN, фаза 3) */
 const queue: WorkItem[] = [];
 const claimed = new Map<string, WorkItem>();
-
-export function enqueueDemo(type = 'demo', payload: Record<string, unknown> = {}): WorkItem {
-  const item: WorkItem = {
-    id: randomUUID(),
-    type,
-    payload,
-    createdAt: new Date().toISOString(),
-  };
-  queue.push(item);
-  return item;
-}
 
 export async function claimNext(): Promise<WorkItem | null> {
   const item = queue.shift() ?? null;

@@ -15,7 +15,6 @@ export type BlockRef = {
 export type PageSlots = {
   default?: BlockRef[];
   actions?: BlockRef[];
-  meta?: BlockRef[];
 };
 
 export type PageDefinition = {
@@ -25,7 +24,6 @@ export type PageDefinition = {
   template: TemplateId;
   title?: string;
   subtitle?: string;
-  lead?: string;
   slots?: PageSlots;
   /** Дані сторінки (виконується в load після перевірки доступу) */
   load?: () => Promise<unknown>;

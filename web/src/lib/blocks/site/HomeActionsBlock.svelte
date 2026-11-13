@@ -1,14 +1,16 @@
 <script lang="ts">
-  /** CTA на головній залежно від сесії */
+  /** CTA залежно від сесії: компактні (шапка) або великі (hero, фінальний блок) */
   import { isAuthenticated } from '$lib/domain/auth';
   import { Button } from '$lib/ui/elements';
   import AdminLinkBlock from './AdminLinkBlock.svelte';
+
+  let { size = 'md' }: { size?: 'md' | 'lg' } = $props();
 </script>
 
 {#if $isAuthenticated}
-  <Button href="/app">Кабінет</Button>
-  <AdminLinkBlock />
+  <Button {size} href="/app">Відкрити кабінет</Button>
+  {#if size === 'md'}<AdminLinkBlock />{/if}
 {:else}
-  <Button href="/login">Увійти</Button>
-  <Button variant="ghost" href="/register">Реєстрація</Button>
+  <Button {size} variant="ghost" href="/login">Увійти</Button>
+  <Button {size} href="/register">Створити акаунт</Button>
 {/if}

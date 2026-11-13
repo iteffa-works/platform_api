@@ -13,10 +13,7 @@ export function registerAllAuthExtensions(): void {
 export {
   collectAuthExtensionFields,
   listAuthExtensionSlots,
-  registerAuthExtension,
   resolveAuthEndpoint,
   resolveAuthSubmitLabel,
   validateAuthExtensions,
 } from './registry.js';
-
-export type { AuthClientExtension, AuthExtensionField, AuthExtensionSlot } from './types.js';

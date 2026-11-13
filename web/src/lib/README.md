@@ -7,7 +7,7 @@
 | `ui/` | UI-kit: `elements` → `components` → `patterns` → `layouts` → `templates`, `styles` |
 | `constructor/` | каталог сторінок `pages.ts` + реєстр блоків |
 | `blocks/` | UI-блоки, що підставляються за id |
-| `domain/` | клієнтська логіка модулів (`auth`, `accounts`, `admin`) |
+| `domain/` | клієнтська логіка модулів (`auth`, `admin`) |
 | `shared/` | типи і утиліти |
 
 ## Конструктор сторінок
@@ -16,16 +16,18 @@
 
 ```ts
 {
-  id: 'cabinet',
-  path: '/app',
-  access: 'user',          // public | user | admin
-  template: 'cabinet',     // landing | auth | cabinet | admin
-  load: loadAccounts,      // дані сторінки (необовʼязково)
-  slots: { default: [{ block: 'cabinet.dashboard' }] },  // default | actions | meta
+  id: 'admin',
+  path: '/admin',
+  access: 'admin',         // public | user | admin
+  template: 'admin',       // landing | auth | cabinet | admin
+  load: loadAdminUsers,    // дані сторінки (необовʼязково)
+  slots: { default: [{ block: 'admin.users' }] },  // default | actions
 }
 ```
 
 Новий блок: компонент у `blocks/` + `registerBlock('id', Cmp)` у `blocks/register.ts`.
+
+Головна (`/`) — шаблон `landing` + секції `site.hero`, `site.features`, `site.workflow`, `site.cta`.
 
 ## Auth extensions
 

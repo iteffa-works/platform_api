@@ -14,5 +14,4 @@ export interface Plugin {
 
 export type PluginModule = {
   plugin: Plugin;
-  isEmpty?: boolean;
-} & Record<string, unknown>;
+};

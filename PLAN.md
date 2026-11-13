@@ -27,7 +27,7 @@
 
 - [x] Monorepo `api` + `web`, `npm run dev`
 - [x] Auth UI (login/register), captcha, extensions
-- [x] JWT login/register/me, accounts, admin users
+- [x] JWT login/register/me, admin users
 - [x] Open Server → Vite `:5173`, API `:4000`
 - [ ] Стабільний `api/.env` з MariaDB, міграції/sync моделей задокументовані
 - [ ] `npm run build` + `npm run start` (API dist + web adapter-node) перевірені локально
@@ -179,7 +179,6 @@ docker compose up -d
 ```text
 api/src/modules/
   auth/          # ядро + extensions (є)
-  accounts/      # є
   admin/         # є
   client-api/    # є
   identity/      # далі

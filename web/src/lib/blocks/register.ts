@@ -1,14 +1,15 @@
 /** Реєстрація всіх блоків конструктора */
 import { registerBlock } from '$lib/constructor/registry.js';
-import { AccountsPanelBlock } from '$lib/blocks/accounts';
 import { UsersPanelBlock } from '$lib/blocks/admin';
 import { AuthFormBlock } from '$lib/blocks/auth';
 import { CabinetDashboardBlock } from '$lib/blocks/cabinet';
 import {
   AdminLinkBlock,
-  CabinetLinkBlock,
+  CtaBlock,
+  FeaturesBlock,
+  HeroBlock,
   HomeActionsBlock,
-  OriginBlock,
+  WorkflowBlock,
 } from '$lib/blocks/site';
 
 let ready = false;
@@ -16,12 +17,13 @@ let ready = false;
 export function registerAllBlocks(): void {
   if (ready) return;
   registerBlock('auth.form', AuthFormBlock);
-  registerBlock('accounts.panel', AccountsPanelBlock);
   registerBlock('cabinet.dashboard', CabinetDashboardBlock);
-  registerBlock('admin.users', UsersPanelBlock);
-  registerBlock('site.origin', OriginBlock);
-  registerBlock('site.home-actions', HomeActionsBlock);
   registerBlock('cabinet.admin-link', AdminLinkBlock);
-  registerBlock('admin.cabinet-link', CabinetLinkBlock);
+  registerBlock('admin.users', UsersPanelBlock);
+  registerBlock('site.actions', HomeActionsBlock);
+  registerBlock('site.hero', HeroBlock);
+  registerBlock('site.features', FeaturesBlock);
+  registerBlock('site.workflow', WorkflowBlock);
+  registerBlock('site.cta', CtaBlock);
   ready = true;
 }

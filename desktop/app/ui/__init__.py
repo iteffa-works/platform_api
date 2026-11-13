@@ -1,1 +1,1 @@
-# CustomTkinter UI
+# UI desktop-клієнта

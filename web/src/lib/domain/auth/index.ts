@@ -13,7 +13,6 @@ export {
   isAuthenticated,
   loadMe,
   loginWithToken,
-  logout,
   signOut,
   user,
 } from './store.js';

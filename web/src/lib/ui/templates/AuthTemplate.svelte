@@ -3,26 +3,25 @@
   import type { Snippet } from 'svelte';
   import { Brand } from '$lib/ui/elements';
 
-  let {
-    title = '',
-    children,
-  }: {
-    title?: string;
-    children: Snippet;
-  } = $props();
+  let { children }: { children: Snippet } = $props();
 </script>
 
-<section class="ui-auth-panel">
-  <div class="ui-auth-panel__brand">
-    <Brand href="/" image />
-  </div>
-  {#if title}
-    <h1 class="ui-auth-panel__title">{title}</h1>
-  {/if}
-  {@render children()}
-</section>
+<main class="ui-auth">
+  <section class="ui-auth-panel">
+    <div class="ui-auth-panel__brand">
+      <Brand href="/" image />
+    </div>
+    {@render children()}
+  </section>
+</main>
 
 <style>
+  .ui-auth {
+    width: min(var(--ui-auth-width), calc(100% - 32px));
+    margin: 0 auto;
+    padding: 48px 0 64px;
+  }
+
   .ui-auth-panel {
     display: grid;
     gap: 14px;
@@ -35,12 +34,5 @@
 
   .ui-auth-panel__brand {
     line-height: 0;
-  }
-
-  .ui-auth-panel__title {
-    margin: 0;
-    color: var(--ui-text);
-    font-size: 1.05rem;
-    font-weight: 650;
   }
 </style>

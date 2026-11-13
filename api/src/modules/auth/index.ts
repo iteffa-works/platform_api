@@ -20,7 +20,3 @@ export const plugin: Plugin = {
     mountAuthExtensionRoutes(router);
   },
 };
-
-export { authConfig } from './config.js';
-export { login, me, register } from './core/index.js';
-export { listAuthExtensions, loadAuthExtensions, runAuthHooks } from './extensions/index.js';

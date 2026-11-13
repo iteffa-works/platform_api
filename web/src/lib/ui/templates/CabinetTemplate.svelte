@@ -7,13 +7,11 @@
   let {
     title = 'Dashboard',
     subtitle = '',
-    error = '',
     actions,
     children,
   }: {
     title?: string;
     subtitle?: string;
-    error?: string;
     actions?: Snippet;
     children: Snippet;
   } = $props();
@@ -62,7 +60,6 @@
 
   <main class="cab__main">
     {#if title}<h1 class="cab__sr-only">{title}</h1>{/if}
-    {#if error}<p class="cab__error">{error}</p>{/if}
     {@render children()}
   </main>
 
@@ -176,12 +173,6 @@
   .cab__main {
     display: grid;
     gap: 16px;
-  }
-
-  .cab__error {
-    margin: 0;
-    color: #fca5a5;
-    font-size: 13px;
   }
 
   .cab__sr-only {

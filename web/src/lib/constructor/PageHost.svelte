@@ -1,6 +1,5 @@
 <script lang="ts">
   /** Хост: шаблон + слоти з масиву сторінки */
-  import { accountsError } from '$lib/domain/accounts';
   import { adminError } from '$lib/domain/admin';
   import { user } from '$lib/domain/auth';
   import { AdminTemplate, AuthTemplate, CabinetTemplate, LandingTemplate } from '$lib/ui/templates';
@@ -16,38 +15,25 @@
 </script>
 
 {#if page.template === 'landing'}
-  <LandingTemplate title={page.title || ''} lead={page.lead || ''}>
-    {#snippet meta()}
-      <BlockSlot items={slots.meta} />
-    {/snippet}
+  <LandingTemplate>
     {#snippet actions()}
       <BlockSlot items={slots.actions} />
     {/snippet}
+    <BlockSlot items={slots.default} />
   </LandingTemplate>
 {:else if page.template === 'auth'}
-  <AuthTemplate title={page.title || ''}>
+  <AuthTemplate>
     <BlockSlot items={slots.default} />
   </AuthTemplate>
 {:else if page.template === 'cabinet'}
-  <CabinetTemplate
-    title={page.title || ''}
-    subtitle={cabinetSubtitle}
-    error={$accountsError}
-  >
+  <CabinetTemplate title={page.title || ''} subtitle={cabinetSubtitle}>
     {#snippet actions()}
       <BlockSlot items={slots.actions} />
     {/snippet}
     <BlockSlot items={slots.default} />
   </CabinetTemplate>
 {:else if page.template === 'admin'}
-  <AdminTemplate
-    title={page.title || ''}
-    subtitle={page.subtitle || ''}
-    error={$adminError}
-  >
-    {#snippet actions()}
-      <BlockSlot items={slots.actions} />
-    {/snippet}
+  <AdminTemplate title={page.title || ''} subtitle={page.subtitle || ''} error={$adminError}>
     <BlockSlot items={slots.default} />
   </AdminTemplate>
 {/if}

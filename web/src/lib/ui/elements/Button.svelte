@@ -10,6 +10,7 @@
     href,
     disabled = false,
     block = false,
+    size = 'md',
     onclick,
     children,
   }: {
@@ -18,6 +19,7 @@
     href?: string;
     disabled?: boolean;
     block?: boolean;
+    size?: 'md' | 'lg';
     onclick?: (event: MouseEvent) => void;
     children: Snippet;
   } = $props();
@@ -29,6 +31,7 @@
     class:is-ghost={variant === 'ghost'}
     class:is-cta={variant === 'cta'}
     class:is-block={block}
+    class:is-lg={size === 'lg'}
     {href}
   >{@render children()}</a>
 {:else}
@@ -37,6 +40,7 @@
     class:is-ghost={variant === 'ghost'}
     class:is-cta={variant === 'cta'}
     class:is-block={block}
+    class:is-lg={size === 'lg'}
     {type}
     {disabled}
     {onclick}
@@ -59,7 +63,19 @@
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
+    white-space: nowrap;
     box-shadow: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .ui-btn:hover:not(:disabled) {
+    background: var(--ui-accent-hover);
+  }
+
+  .ui-btn.is-lg {
+    min-height: 48px;
+    padding: 0 22px;
+    font-size: 16px;
   }
 
   .ui-btn.is-block {
