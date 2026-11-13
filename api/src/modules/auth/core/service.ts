@@ -4,7 +4,7 @@ import { emit } from '../../../core/events/index.js';
 import { hashPassword, signToken, verifyPassword } from '../../../shared/crypto/index.js';
 import { HttpError } from '../../../shared/http/index.js';
 import { DEFAULT_ROLE, DEVELOPER_ROLE, findRoleBySlug, Role } from '../models/role.js';
-import { findUserWithRole, User } from '../models/user.js';
+import { ACCOUNT_INCLUDE, findUserWithRole, User } from '../models/user.js';
 
 /** Роль у публічних відповідях */
 export function publicRole(role: Role) {
@@ -17,8 +17,13 @@ export function publicUser(user: User) {
   return {
     id: user.id,
     email: user.email,
+    name: user.name ?? null,
     role: publicRole(user.role),
     permissions: user.role.permissions,
+    preferences: {
+      theme: user.preferences?.theme ?? null,
+      timezone: user.preferences?.timezone ?? null,
+    },
   };
 }
 
@@ -49,7 +54,7 @@ export async function register(email: string, password: string) {
 
 /** Вхід за email і паролем */
 export async function login(email: string, password: string) {
-  const user = await User.findOne({ where: { email }, include: [{ model: Role, as: 'role' }] });
+  const user = await User.findOne({ where: { email }, include: ACCOUNT_INCLUDE });
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     throw new HttpError(401, 'Невірний email або пароль');
   }

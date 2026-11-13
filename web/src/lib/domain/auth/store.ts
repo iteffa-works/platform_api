@@ -1,7 +1,9 @@
 import { goto } from '$app/navigation';
 import { derived, get, writable } from 'svelte/store';
 import { clearToken, getToken, setToken } from '$lib/core/session';
+import { applyAccountTheme } from '$lib/domain/theme';
 import type { User } from '$lib/shared/types';
+import { timeZone } from '$lib/shared/utils';
 import { fetchMe } from './api.js';
 
 export const token = writable(getToken());
@@ -19,6 +21,11 @@ export function logout(): void {
   user.set(null);
 }
 
+/** Імʼя для показу: імʼя з профілю або частина email до @ */
+export function displayName(value: User | null | undefined): string {
+  return value?.name || value?.email.split('@')[0] || '';
+}
+
 /** Вихід з переходом на сторінку входу */
 export function signOut(): Promise<void> {
   logout();
@@ -28,6 +35,8 @@ export function signOut(): Promise<void> {
 export async function loadMe(): Promise<User> {
   const data = await fetchMe();
   user.set(data.user);
+  applyAccountTheme(data.user.preferences.theme);
+  timeZone.set(data.user.preferences.timezone ?? undefined);
   return data.user;
 }
 

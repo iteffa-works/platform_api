@@ -33,7 +33,7 @@
     <BlockSlot items={slots.default} />
   </CabinetTemplate>
 {:else if page.template === 'admin'}
-  <AdminTemplate title={page.title || ''} subtitle={page.subtitle} error={$adminError} {nav} {current}>
+  <AdminTemplate title={page.title} subtitle={page.subtitle} error={$adminError} {nav} {current}>
     <BlockSlot items={slots.default} />
   </AdminTemplate>
 {/if}

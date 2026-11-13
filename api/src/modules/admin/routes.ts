@@ -2,6 +2,7 @@ import type { Router } from 'express';
 import { asyncRoute, readIdParam } from '../../shared/http/index.js';
 import { requireUser, userIdOf } from '../../shared/middleware/index.js';
 import { permissionsOf, requirePermission } from '../auth/access.js';
+import { overview } from './overview.js';
 import * as roles from './roles.js';
 import * as users from './service.js';
 import { readNewRole, readReassignTo, readRoleId, readRolePatch } from './validators.js';
@@ -9,6 +10,10 @@ import { readNewRole, readReassignTo, readRoleId, readRolePatch } from './valida
 /** Маршрути адмінки: доступ визначають рівні прав ролі */
 export function adminRoutes(router: Router): void {
   router.use('/admin', requireUser, requirePermission('admin.panel', 'view'));
+
+  router.get('/admin/overview', asyncRoute(async (_req, res) => {
+    res.json(await overview());
+  }));
 
   router.get('/admin/users', requirePermission('users', 'view'), asyncRoute(async (_req, res) => {
     res.json(await users.listUsers());

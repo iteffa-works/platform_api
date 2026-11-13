@@ -119,7 +119,8 @@
     place-items: center;
     min-width: 0;
     padding: 0 10px;
-    background: transparent;
+    /* SVG-капча — темні символи: підкладка світла в обох темах */
+    background: #f7f8fa;
   }
 
   .captcha__preview.is-loading {

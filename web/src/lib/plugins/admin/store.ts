@@ -1,10 +1,11 @@
 import { get, writable } from 'svelte/store';
-import { DEVELOPER_ROLE } from '$lib/domain/auth';
+import { can, DEVELOPER_ROLE, user } from '$lib/domain/auth';
 import type { AdminUser, Permissions, Role } from '$lib/shared/types';
 import { createRunner } from '$lib/shared/utils';
 import * as adminApi from './api.js';
-import type { PermissionResource } from './api.js';
+import type { AdminOverview, PermissionResource } from './api.js';
 
+export const adminOverview = writable<AdminOverview | null>(null);
 export const adminUsers = writable<AdminUser[]>([]);
 export const adminRoles = writable<Role[]>([]);
 export const adminResources = writable<PermissionResource[]>([]);
@@ -24,6 +25,17 @@ async function fetchRoles(): Promise<void> {
 
 async function fetchUsers(): Promise<void> {
   adminUsers.set((await adminApi.fetchUsers()).users);
+}
+
+/** load головної: показники + (за правом) останні користувачі */
+export function loadOverviewPage(): Promise<void> {
+  return run(async () => {
+    const [data] = await Promise.all([
+      adminApi.fetchOverview(),
+      can(get(user), 'users', 'view') ? fetchUsers() : Promise.resolve(),
+    ]);
+    adminOverview.set(data);
+  }, { rethrow: true });
 }
 
 /** load сторінки користувачів: помилка прокидається далі */

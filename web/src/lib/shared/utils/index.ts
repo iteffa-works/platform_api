@@ -1,14 +1,23 @@
-import type { Writable } from 'svelte/store';
+import { derived, writable, type Writable } from 'svelte/store';
 
 /** Текст помилки для UI */
 export function errorMessage(err: unknown, fallback = 'Помилка'): string {
   return err instanceof Error ? err.message : fallback;
 }
 
-/** Дата в українській локалі */
-export function formatDate(value: string | Date): string {
-  return new Date(value).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
-}
+/** Часовий пояс показу дат: з налаштувань акаунта; undefined — пояс браузера */
+export const timeZone = writable<string | undefined>(undefined);
+
+/**
+ * Форматер дат з урахуванням поясу: `$formatDate(value)`.
+ * Store — щоб дати на екрані оновлювались одразу після зміни поясу.
+ */
+export const formatDate = derived(timeZone, ($timeZone) => {
+  const format = new Intl.DateTimeFormat('uk-UA', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: $timeZone,
+  });
+  return (value: string | Date): string => format.format(new Date(value));
+});
 
 type RunOptions = { rethrow?: boolean };
 

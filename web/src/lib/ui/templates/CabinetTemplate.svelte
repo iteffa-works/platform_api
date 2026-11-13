@@ -1,11 +1,16 @@
 <script lang="ts">
-  /** Кабінет: темна оболонка з навігацією плагіна */
+  /**
+   * Кабінет: шапка-картка (логотип · розділи · інструменти · сервіси · меню користувача),
+   * другий ряд вкладок для сторінок акаунта, футер.
+   */
   import type { Snippet } from 'svelte';
-  import { signOut, user } from '$lib/domain/auth';
-  import { Brand } from '$lib/ui/elements';
-  import { NavTabs, Stack } from '$lib/ui/patterns';
+  import { APP_NAME } from '$lib/config';
+  import { displayName, signOut, user } from '$lib/domain/auth';
+  import { Dropdown, ThemeToggle } from '$lib/ui/components';
+  import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
+  import { Stack } from '$lib/ui/patterns';
 
-  type Item = { href: string; label: string };
+  type Item = { href: string; label: string; icon?: IconName; group?: string };
 
   let {
     title = '',
@@ -20,19 +25,76 @@
     adminHref?: string | null;
     children: Snippet;
   } = $props();
+
+  /** Пункти з group: 'account' — вкладки другого ряду */
+  const mainNav = $derived(nav.filter((item) => item.group !== 'account'));
+  const accountNav = $derived(nav.filter((item) => item.group === 'account'));
+  const inAccount = $derived(accountNav.some((item) => item.href === current));
+
+  const services = $derived([
+    { href: '/app', label: 'Кабінет', icon: 'dashboard' as const, tone: 'purple' },
+    ...(adminHref ? [{ href: adminHref, label: 'Адмінка', icon: 'shield' as const, tone: 'blue' }] : []),
+  ]);
+
+  const year = new Date().getFullYear();
 </script>
 
 <div class="cab">
-  <header class="cab__top">
-    <div class="cab__bar">
-      <Brand href="/app" />
-      <NavTabs items={nav} {current} />
-      <div class="cab__user">
-        <span class="cab__who">{$user?.email}<small>{$user?.role.name}</small></span>
-        {#if adminHref}<a class="cab__link" href={adminHref}>Адмінка</a>{/if}
-        <button class="cab__link" type="button" onclick={signOut}>Вийти</button>
+  <header class="cab__head">
+    <div class="cab__row">
+      <Brand href="/app" image />
+      <span class="cab__divider" aria-hidden="true"></span>
+      <nav class="cab__nav" aria-label="Кабінет">
+        {#each mainNav as item (item.href)}
+          <a class="cab__tab" class:is-active={item.href === current} href={item.href}>{item.label}</a>
+        {/each}
+      </nav>
+
+      <div class="cab__right">
+        <div class="cab__tools"><ThemeToggle /></div>
+
+        <Dropdown label="Сервіси" width={280}>
+          {#snippet trigger()}<Icon name="apps" size={18} />{/snippet}
+          <p class="menu__title">Сервіси</p>
+          <div class="services">
+            {#each services as service (service.href)}
+              <a class="services__item" href={service.href} style:--tone="var(--ui-tone-{service.tone})">
+                <span class="services__icon"><Icon name={service.icon} size={20} /></span>
+                {service.label}
+              </a>
+            {/each}
+          </div>
+        </Dropdown>
+
+        <Dropdown label="Меню акаунта" width={260}>
+          {#snippet trigger()}
+            <span class="cab__id">ID: {$user?.id}</span>
+            <Avatar seed={$user?.email ?? ''} size={30} />
+          {/snippet}
+          <div class="menu__me">
+            <Avatar seed={$user?.email ?? ''} size={36} />
+            <span><strong>{displayName($user)}</strong><small>{$user?.email}</small></span>
+          </div>
+          <nav class="menu__list">
+            {#each accountNav as item (item.href)}
+              <a href={item.href}>{#if item.icon}<Icon name={item.icon} />{/if}{item.label}</a>
+            {/each}
+            {#if adminHref}<a href={adminHref}><Icon name="shield" />Адмінка</a>{/if}
+          </nav>
+          <button class="menu__logout" type="button" onclick={signOut}><Icon name="logout" />Вийти</button>
+        </Dropdown>
       </div>
     </div>
+
+    {#if inAccount}
+      <nav class="cab__sub" aria-label="Акаунт">
+        {#each accountNav as item (item.href)}
+          <a class="cab__subtab" class:is-active={item.href === current} href={item.href}>
+            {#if item.icon}<Icon name={item.icon} />{/if}{item.label}
+          </a>
+        {/each}
+      </nav>
+    {/if}
   </header>
 
   <main class="cab__main">
@@ -41,67 +103,236 @@
       {@render children()}
     </Stack>
   </main>
+
+  <footer class="cab__foot">© {year} <strong>{APP_NAME}</strong></footer>
 </div>
 
 <style>
   .cab {
-    min-height: 100vh;
-    background: var(--ui-page-bg);
+    width: min(1170px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 20px 0 32px;
   }
 
-  .cab__top {
-    border-bottom: 1px solid var(--ui-border);
+  .cab__head,
+  .cab__foot {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
     background: var(--ui-surface);
   }
 
-  .cab__bar,
-  .cab__main {
-    width: min(1120px, calc(100% - 32px));
-    margin: 0 auto;
-  }
-
-  .cab__bar {
+  .cab__row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 32px;
-    min-height: 60px;
+    gap: 12px 20px;
+    padding: 10px 18px;
   }
 
-  .cab__user {
+  .cab__divider {
+    width: 1px;
+    height: 28px;
+    background: var(--ui-border);
+  }
+
+  .cab__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .cab__tab {
+    padding: 10px 12px;
+    border-bottom: 2px solid transparent;
+    color: var(--ui-text);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .cab__tab:hover {
+    color: var(--ui-link);
+  }
+
+  .cab__tab.is-active {
+    border-bottom-color: var(--ui-accent);
+  }
+
+  .cab__right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     margin-left: auto;
-    font-size: 14px;
   }
 
-  .cab__who {
-    display: grid;
-    text-align: right;
+  .cab__tools {
+    display: flex;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
   }
 
-  .cab__who small {
-    color: var(--ui-muted);
-  }
-
-  .cab__link {
-    padding: 0;
+  .cab__tools :global(.ui-theme) {
     border: 0;
-    background: none;
-    color: var(--ui-link);
-    font: inherit;
+    background: transparent;
+  }
+
+  .cab__id {
+    font-size: 13px;
     font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Другий ряд: вкладки акаунта праворуч */
+  .cab__sub {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px 22px;
+    padding: 0 18px;
+    border-top: 1px solid var(--ui-border);
+  }
+
+  .cab__subtab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0 10px;
+    border-bottom: 2px solid transparent;
+    color: var(--ui-muted);
+    font-size: 14px;
     text-decoration: none;
+  }
+
+  .cab__subtab:hover {
+    color: var(--ui-text);
+  }
+
+  .cab__subtab.is-active {
+    border-bottom-color: var(--ui-accent);
+    color: var(--ui-text);
+    font-weight: 600;
+  }
+
+  /* Випадні меню */
+  .menu__title {
+    margin: 0;
+    padding: 14px 16px 4px;
+    font-weight: 600;
+  }
+
+  .services {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px 10px 14px;
+  }
+
+  .services__item {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    border-radius: var(--ui-radius);
+    color: var(--ui-text);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .services__item:hover {
+    background: var(--ui-surface-muted);
+  }
+
+  .services__icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tone) 14%, transparent);
+    color: var(--tone);
+  }
+
+  .menu__me {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .menu__me > span {
+    display: grid;
+    min-width: 0;
+  }
+
+  .menu__me small {
+    overflow: hidden;
+    color: var(--ui-muted);
+    text-overflow: ellipsis;
+  }
+
+  .menu__list {
+    display: grid;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .menu__list a,
+  .menu__logout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 14px;
+    text-decoration: none;
+  }
+
+  .menu__list a:hover,
+  .menu__logout:hover {
+    background: var(--ui-surface-muted);
+  }
+
+  .menu__logout {
+    width: 100%;
+    margin: 6px 0;
+    border: 0;
+    background: transparent;
+    color: var(--ui-link);
     cursor: pointer;
   }
 
   .cab__main {
-    padding: 28px 0 64px;
+    padding: 20px 0;
   }
 
+  /* Заголовок для читачів екрана: візуально розділ показують вкладки */
   .cab__title {
-    margin: 0;
-    font-size: 1.5rem;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .cab__foot {
+    padding: 18px 20px;
+    color: var(--ui-muted);
+    font-size: 14px;
+  }
+
+  .cab__foot strong {
+    color: var(--ui-text);
+  }
+
+  @media (max-width: 760px) {
+    .cab__divider {
+      display: none;
+    }
+
+    .cab__sub {
+      justify-content: flex-start;
+    }
   }
 </style>

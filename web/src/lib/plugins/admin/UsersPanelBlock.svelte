@@ -1,9 +1,11 @@
 <script lang="ts">
-  /** Блок таблиці користувачів з призначенням ролі */
-  import { adminBusy, adminRoles, adminUsers, changeUserRole } from './store.js';
+  /** Користувачі: аватар, роль (призначення), дата реєстрації */
   import { can, DEVELOPER_ROLE, user } from '$lib/domain/auth';
   import type { AdminUser } from '$lib/shared/types';
-  import { Card, DataTable, EmptyState } from '$lib/ui/components';
+  import { formatDate } from '$lib/shared/utils';
+  import { DataTable, EmptyState, Panel } from '$lib/ui/components';
+  import { Avatar, Badge } from '$lib/ui/elements';
+  import { adminBusy, adminRoles, adminUsers, changeUserRole } from './store.js';
 
   /** Роль розробника не призначається з адмінки */
   const assignable = $derived($adminRoles.filter((role) => role.slug !== DEVELOPER_ROLE));
@@ -19,21 +21,27 @@
   }
 </script>
 
-<Card>
+<Panel title="Усі користувачі · {$adminUsers.length}" flush>
   {#if $adminUsers.length === 0}
-    <EmptyState text="Користувачів немає." />
+    <div class="empty"><EmptyState text="Користувачів немає." /></div>
   {:else}
     <DataTable>
       {#snippet head()}
-        <tr><th>Email</th><th>Роль</th></tr>
+        <tr><th>Користувач</th><th>ID</th><th>Роль</th><th>Реєстрація</th></tr>
       {/snippet}
       {#snippet body()}
         {#each $adminUsers as row (row.id)}
           <tr>
-            <td>{row.email}{row.id === $user?.id ? ' · ви' : ''}</td>
+            <td>
+              <span class="person">
+                <Avatar seed={row.email} />
+                <span>{row.email}{#if row.id === $user?.id}<small> · ви</small>{/if}</span>
+              </span>
+            </td>
+            <td class="muted">{row.id}</td>
             <td>
               {#if locked(row)}
-                {row.role.name}
+                <Badge tone={row.role.slug === DEVELOPER_ROLE ? 'green' : 'blue'}>{row.role.name}</Badge>
               {:else}
                 <select
                   class="role-select"
@@ -48,16 +56,32 @@
                 </select>
               {/if}
             </td>
+            <td class="muted">{$formatDate(row.createdAt)}</td>
           </tr>
         {/each}
       {/snippet}
     </DataTable>
   {/if}
-</Card>
+</Panel>
 
 <style>
+  .person {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .person small,
+  .muted {
+    color: var(--ui-muted);
+  }
+
+  .empty {
+    padding: 16px;
+  }
+
   .role-select {
-    height: 34px;
+    height: 32px;
     padding: 0 8px;
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius);

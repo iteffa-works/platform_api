@@ -2,8 +2,8 @@
   /** Ролі: матриця «ресурс × рівень», створення й видалення — без змін у коді */
   import { can, DEVELOPER_ROLE, LEVEL_LABELS, user } from '$lib/domain/auth';
   import type { GrantLevel, Permissions, Role } from '$lib/shared/types';
-  import { Card, DataTable, Field } from '$lib/ui/components';
-  import { Button, Text } from '$lib/ui/elements';
+  import { DataTable, Field, Panel } from '$lib/ui/components';
+  import { Badge, Button, Text } from '$lib/ui/elements';
   import { Row } from '$lib/ui/patterns';
   import {
     adminBusy,
@@ -50,8 +50,7 @@
   }
 </script>
 
-<Card>
-
+<Panel title="Ролі · {$adminRoles.length}" flush>
   <DataTable>
     {#snippet head()}
       <tr>
@@ -74,7 +73,7 @@
           {#each $adminResources as resource (resource.key)}
             <td>
               {#if role.slug === DEVELOPER_ROLE}
-                <span class="roles__all">Усі</span>
+                <Badge tone="green">Усі</Badge>
               {:else if locked(role)}
                 {LEVEL_LABELS[role.permissions[resource.key] ?? 'none']}
               {:else}
@@ -111,18 +110,17 @@
       {/each}
     {/snippet}
   </DataTable>
-</Card>
+</Panel>
 
 {#if canManage}
-  <Card>
-    <h2>Нова роль</h2>
+  <Panel title="Нова роль">
     <form class="roles__new" onsubmit={submitNew}>
       <Field label="Назва" bind:value={newName} required grow />
       <Field label="Ключ (латиницею, напр. support)" bind:value={newSlug} required grow />
       <Button type="submit" disabled={$adminBusy}>Створити</Button>
     </form>
     <Text tone="muted">Права нової ролі налаштовуються в таблиці вище.</Text>
-  </Card>
+  </Panel>
 {/if}
 
 <style>
@@ -130,11 +128,6 @@
     display: block;
     color: var(--ui-muted);
     font-size: 12px;
-  }
-
-  .roles__all {
-    color: var(--ui-success);
-    font-weight: 600;
   }
 
   .roles__select {

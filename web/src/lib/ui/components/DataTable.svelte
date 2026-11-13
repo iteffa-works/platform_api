@@ -29,8 +29,23 @@
   .ui-table :global(th),
   .ui-table :global(td) {
     text-align: left;
-    padding: 0.55rem 0.4rem;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--ui-border);
     vertical-align: middle;
+  }
+
+  /* Заголовки колонок — дрібний капс */
+  .ui-table :global(th) {
+    padding-block: 10px;
+    color: var(--ui-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .ui-table :global(tbody tr:last-child td) {
+    border-bottom: 0;
   }
 </style>

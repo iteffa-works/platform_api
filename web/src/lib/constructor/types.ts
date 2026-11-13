@@ -1,6 +1,7 @@
 /** Типи конструктора сторінок і web-плагінів */
 import type { Component } from 'svelte';
 import type { GrantLevel } from '$lib/shared/types';
+import type { IconName } from '$lib/ui/elements';
 
 export type AccessLevel = 'public' | 'user';
 
@@ -44,6 +45,11 @@ export type NavItem = {
   href: string;
   label: string;
   permission?: PagePermission;
+  icon?: IconName;
+  /** Група в бічному меню (адмінка) */
+  group?: string;
+  /** Показувати також у верхній смузі */
+  pinned?: boolean;
 };
 
 /**

@@ -26,4 +26,41 @@
   --ui-gap-lg: 18px;
   --ui-control-h: 42px;
   --ui-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  /* Акценти карток (статистика, категорії) */
+  --ui-tone-blue: #2d63ed;
+  --ui-tone-purple: #7c3aed;
+  --ui-tone-green: #16a34a;
+  --ui-tone-orange: #ea580c;
+  --ui-tone-slate: #64748b;
+
+  /* Темна смуга адмінки (в обох темах) */
+  --ui-bar-bg: #1e293b;
+  --ui-bar-text: #e2e8f0;
+  --ui-bar-muted: #94a3b8;
+}
+
+/* Темна тема: <html data-theme="dark"> (cookie / акаунт) */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ui-page-bg: #0f1117;
+  --ui-surface: #151821;
+  --ui-surface-muted: #1a1e29;
+  --ui-text: #eef1f6;
+  --ui-muted: #8b93a3;
+  --ui-border: #2a3140;
+  --ui-border-strong: #3a4456;
+  --ui-accent: #3b82f6;
+  --ui-accent-hover: #2563eb;
+  --ui-accent-soft: rgba(59, 130, 246, 0.16);
+  --ui-success: #22c55e;
+  --ui-danger: #f87171;
+  --ui-link: #5b9cff;
+  --ui-focus: #5b9cff;
+  --ui-tone-blue: #60a5fa;
+  --ui-tone-purple: #a78bfa;
+  --ui-tone-green: #4ade80;
+  --ui-tone-orange: #fb923c;
+  --ui-tone-slate: #94a3b8;
+  --ui-bar-bg: #0b0e14;
 }

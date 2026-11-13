@@ -10,12 +10,21 @@ export type RoleRef = {
   name: string;
 };
 
+/** Налаштування акаунта; null — ще не обрано */
+export type Preferences = {
+  theme: 'light' | 'dark' | null;
+  /** IANA-пояс показу дат; null — пояс браузера */
+  timezone: string | null;
+};
+
 /** Поточний користувач платформи */
 export type User = {
   id: number;
   email: string;
+  name: string | null;
   role: RoleRef;
   permissions: Permissions;
+  preferences: Preferences;
 };
 
 /** Рядок списку користувачів в адмінці */

@@ -1,17 +1,19 @@
 <script lang="ts">
-  /** Логотип / назва бренду (light/dark синхронно для майбутньої теми) */
+  /** Логотип / назва бренду; логотип міняється з темою, `onDark` — завжди світлий (темна смуга) */
   import { APP_NAME } from '$lib/config';
 
   let {
     href = '/',
     image = false,
+    onDark = false,
   }: {
     href?: string;
     image?: boolean;
+    onDark?: boolean;
   } = $props();
 </script>
 
-<a class="ui-brand" class:is-image={image} {href} aria-label={APP_NAME}>
+<a class="ui-brand" class:is-image={image} class:is-on-dark={onDark} {href} aria-label={APP_NAME}>
   {#if image}
     <span class="ui-brand__mark" aria-hidden="true">
       <img class="ui-brand__logo ui-brand__logo--light" src="/brand/logo_dark.png" alt="" />
@@ -51,6 +53,15 @@
     -webkit-user-drag: none;
   }
 
+
+  /* На темній смузі — лише світлий логотип */
+  .ui-brand.is-on-dark .ui-brand__logo--light {
+    opacity: 0 !important;
+  }
+
+  .ui-brand.is-on-dark .ui-brand__logo--dark {
+    opacity: 1 !important;
+  }
 
   /* Світла тема: темний логотип */
   .ui-brand__logo--light {

@@ -12,8 +12,10 @@ export {
 export {
   ensureAuth,
   isAuthenticated,
+  displayName,
   loadMe,
   loginWithToken,
+  logout,
   signOut,
   user,
 } from './store.js';

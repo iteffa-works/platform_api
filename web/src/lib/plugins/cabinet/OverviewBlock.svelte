@@ -1,37 +1,47 @@
 <script lang="ts">
-  /** Огляд кабінету: роль, доступи, дата реєстрації */
+  /** Огляд кабінету: показники акаунта й доступи за роллю */
   import { formatDate } from '$lib/shared/utils';
-  import { Card } from '$lib/ui/components';
-  import { Button, Text } from '$lib/ui/elements';
+  import { DataTable, EmptyState, Panel, StatCard } from '$lib/ui/components';
+  import LevelCell from './LevelCell.svelte';
   import { profile } from './store.js';
 
-  const stats = $derived($profile ? [
-    { label: 'Роль', value: $profile.user.role.name },
-    { label: 'Доступні розділи', value: String($profile.access.length) },
-    { label: 'З нами з', value: formatDate($profile.user.createdAt) },
-  ] : []);
+  const days = $derived(
+    $profile ? Math.max(1, Math.ceil((Date.now() - new Date($profile.user.createdAt).getTime()) / 86_400_000)) : 0,
+  );
 </script>
 
 {#if $profile}
-  <Card>
-    <h2>Вітаємо, {$profile.user.email}</h2>
-    <Text tone="muted">Сервіси платформи зʼявлятимуться тут у міру підключення.</Text>
-  </Card>
-
   <div class="stats">
-    {#each stats as stat (stat.label)}
-      <Card>
-        <Text tone="muted">{stat.label}</Text>
-        <p class="stats__value">{stat.value}</p>
-      </Card>
-    {/each}
+    <StatCard label="Роль" value={$profile.user.role.name} note="визначає доступи" icon="shield" accent="purple" />
+    <StatCard label="Доступні розділи" value={$profile.access.length} note="за рівнями прав" icon="layers" accent="blue" />
+    <StatCard
+      label="З нами"
+      value="{days} дн."
+      note="з {$formatDate($profile.user.createdAt)}"
+      icon="calendar"
+      accent="green"
+    />
   </div>
 
-  <Card>
-    <h2>Профіль і доступи</h2>
-    <Text tone="muted">Ваш email, роль і рівні прав у розділах платформи.</Text>
-    <div><Button variant="ghost" href="/app/profile">Відкрити профіль</Button></div>
-  </Card>
+  <Panel title="Мої доступи" action={{ href: '/app/access', label: 'Усі доступи' }} flush>
+    {#if $profile.access.length === 0}
+      <div class="empty"><EmptyState text="Додаткових доступів немає — лише власний кабінет." /></div>
+    {:else}
+      <DataTable>
+        {#snippet head()}
+          <tr><th>Розділ</th><th>Рівень</th></tr>
+        {/snippet}
+        {#snippet body()}
+          {#each $profile.access as item (item.key)}
+            <tr>
+              <td class="name">{item.label}</td>
+              <td><LevelCell level={item.level} /></td>
+            </tr>
+          {/each}
+        {/snippet}
+      </DataTable>
+    {/if}
+  </Panel>
 {/if}
 
 <style>
@@ -41,13 +51,16 @@
     gap: 16px;
   }
 
-  .stats__value {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
+  .name {
+    color: var(--ui-link);
+    font-weight: 500;
   }
 
-  @media (max-width: 720px) {
+  .empty {
+    padding: 16px;
+  }
+
+  @media (max-width: 860px) {
     .stats {
       grid-template-columns: 1fr;
     }

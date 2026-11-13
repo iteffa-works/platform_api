@@ -43,4 +43,10 @@
     background: var(--ui-surface);
     font: inherit;
   }
+
+  .ui-input:disabled {
+    background: var(--ui-surface-muted);
+    color: var(--ui-muted);
+    cursor: not-allowed;
+  }
 </style>

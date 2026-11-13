@@ -2,6 +2,7 @@
   /** Шаблон публічного лендингу: шапка, секції, футер */
   import type { Snippet } from 'svelte';
   import { APP_NAME } from '$lib/config';
+  import { ThemeToggle } from '$lib/ui/components';
   import { Brand } from '$lib/ui/elements';
 
   let { actions, children }: { actions?: Snippet; children: Snippet } = $props();
@@ -24,7 +25,10 @@
           <a href={item.href}>{item.label}</a>
         {/each}
       </nav>
-      {#if actions}<div class="site__actions">{@render actions()}</div>{/if}
+      <div class="site__actions">
+        <ThemeToggle />
+        {#if actions}{@render actions()}{/if}
+      </div>
     </div>
   </header>
 

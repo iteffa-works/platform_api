@@ -1,8 +1,12 @@
 export { default as Card } from './Card.svelte';
 export { default as DataTable } from './DataTable.svelte';
+export { default as Dropdown } from './Dropdown.svelte';
 export { default as EmptyState } from './EmptyState.svelte';
 export { default as ErrorText } from './ErrorText.svelte';
 export { default as Field } from './Field.svelte';
-export { default as PageHeader } from './PageHeader.svelte';
+export { default as LinkCard } from './LinkCard.svelte';
+export { default as Panel } from './Panel.svelte';
 export { default as PasswordField } from './PasswordField.svelte';
 export { default as SectionHeading } from './SectionHeading.svelte';
+export { default as StatCard } from './StatCard.svelte';
+export { default as ThemeToggle } from './ThemeToggle.svelte';

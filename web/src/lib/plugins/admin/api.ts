@@ -6,6 +6,16 @@ export type PermissionResource = { key: string; label: string; levels: GrantLeve
 
 export type RoleInput = { slug: string; name: string; permissions: Permissions };
 
+export type AdminOverview = {
+  users: { total: number; thisMonth: number };
+  roles: { total: number; custom: number };
+  resources: number;
+};
+
+export function fetchOverview() {
+  return api<AdminOverview>('/admin/overview');
+}
+
 export function fetchUsers() {
   return api<{ users: AdminUser[] }>('/admin/users');
 }

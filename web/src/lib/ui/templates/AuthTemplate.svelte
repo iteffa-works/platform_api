@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Світла картка входу і реєстрації */
   import type { Snippet } from 'svelte';
+  import { ThemeToggle } from '$lib/ui/components';
   import { Brand } from '$lib/ui/elements';
 
   let { children }: { children: Snippet } = $props();
@@ -10,6 +11,7 @@
   <section class="ui-auth-panel">
     <div class="ui-auth-panel__brand">
       <Brand href="/" image />
+      <ThemeToggle />
     </div>
     {@render children()}
   </section>
@@ -33,6 +35,9 @@
   }
 
   .ui-auth-panel__brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     line-height: 0;
   }
 </style>

@@ -2,7 +2,7 @@
   /** Кнопка або кнопка-посилання */
   import type { Snippet } from 'svelte';
 
-  type Variant = 'primary' | 'ghost' | 'cta';
+  type Variant = 'primary' | 'ghost' | 'cta' | 'danger';
 
   let {
     variant = 'primary',
@@ -30,6 +30,7 @@
     class="ui-btn"
     class:is-ghost={variant === 'ghost'}
     class:is-cta={variant === 'cta'}
+    class:is-danger={variant === 'danger'}
     class:is-block={block}
     class:is-lg={size === 'lg'}
     {href}
@@ -39,6 +40,7 @@
     class="ui-btn"
     class:is-ghost={variant === 'ghost'}
     class:is-cta={variant === 'cta'}
+    class:is-danger={variant === 'danger'}
     class:is-block={block}
     class:is-lg={size === 'lg'}
     {type}
@@ -108,5 +110,15 @@
   .ui-btn.is-cta:hover:not(:disabled) {
     background: var(--ui-cta-hover);
     border-color: var(--ui-cta-hover);
+  }
+
+  .ui-btn.is-danger {
+    background: var(--ui-danger);
+    border-color: var(--ui-danger);
+    color: #fff;
+  }
+
+  .ui-btn.is-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ui-danger) 85%, #000);
   }
 </style>

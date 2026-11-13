@@ -39,10 +39,24 @@ export const admin: WebPlugin = {
 |--------|----------|--------|
 | `site` | `/` | публічно |
 | `auth` | `/login`, `/register` | публічно |
-| `cabinet` | `/app`, `/app/profile` | будь-який користувач |
-| `admin` | `/admin`, `/admin/roles` | `users: view`, `roles: view` |
+| `cabinet` | `/app`, `/app/account`, `/app/preferences`, `/app/access` | будь-який користувач |
+| `admin` | `/admin` (панель), `/admin/users`, `/admin/roles` | `admin.panel`, `users`, `roles: view` |
 
-Кабінет — темна тема: `.cab` перевизначає токени `--ui-*`, тож блоки використовують звичайний UI-kit.
+## Тема (світла / темна)
+
+`domain/theme` + `ui/components/ThemeToggle`. Вибір зберігається:
+
+1. **cookie `theme`** — на пристрої, і для гостей; `hooks.server.ts` ставить `<html data-theme>` ще на SSR (без мерехтіння);
+2. **акаунт** — таблиця `user_preferences` (`PATCH /cabinet/preferences`), приходить у `/auth/me`.
+
+Після входу тема акаунта має пріоритет; якщо в акаунті ще не обрано — туди зберігається вибір з пристрою.
+Кольори — токени `--ui-*` у `ui/styles/tokens.css` (`:root` і `:root[data-theme='dark']`).
+
+## Оболонки
+
+- **Кабінет** — шапка-картка: логотип · вкладки плагіна · панель (тема, адмінка, вихід, ID, аватар).
+- **Адмінка** — темна смуга (`--ui-bar-*`) з закріпленими розділами (`pinned`) + бічне меню з пошуком і групами (`group`).
+- Спільні блоки: `Panel`, `StatCard`, `LinkCard`, `DataTable`, `Badge`, `Avatar` (ідентикон), `Icon`.
 
 ## Сесія
 

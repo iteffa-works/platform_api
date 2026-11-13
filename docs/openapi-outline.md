@@ -7,13 +7,18 @@
 ### Auth
 - `POST /auth/register` — перший користувач = `developer`
 - `POST /auth/login`
-- `GET /auth/me` — `{ user: { id, email, role, permissions } }`
+- `GET /auth/me` — `{ user: { id, email, name, role, permissions, preferences: { theme, timezone } } }`
 - `GET /auth/captcha` — SVG-капча; `{ enabled: false }`, якщо `AUTH_CAPTCHA=false`
 
 ### Cabinet (будь-який користувач)
 - `GET /cabinet/profile` — `{ user, access: [{ key, label, level }] }`
+- `PATCH /cabinet/account` — `{ name }` (email — після підтвердження пошти)
+- `PATCH /cabinet/preferences` — `{ theme?: light|dark, timezone?: IANA|null }` → таблиця `user_preferences`
+- `POST /cabinet/password` — `{ currentPassword, newPassword }`
+- `DELETE /cabinet/account` — `{ password }`; розробника не видалити
 
 ### Admin (права ролі, див. [roles-plan.md](roles-plan.md))
+- `GET /admin/overview` — показники (користувачі / ролі / розділи прав), `admin.panel: view`
 - `GET /admin/users` — `users: view`
 - `PATCH /admin/users/:id` — `{ roleId }`, `users: manage`
 - `GET /admin/permissions` — каталог ресурсів і рівнів, `roles: view`
