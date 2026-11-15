@@ -25,13 +25,13 @@ desktop / SDK ───/api/client/v1 (ключ)───▶       │
 | `core/activity` | `track(req, userId, action, meta)` → подія `activity` |
 | `core/db` | Sequelize, міграції (umzug) |
 | `core/events` | шина подій `on` / `emit` |
-| `core/plugins` | автозавантаження модулів з `modules/*` і `plugins/*` |
+| `core/plugins` | автозавантаження модулів з `modules/*` (ядро) і `plugins/*` (addon, вмикаються в адмінці) — [docs/plugins](plugins/README.md) |
 | `shared/` | crypto (bcrypt, AES-GCM, TOTP, підписані тікети), http (помилки, ліміти, cookies), i18n помилок |
 | `modules/` | плагіни (нижче) |
 
 ### Плагін
 
-Тека в `modules/` (ядро) або `plugins/` (додаткові) з `index.ts`:
+Тека в `modules/` (ядро, завжди увімкнено) або `plugins/` (addon: вмикається в `/admin/plugins` без перезапуску, див. [docs/plugins](plugins/README.md)) з `index.ts`:
 
 ```ts
 export const plugin: Plugin = {
@@ -59,6 +59,9 @@ export const plugin: Plugin = {
 | `notifications` | сповіщення з подій `activity`, прочитано / ні |
 | `billing` | тарифи, рахунок (тариф + баланс), операції балансу |
 | `client-api` | черга завдань для desktop (скелет, у памʼяті) |
+| `plugins` | список плагінів, увімкнення / вимкнення addon, `GET /plugins` для web |
+
+Addon (`api/src/plugins`): `ispmanager` — хостинг на ISPmanager 6 ([ТЗ](plugins/ispmanager.md)).
 
 ## Дані (MariaDB)
 
@@ -73,6 +76,9 @@ export const plugin: Plugin = {
 | `plans` | billing | ціна в копійках, `isDefault`, `isActive` |
 | `billing_accounts` | billing | `userId` → `planId`, `balanceCents` |
 | `balance_transactions` | billing | незмінний журнал: сума, баланс після, тип, хто |
+| `plugin_states` | plugins | стан addon: `name`, `enabled` |
+| `isp_servers` | ispmanager | панелі: URL, логін, пароль (AES-GCM), `verifyTls` |
+| `isp_accounts` | ispmanager | `userId` ↔ `panelUser` на сервері, шаблон, стан |
 | `migrations` | core | застосовані міграції |
 
 Усі `id` — `INT UNSIGNED AUTO_INCREMENT`; дочірні рядки видаляються каскадом разом з користувачем.
@@ -103,7 +109,9 @@ export const plugin: Plugin = {
 | `i18n/` | uk (еталон) / en / ru; ключі типізовані — невідомий ключ = помилка svelte-check |
 | `domain/` | `auth` (користувач, `can`, розширення форми), `theme` |
 | `constructor/` | реєстр сторінок / блоків / навігації з плагінів, `PageHost`, перевірка доступу |
-| `plugins/` | `site` (лендинг), `auth`, `cabinet`, `admin` |
+| `plugins/` | ядро: `site` (лендинг), `auth`, `cabinet`, `admin` |
+
+Addon — `web/src/plugins/<name>` з `export const plugin`, підхоплюються автоматично й діють, поки однойменний API-плагін увімкнено.
 | `ui/` | UI-kit: elements → components → patterns → templates, токени тем |
 
 ### Web-плагін
@@ -136,6 +144,8 @@ export const admin: WebPlugin = {
 | auth | `POST /auth/register` `{email,password,ref?}` · `POST /auth/login` → `{user}` або `{twoFactor,ticket}` · `POST /auth/login/2fa` · `POST /auth/logout` · `GET /auth/session` (гість → `{user:null}`) · `GET /auth/me` · `GET /auth/captcha` · `GET /avatars/:file` |
 | cabinet | `GET /cabinet/profile` · `PATCH /cabinet/account` · `DELETE /cabinet/account` · `PATCH /cabinet/preferences` · `POST /cabinet/password` · `GET\|DELETE /cabinet/sessions[/:id]` · `POST /cabinet/2fa/setup\|enable\|disable` · `PUT\|DELETE /cabinet/avatar` (тіло — файл) · `GET /cabinet/referrals` · `GET /cabinet/activity` · `GET /cabinet/notifications` · `POST /cabinet/notifications/read` · `GET /cabinet/billing[/summary]` · `POST /cabinet/billing/plan` |
 | admin | `GET /admin/overview` · `GET /admin/users` · `PATCH /admin/users/:id` · `GET /admin/permissions` · `GET\|POST /admin/roles` · `PATCH\|DELETE /admin/roles/:id` · `GET /admin/activity` · `GET /admin/billing` · `POST /admin/billing/adjust` · `POST\|PATCH\|DELETE /admin/billing/plans[/:id]` |
+| plugins | `GET /plugins` (публічно, `{enabled}`) · `GET /admin/plugins` · `PATCH /admin/plugins/:name` `{enabled}` |
+| ispmanager | `/admin/ispmanager/servers…`, `/admin/ispmanager/accounts…`, `/cabinet/hosting…` — [ТЗ](plugins/ispmanager.md) |
 | client | `GET /status` · `GET /work/next` · `POST /work/:id/result` |
 
 Помилки: `{ error }` з HTTP-статусом; 401 — немає сесії, 403 — прав / CSRF, 429 — ліміт.
@@ -157,4 +167,4 @@ export const admin: WebPlugin = {
 
 ## Перевірки
 
-`npm run typecheck` (tsc + svelte-check з типізованими ключами перекладів) · `npm test -w api` (vitest: права, TOTP, гроші, id).
+`npm run typecheck` (tsc + svelte-check з типізованими ключами перекладів) · `npm test -w api` (vitest: права, TOTP, гроші, id, відповіді ISPmanager).
