@@ -3,7 +3,8 @@
  * - консолі адміністратора: усі власники, фільтр `?owner=`, REST `/admin/hosting/servers/:id/panel`;
  * - кабінету клієнта: власник зафіксований (логін його акаунта), REST `/cabinet/hosting/:id/panel`.
  */
-import type { UiContext, UiField, UiNode } from '../../../../core/ui/index.js';
+import type { GridTone, UiContext, UiField, UiNode } from '../../../../core/ui/index.js';
+import { datagrid, gridQuery, localGrid, searchBox, type GridColumn, type GridToolbar } from '../grid.js';
 import { hosting } from '../../module.js';
 import type { Column } from '../kit.js';
 
@@ -68,7 +69,7 @@ export class PanelScope {
   }
 
   /** Колонки таблиці: у кабінеті без «Власник» */
-  columns(columns: Column[]): Column[] {
+  columns<C extends Column>(columns: C[]): C[] {
     return this.fixed ? columns.filter((column) => column.key !== 'owner') : columns;
   }
 
@@ -86,22 +87,46 @@ export class PanelScope {
     return { ...field, value: preferred ?? this.owner ?? owners[0] ?? '', options: owners.map((owner) => ({ value: owner, label: owner })) };
   }
 
-  /** Фільтр власника (адмінка, через URL); у кабінеті — нічого */
-  async ownerFilter(): Promise<UiNode[]> {
+  /** Фільтр власника для панелі інструментів таблиці (адмінка); у кабінеті — немає */
+  async ownerFilters(): Promise<NonNullable<NonNullable<GridToolbar>['filters']>> {
     if (this.fixed) return [];
     const owners = await this.owners();
     return [{
-      type: 'form',
-      fields: [{
-        name: 'owner',
-        kind: 'select',
-        label: this.t('ownerFilter'),
-        value: this.owner ?? '',
-        navigate: true,
-        options: [{ value: '', label: this.t('allOwners') }, ...owners.map((item) => ({ value: item, label: item }))],
-      }],
+      name: 'owner',
+      label: this.t('ownerFilter'),
+      value: this.owner ?? '',
+      options: [{ value: '', label: this.t('allOwners') }, ...owners.map((item) => ({ value: item, label: item }))],
     }];
   }
+
+  /**
+   * Таблиця розділу над списком панелі: фільтр власника (адмінка), пошук, сортування й сторінка на сервері.
+   * Розділ описує лише колонки й рядок.
+   */
+  async grid<T>(items: T[], options: {
+    columns: GridColumn[];
+    defaultSort: string;
+    sort: Record<string, (item: T) => string | number | boolean | null | undefined>;
+    text: (item: T) => string;
+    row: (item: T) => { key: string | number; tone?: GridTone; cells: Record<string, UiNode[]> };
+    empty: string;
+    extraFilters?: NonNullable<NonNullable<GridToolbar>['filters']>;
+    segments?: NonNullable<GridToolbar>['segments'];
+  }): Promise<UiNode> {
+    const query = gridQuery(this.ctx.state, Object.keys(options.sort), options.defaultSort);
+    const page = localGrid(items, query, { text: options.text, sort: options.sort });
+    const filters = [...(await this.ownerFilters()), ...(options.extraFilters ?? [])];
+    return datagrid({
+      ctx: this.ctx,
+      query: page.query,
+      total: page.total,
+      toolbar: { segments: options.segments, filters: filters.length ? filters : undefined, search: searchBox(this.ctx, query) },
+      columns: this.columns(options.columns.map((column) => ({ ...column, sortable: column.key in options.sort }))),
+      rows: page.rows.map(options.row),
+      empty: options.empty,
+    });
+  }
+
 }
 
 export type PanelSectionRenderer = (scope: PanelScope) => Promise<UiNode[]>;

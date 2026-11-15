@@ -1,7 +1,7 @@
 /** WWW-домени: створення, PHP / SSL / IP, видалення */
 import { ui, type UiNode } from '../../../../core/ui/index.js';
 import { hosting } from '../../module.js';
-import { badge, dialogButton, enc, menu, panel, removeAction, table } from '../kit.js';
+import { badge, dialogButton, enc, panel } from '../kit.js';
 import type { PanelSectionRenderer } from './scope.js';
 
 export const sitesSection: PanelSectionRenderer = async (scope) => {
@@ -18,33 +18,38 @@ export const sitesSection: PanelSectionRenderer = async (scope) => {
     submit: { label: t('create'), action: { method: 'POST', url: `${scope.api}/sites`, success: { notice: t('saved') } } },
   }])] : [];
 
-  return [
-    ...(await scope.ownerFilter()),
-    panel(`${t('tab.sites')} · ${sites.length}`, [table(
-      scope.columns([
-        { key: 'name', label: t('domain') },
-        { key: 'owner', label: t('owner') },
-        { key: 'php', label: 'PHP' },
-        { key: 'ips', label: t('ipAddresses') },
-        { key: 'state', label: t('status') },
-        { key: 'actions', label: '', align: 'right', width: '48px' },
-      ]),
-      sites.map((site) => ({
-        key: site.name,
-        muted: !site.active,
-        cells: {
-          name: [{ type: 'link', text: site.name, href: `${site.ssl ? 'https' : 'http'}://${site.name}`, external: true }, ...(site.docroot ? [ui.muted(site.docroot)] : [])],
-          owner: [ui.text(site.owner, { size: 'sm' })],
-          php: [ui.text(site.php ?? '—', { size: 'sm' })],
-          ips: [ui.muted(site.ips.join(', ') || '—')],
-          state: [ui.row([badge(site.active ? t('on') : t('off'), site.active ? 'green' : 'slate'), ...(site.ssl ? [badge('SSL', 'blue')] : [])])],
-          actions: scope.manage ? [menu([
-            removeAction(t('delete'), `${scope.api}/sites/${enc(site.name)}?owner=${enc(site.owner)}`, t('deleteSiteConfirm', { name: site.name })),
-          ])] : [],
-        },
-      })),
-      scope.fixed ? t('noSitesYet') : t('empty'),
-      t('search'),
-    )], { flush: true, actions }),
-  ];
+  const grid = await scope.grid(sites, {
+    defaultSort: 'name',
+    sort: { name: (site) => site.name, owner: (site) => site.owner, php: (site) => site.php },
+    text: (site) => `${site.name} ${site.owner} ${site.docroot ?? ''} ${site.ips.join(' ')}`,
+    columns: [
+      { key: 'name', label: t('domain') },
+      { key: 'owner', label: t('owner') },
+      { key: 'php', label: 'PHP' },
+      { key: 'ips', label: t('ipAddresses') },
+      { key: 'state', label: t('status') },
+      { key: 'actions', label: '', align: 'right', width: '1%' },
+    ],
+    row: (site) => ({
+      key: site.name,
+      tone: site.active ? undefined : 'muted',
+      cells: {
+        name: [{ type: 'link', text: site.name, href: `${site.ssl ? 'https' : 'http'}://${site.name}`, external: true }, ...(site.docroot ? [ui.muted(site.docroot)] : [])],
+        owner: [ui.text(site.owner, { size: 'sm' })],
+        php: [ui.text(site.php ?? '—', { size: 'sm' })],
+        ips: [ui.muted(site.ips.join(', ') || '—')],
+        state: [ui.row([badge(site.active ? t('on') : t('off'), site.active ? 'green' : 'slate'), ...(site.ssl ? [badge('SSL', 'blue')] : [])])],
+        actions: [{
+          type: 'actions',
+          items: [
+            { type: 'button', label: t('openSite'), icon: 'external', href: `${site.ssl ? 'https' : 'http'}://${site.name}` },
+            ...(scope.manage ? [{ type: 'button' as const, label: t('delete'), icon: 'trash', variant: 'danger' as const, action: { method: 'DELETE' as const, url: `${scope.api}/sites/${enc(site.name)}?owner=${enc(site.owner)}`, confirm: t('deleteSiteConfirm', { name: site.name }) } }] : []),
+          ],
+        }],
+      },
+    }),
+    empty: scope.fixed ? t('noSitesYet') : t('empty'),
+  });
+
+  return [panel(`${t('tab.sites')} · ${sites.length}`, [grid], { flush: true, actions })];
 };

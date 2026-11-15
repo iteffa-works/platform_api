@@ -2,7 +2,8 @@
 import { ui, type UiNode } from '../../../../../../core/ui/index.js';
 import { hosting } from '../../../../module.js';
 import { formatSize } from '../../../format.js';
-import { badge, errorBanner, panel, table } from '../../../kit.js';
+import { datagrid } from '../../../grid.js';
+import { badge, errorBanner, panel } from '../../../kit.js';
 import type { ConsoleSection } from './context.js';
 
 export const overviewSection: ConsoleSection = async (console) => {
@@ -43,19 +44,23 @@ export const overviewSection: ConsoleSection = async (console) => {
     }])
     : panel(t('system'), [errorBanner(console.ctx, info.error)]);
 
+  // Служби: зупинені — першими
   const servicesPanel = panel(t('services'), overview.services.ok
-    ? [table(
-      [{ key: 'name', label: t('service') }, { key: 'state', label: t('status') }, { key: 'auto', label: t('autostart') }],
-      services.map((service) => ({
+    ? [datagrid({
+      ctx: console.ctx,
+      paged: false,
+      columns: [{ key: 'name', label: t('service') }, { key: 'state', label: t('status') }, { key: 'auto', label: t('autostart') }],
+      rows: [...services].sort((a, b) => Number(a.running) - Number(b.running) || a.name.localeCompare(b.name)).map((service) => ({
         key: service.name,
+        tone: service.running ? undefined : 'danger' as const,
         cells: {
           name: [ui.text({ b: service.name })],
           state: [badge(service.running ? t('running') : t('stopped'), service.running ? 'green' : 'red')],
           auto: [ui.muted(service.autostart ? t('yes') : t('no'))],
         },
       })),
-      t('empty'),
-    )]
+      empty: t('empty'),
+    })]
     : [errorBanner(console.ctx, overview.services.error)], { flush: overview.services.ok });
 
   const network = panel(t('network'), [

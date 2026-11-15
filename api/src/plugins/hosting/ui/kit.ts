@@ -1,24 +1,13 @@
-/** Конструктори вузлів сторінок хостингу: таблиці, меню дій, модальні форми, вкладки консолі — без дублів у сторінках */
+/** Конструктори вузлів сторінок хостингу: панелі, модальні форми, дії, вкладки консолі; таблиці — grid.ts */
 import { ui, type Inline, type Tone, type UiAction, type UiButton, type UiContext, type UiField, type UiNode } from '../../../core/ui/index.js';
 import type { ServerView } from '../services/presenter.js';
 
 export const ADMIN = '/admin/hosting';
 export const enc = encodeURIComponent;
 
-export type Column = { key: string; label: string; align?: 'left' | 'right'; width?: string };
-export type Row = { key: string | number; cells: Record<string, UiNode[]>; muted?: boolean };
-
-export function table(columns: Column[], rows: Row[], empty: string, search?: string): UiNode {
-  return { type: 'table', columns, rows, empty, search };
-}
-
+export type Column = { key: string; label: string; align?: 'left' | 'right' | 'center'; width?: string; sortable?: boolean };
 export function panel(title: string, children: UiNode[], options: { subtitle?: string; actions?: UiNode[]; flush?: boolean } = {}): UiNode {
   return { type: 'panel', title, children, subtitle: options.subtitle, actions: options.actions, flush: options.flush };
-}
-
-/** Меню дій рядка; false / null — пропустити пункт */
-export function menu(items: Array<UiButton | false | null | undefined>): UiNode {
-  return { type: 'menu', items: items.filter(Boolean) as UiButton[] };
 }
 
 export function action(label: string, act: UiAction, variant: UiButton['variant'] = 'ghost'): UiButton {
@@ -57,18 +46,6 @@ export function code(text: string): UiNode {
 
 export function muted(text: Inline): UiNode {
   return ui.muted(text);
-}
-
-/** Поле вибору власника (користувача панелі) */
-export function ownerField(ctx: UiContext, owners: string[], value?: string): UiField {
-  return {
-    name: 'owner',
-    kind: 'select',
-    label: ctx.t('owner'),
-    required: true,
-    value: value ?? owners[0] ?? '',
-    options: owners.map((owner) => ({ value: owner, label: owner })),
-  };
 }
 
 /** Поле пароля: порожньо — згенерувати */
@@ -119,21 +96,6 @@ export function consoleTabs(ctx: UiContext, serverId: number, active: ConsoleTab
     return `${ADMIN}/servers/${serverId}${search ? `?${search}` : ''}`;
   };
   return { type: 'tabs', items: CONSOLE_TABS.map((tab) => ({ label: ctx.t(`tab.${tab}`), href: query(tab), active: tab === active })) };
-}
-
-/** Фільтр власника (через URL — переживає дії й оновлення) */
-export function ownerFilter(ctx: UiContext, owners: string[], owner?: string): UiNode {
-  return {
-    type: 'form',
-    fields: [{
-      name: 'owner',
-      kind: 'select',
-      label: ctx.t('ownerFilter'),
-      value: owner ?? '',
-      navigate: true,
-      options: [{ value: '', label: ctx.t('allOwners') }, ...owners.map((item) => ({ value: item, label: item }))],
-    }],
-  };
 }
 
 /** Відсоток використання для смуги; без ліміту — null */

@@ -1,7 +1,7 @@
-/** Планувальник (cron): розклад, команда, створення / видалення */
+/** Планувальник (cron): розклад, команда, створення / видалення (службові завдання адміністратора — лише перегляд) */
 import { ui, type UiNode } from '../../../../core/ui/index.js';
 import { hosting } from '../../module.js';
-import { code, dialogButton, menu, onOff, panel, removeAction, table } from '../kit.js';
+import { code, dialogButton, onOff, panel } from '../kit.js';
 import type { PanelSectionRenderer } from './scope.js';
 
 export const cronSection: PanelSectionRenderer = async (scope) => {
@@ -20,30 +20,32 @@ export const cronSection: PanelSectionRenderer = async (scope) => {
     submit: { label: t('create'), action: { method: 'POST', url: `${scope.api}/cron`, success: { notice: t('saved') } } },
   }])] : [];
 
-  return [
-    ...(await scope.ownerFilter()),
-    panel(`${t('tab.cron')} · ${jobs.length}`, [table(
-      [
-        { key: 'schedule', label: t('schedule'), width: '140px' },
-        { key: 'command', label: t('command') },
-        { key: 'state', label: t('status'), width: '110px' },
-        { key: 'actions', label: '', align: 'right', width: '48px' },
-      ],
-      jobs.map((job) => ({
-        key: job.key,
-        muted: !job.active,
-        cells: {
-          schedule: [code(job.schedule)],
-          command: [code(job.command), ...(job.description ? [ui.muted(job.description)] : [])],
-          state: [onOff(scope.ctx, job.active)],
-          // Службові завдання адміністратора панелі (без власника) не видаляються
-          actions: scope.manage && scope.owner ? [menu([
-            removeAction(t('delete'), `${scope.api}/cron${scope.ownerQuery}`, t('deleteCronConfirm'), { key: job.key }),
-          ])] : [],
-        },
-      })),
-      scope.fixed ? t('noCronYet') : t('empty'),
-      t('search'),
-    )], { flush: true, actions, subtitle: scope.owner ? undefined : t('cronOwnerHint') }),
-  ];
+  const grid = await scope.grid(jobs, {
+    defaultSort: 'schedule',
+    sort: { schedule: (job) => job.schedule, command: (job) => job.command, state: (job) => job.active },
+    text: (job) => `${job.schedule} ${job.command} ${job.description ?? ''}`,
+    columns: [
+      { key: 'schedule', label: t('schedule'), width: '140px' },
+      { key: 'command', label: t('command') },
+      { key: 'state', label: t('status'), width: '110px' },
+      { key: 'actions', label: '', align: 'right', width: '1%' },
+    ],
+    row: (job) => ({
+      key: job.key,
+      tone: job.active ? undefined : 'muted',
+      cells: {
+        schedule: [code(job.schedule)],
+        command: [code(job.command), ...(job.description ? [ui.muted(job.description)] : [])],
+        state: [onOff(scope.ctx, job.active)],
+        actions: [{
+          type: 'actions',
+          items: scope.manage && scope.owner
+            ? [{ type: 'button', label: t('delete'), icon: 'trash', variant: 'danger', action: { method: 'DELETE', url: `${scope.api}/cron${scope.ownerQuery}`, body: { key: job.key }, confirm: t('deleteCronConfirm') } }]
+            : [],
+        }],
+      },
+    }),
+    empty: scope.fixed ? t('noCronYet') : t('empty'),
+  });
+  return [panel(`${t('tab.cron')} · ${jobs.length}`, [grid], { flush: true, actions, subtitle: scope.owner ? undefined : t('cronOwnerHint') })];
 };

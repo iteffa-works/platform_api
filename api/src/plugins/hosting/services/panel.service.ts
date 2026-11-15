@@ -39,10 +39,10 @@ export class PanelService {
     return client;
   }
 
-  /** Читання з панелі */
-  private async read<T>(serverId: number, fn: (client: PanelClient) => Promise<T>): Promise<T> {
+  /** Читання з панелі через кеш (ключ — розділ + власник); сортування / сторінки таблиць не смикають панель */
+  private async read<T>(serverId: number, key: string, fn: (client: PanelClient) => Promise<T>): Promise<T> {
     const client = await this.client(serverId);
-    return panelCall(() => fn(client));
+    return panelCall(() => this.servers.cache.get(serverId, key, () => fn(client)));
   }
 
   /** Зміна в панелі + запис у журнал через хук */
@@ -55,7 +55,7 @@ export class PanelService {
     fn: (client: PanelClient) => Promise<T>,
   ): Promise<T> {
     const client = await this.client(serverId);
-    const result = await panelCall(() => fn(client));
+    const result = await panelCall(() => fn(client)).finally(() => this.servers.cache.invalidate(serverId));
     await hooks.doAction('hosting.panel.changed', { ...actor, serverId, section, action, name });
     return result;
   }
@@ -65,6 +65,10 @@ export class PanelService {
   /** Система панелі; кожна частина незалежна — збій однієї не ховає інші */
   async overview(serverId: number) {
     const client = await this.client(serverId);
+    return this.servers.cache.get(serverId, 'overview', () => this.loadOverview(client));
+  }
+
+  private async loadOverview(client: PanelClient) {
     const settle = async <T>(fn: () => Promise<T>) => {
       try {
         return { ok: true as const, value: await fn() };
@@ -79,6 +83,11 @@ export class PanelService {
       settle(() => client.system.php()),
     ]);
     return { info, services, ips, php };
+  }
+
+  /** Оновити дані з панелі (скинути кеш сервера) */
+  refresh(serverId: number): void {
+    this.servers.cache.invalidate(serverId);
   }
 
   /* ---------- Користувачі панелі ---------- */
@@ -115,7 +124,7 @@ export class PanelService {
   /* ---------- Сайти ---------- */
 
   sites(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.sites.list(owner));
+    return this.read(serverId, `sites|${owner ?? ''}`, (client) => client.sites.list(owner));
   }
 
   async createSite(actor: Actor, serverId: number, input: Record<string, unknown>) {
@@ -131,7 +140,7 @@ export class PanelService {
   /* ---------- DNS ---------- */
 
   zones(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.dns.zones(owner));
+    return this.read(serverId, `zones|${owner ?? ''}`, (client) => client.dns.zones(owner));
   }
 
   /** Зона належить власнику (кабінет): записи зон читаються без su — інакше видно чужі */
@@ -141,7 +150,7 @@ export class PanelService {
 
   records(serverId: number, zoneInput: string, owner?: string) {
     const zone = readDomain(zoneInput);
-    return this.read(serverId, async (client) => {
+    return this.read(serverId, `records|${zone}|${owner ?? ''}`, async (client) => {
       await this.ensureZone(client, zone, owner);
       return client.dns.records(zone);
     });
@@ -190,11 +199,11 @@ export class PanelService {
   /* ---------- Пошта ---------- */
 
   mailDomains(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.mail.domains(owner));
+    return this.read(serverId, `maildomains|${owner ?? ''}`, (client) => client.mail.domains(owner));
   }
 
   mailboxes(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.mail.boxes(owner));
+    return this.read(serverId, `mailboxes|${owner ?? ''}`, (client) => client.mail.boxes(owner));
   }
 
   async createMailDomain(actor: Actor, serverId: number, input: Record<string, unknown>) {
@@ -231,7 +240,7 @@ export class PanelService {
   /* ---------- Бази даних ---------- */
 
   databases(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.databases.list(owner));
+    return this.read(serverId, `databases|${owner ?? ''}`, (client) => client.databases.list(owner));
   }
 
   async createDatabase(actor: Actor, serverId: number, input: Record<string, unknown>) {
@@ -250,7 +259,7 @@ export class PanelService {
   /* ---------- FTP ---------- */
 
   ftp(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.ftp.list(owner));
+    return this.read(serverId, `ftp|${owner ?? ''}`, (client) => client.ftp.list(owner));
   }
 
   async createFtp(actor: Actor, serverId: number, input: Record<string, unknown>) {
@@ -270,11 +279,11 @@ export class PanelService {
   /* ---------- SSL і cron ---------- */
 
   certificates(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.ssl.list(owner));
+    return this.read(serverId, `ssl|${owner ?? ''}`, (client) => client.ssl.list(owner));
   }
 
   cron(serverId: number, owner?: string) {
-    return this.read(serverId, (client) => client.cron.list(owner));
+    return this.read(serverId, `cron|${owner ?? ''}`, (client) => client.cron.list(owner));
   }
 
   async createCron(actor: Actor, serverId: number, input: Record<string, unknown>) {

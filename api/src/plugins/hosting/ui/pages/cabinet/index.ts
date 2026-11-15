@@ -4,6 +4,7 @@ import { ui, type UiContext, type UiNode, type UiPage } from '../../../../../cor
 import { HttpError } from '../../../../../shared/http/index.js';
 import { hosting } from '../../../module.js';
 import { accountTone, countryName, formatSize, freeSize, paidLabel, percent, type AccountView } from '../../format.js';
+import { datagrid, gridQuery, localGrid, searchBox } from '../../grid.js';
 import { cronSection } from '../../sections/cron.js';
 import { databasesSection } from '../../sections/databases.js';
 import { dnsSection } from '../../sections/dns.js';
@@ -45,40 +46,48 @@ const list: UiPage = {
   async render(ctx) {
     const deleted = ctx.state.tab === 'deleted';
     const { accounts } = await hosting.accounts.listMine(ctx.userId);
-    const visible = accounts.filter((account) => (account.status === 'deleted') === deleted);
+    const scoped = accounts.filter((account) => (account.status === 'deleted') === deleted);
     const deletedCount = accounts.filter((account) => account.status === 'deleted').length;
-
-    return [
-      {
-        type: 'row',
-        justify: 'between',
-        align: 'end',
-        children: [
-          {
-            type: 'tabs',
-            items: [
-              { label: ctx.t('tab.available'), href: '/app/hosting', active: !deleted },
-              { label: `${ctx.t('tab.deleted')}${deletedCount ? ` · ${deletedCount}` : ''}`, href: '/app/hosting?tab=deleted', active: deleted },
-            ],
-          },
-          { type: 'button', label: ctx.t('orderNew'), icon: 'plus', href: '/app/hosting/order' },
-        ],
+    const query = gridQuery(ctx.state, ['name', 'paid', 'disk'], 'name');
+    const page = localGrid(scoped, query, {
+      text: (account) => `${account.login} ${account.note ?? ''} ${account.plan?.name ?? ''} ${account.server?.name ?? ''}`,
+      sort: {
+        name: (account) => account.login,
+        paid: (account) => (account.paidUntil ? new Date(account.paidUntil).getTime() : null),
+        disk: (account) => account.usage.diskUsedMb,
       },
-      ui.panel(`${ctx.t('accounts')} · ${visible.length}`, [{
-        type: 'table',
-        empty: deleted ? ctx.t('emptyDeleted') : ctx.t('empty'),
-        columns: [
-          { key: 'name', label: ctx.t('col.name') },
-          { key: 'plan', label: ctx.t('col.plan') },
-          { key: 'sites', label: ctx.t('col.sites') },
-          { key: 'disk', label: ctx.t('col.disk') },
-          { key: 'location', label: ctx.t('col.location') },
-        ],
-        rows: visible.map((account) => {
+    });
+
+    const grid = datagrid({
+      ctx,
+      query: page.query,
+      total: page.total,
+      toolbar: {
+        segments: {
+          name: 'tab',
+          value: deleted ? 'deleted' : '',
+          items: [
+            { label: ctx.t('tab.available'), value: '', count: accounts.length - deletedCount },
+            { label: ctx.t('tab.deleted'), value: 'deleted', count: deletedCount },
+          ],
+        },
+        search: searchBox(ctx, query),
+      },
+      empty: deleted ? ctx.t('emptyDeleted') : ctx.t('empty'),
+      columns: [
+        { key: 'name', label: ctx.t('col.name'), sortable: true },
+        { key: 'plan', label: ctx.t('col.plan') },
+        { key: 'paid', label: ctx.t('paidUntilField'), sortable: true },
+        { key: 'sites', label: ctx.t('col.sites') },
+        { key: 'disk', label: ctx.t('col.disk'), sortable: true },
+        { key: 'location', label: ctx.t('col.location') },
+      ],
+      rows: page.rows.map((account) => {
           const usage = account.usage;
           const tone = accountTone(account);
           return {
             key: account.id,
+            tone: account.status === 'suspended' ? 'danger' as const : tone === 'orange' ? 'warn' as const : account.status === 'deleted' ? 'muted' as const : undefined,
             cells: {
               name: [{
                 type: 'row',
@@ -93,10 +102,8 @@ const list: UiPage = {
                   ], 0),
                 ],
               }],
-              plan: [
-                ui.text({ b: account.plan?.name ?? account.package ?? '—' }),
-                ui.text(paidLabel(ctx, account), { size: 'sm', tone: tone === 'green' ? 'muted' : 'warn' }),
-              ],
+              plan: [ui.text({ b: account.plan?.name ?? account.package ?? '—' })],
+              paid: [ui.text(paidLabel(ctx, account), { size: 'sm', tone: tone === 'green' ? 'muted' : 'warn' })],
               sites: [ui.badge(ctx.t('sitesOf', { used: usage.sitesUsed ?? '—', limit: usage.sitesLimit ?? '∞' }))],
               disk: [{
                 type: 'row',
@@ -113,7 +120,14 @@ const list: UiPage = {
             },
           };
         }),
-      }], true),
+    });
+
+    return [
+      ui.row([
+        ui.muted(ctx.t('listHint')),
+        { type: 'button', label: ctx.t('orderNew'), icon: 'plus', href: '/app/hosting/order' },
+      ], 'between'),
+      ui.panel(undefined, [grid], true),
     ];
   },
 };

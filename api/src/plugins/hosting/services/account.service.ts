@@ -3,7 +3,8 @@
  * і дії власника (сайти, вхід у панель, пароль, примітка, видалення). Побічні ефекти — через хуки.
  */
 import type { Request } from 'express';
-import { Op } from 'sequelize';
+import { col, fn, Op, type WhereOptions } from 'sequelize';
+import { sequelize } from '../../../core/db/index.js';
 import { hooks } from '../../../core/hooks/index.js';
 import { User } from '../../../modules/auth/models/user.js';
 import { createRateLimiter, HttpError } from '../../../shared/http/index.js';
@@ -15,6 +16,23 @@ import { presentAccount } from './presenter.js';
 import type { ServerService } from './server.service.js';
 
 const STATUSES: AccountStatus[] = ['pending', 'active', 'suspended', 'deleted'];
+
+/** Ключ сортування таблиці → колонка */
+const ACCOUNT_SORT: Record<string, string> = { created: 'id', login: 'panelUser', paid: 'paidUntil', disk: 'diskUsedMb' };
+export const ACCOUNT_SORT_KEYS = Object.keys(ACCOUNT_SORT);
+
+export type AccountQuery = {
+  status?: string;
+  serverId?: number;
+  planId?: number;
+  q?: string;
+  sort: { key: string; dir: 'asc' | 'desc' };
+  limit: number;
+  offset: number;
+};
+
+/** Екранування `%` і `_` для LIKE */
+const likeOf = (text: string) => `%${text.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
 
 /** Запити до панелі від користувача — з лімітом: кожен навантажує панель */
 const panelLimiter = createRateLimiter({ windowMs: 60_000, max: 60, message: 'Забагато запитів до панелі — зачекайте хвилину' });
@@ -59,6 +77,44 @@ export class AccountService {
       include: [...withRelations, { model: User, as: 'user', attributes: ['id', 'email'] }],
     });
     return { accounts: accounts.map((account) => presentAccount(account, true)) };
+  }
+
+  /**
+   * Таблиця акаунтів адмінки: фільтри, пошук, сортування й сторінка — у SQL (LIMIT / OFFSET, COUNT),
+   * без завантаження всього списку. Пошук — логін, примітка, email власника.
+   */
+  async search(query: AccountQuery) {
+    const where: WhereOptions = query.status && STATUSES.includes(query.status as AccountStatus)
+      ? { status: query.status }
+      : { status: { [Op.ne]: 'deleted' } };
+    if (query.serverId) Object.assign(where, { serverId: query.serverId });
+    if (query.planId) Object.assign(where, { planId: query.planId });
+    if (query.q) {
+      const like = likeOf(query.q);
+      Object.assign(where, { [Op.or]: [{ panelUser: { [Op.like]: like } }, { note: { [Op.like]: like } }, { '$user.email$': { [Op.like]: like } }] });
+    }
+    const dir = query.sort.dir === 'desc' ? 'DESC' : 'ASC';
+    const column = ACCOUNT_SORT[query.sort.key] ?? 'id';
+    const { rows, count } = await HostingAccount.findAndCountAll({
+      where,
+      include: [...withRelations, { model: User, as: 'user', attributes: ['id', 'email'], required: false }],
+      // NULL (без строку / без даних) — в кінці незалежно від напрямку
+      order: [[sequelize.literal(`\`HostingAccount\`.\`${column}\` IS NULL`), 'ASC'], [column, dir], ['id', 'DESC']],
+      limit: query.limit,
+      offset: query.offset,
+      distinct: true,
+      subQuery: false,
+    });
+    return { accounts: rows.map((account) => presentAccount(account, true)), total: count };
+  }
+
+  /** Кількість акаунтів за станами (сегменти таблиці) — одним GROUP BY */
+  async statusCounts(filter: { serverId?: number; planId?: number } = {}): Promise<Record<string, number>> {
+    const where: WhereOptions = {};
+    if (filter.serverId) Object.assign(where, { serverId: filter.serverId });
+    if (filter.planId) Object.assign(where, { planId: filter.planId });
+    const rows = await HostingAccount.findAll({ where, attributes: ['status', [fn('COUNT', col('id')), 'total']], group: ['status'], raw: true }) as unknown as Array<{ status: string; total: number | string }>;
+    return Object.fromEntries(rows.map((row) => [row.status, Number(row.total)]));
   }
 
   /** Показники для огляду адмінки */
@@ -113,6 +169,7 @@ export class AccountService {
       suspended = found.suspended;
     }
 
+    this.servers.cache.invalidate(server.id);
     const account = await HostingAccount.create({
       serverId: server.id,
       userId: user.id,
@@ -136,7 +193,7 @@ export class AccountService {
     if (input.planId !== undefined && input.planId !== '' && Number(input.planId) !== account.planId) {
       const plan = await HostingPlan.findByPk(Number(input.planId));
       if (!plan) throw new HttpError(404, 'Тариф не знайдено');
-      await panelCall(() => this.client(account).accounts.setPackage(account.panelUser, plan.package));
+      await panelCall(() => this.client(account).accounts.setPackage(account.panelUser, plan.package)).finally(() => this.servers.cache.invalidate(account.serverId));
       Object.assign(patch, { planId: plan.id, preset: plan.package, diskLimitMb: null, sitesLimit: null });
     }
     if (input.paidUntil !== undefined) Object.assign(patch, { paidUntil: readDate(input.paidUntil), remindedAt: null });
@@ -153,7 +210,8 @@ export class AccountService {
     const account = await this.find(id);
     if (account.status === 'deleted' || account.status === 'pending') throw new HttpError(400, 'Акаунт недоступний');
     const accounts = this.client(account).accounts;
-    await panelCall(() => (action === 'suspend' ? accounts.suspend(account.panelUser) : accounts.resume(account.panelUser)));
+    await panelCall(() => (action === 'suspend' ? accounts.suspend(account.panelUser) : accounts.resume(account.panelUser)))
+      .finally(() => this.servers.cache.invalidate(account.serverId));
     if (action === 'suspend') {
       const reason = actor.reason ?? 'admin';
       await account.update({ status: 'suspended', suspendReason: reason });
@@ -169,7 +227,9 @@ export class AccountService {
   async remove(id: number, removeFromPanel: boolean, actor: { req?: Request | null; actorId?: number | null } = {}) {
     const account = await this.find(id);
     if (account.status === 'deleted') return;
-    if (removeFromPanel) await panelCall(() => this.client(account).accounts.remove(account.panelUser));
+    if (removeFromPanel) {
+      await panelCall(() => this.client(account).accounts.remove(account.panelUser)).finally(() => this.servers.cache.invalidate(account.serverId));
+    }
     await account.update({ status: 'deleted', deletedAt: new Date(), autoRenew: false });
     await hooks.doAction('hosting.account.deleted', { account, removeFromPanel, ...actor });
   }

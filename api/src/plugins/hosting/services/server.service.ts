@@ -6,6 +6,7 @@ import { HttpError } from '../../../shared/http/index.js';
 import { HostingAccount, HostingServer } from '../domain/models.js';
 import { PanelError, type PanelClient } from '../providers/contracts.js';
 import type { ProviderRegistry } from '../providers/registry.js';
+import { PanelCache } from './panel-cache.js';
 import { panelCall } from './panel-call.js';
 import { presentServer } from './presenter.js';
 
@@ -22,7 +23,8 @@ function readIps(input: unknown, family: 4 | 6): string | null {
 }
 
 export class ServerService {
-  constructor(readonly providers: ProviderRegistry) {}
+  /** Кеш читань панелей — спільний для сервісів (скидається після змін) */
+  constructor(readonly providers: ProviderRegistry, readonly cache = new PanelCache()) {}
 
   async find(id: number): Promise<HostingServer> {
     const server = await HostingServer.findByPk(id);
@@ -47,6 +49,7 @@ export class ServerService {
 
   private forget(server: HostingServer): void {
     this.providers.get(server.provider).forgetSession?.(server.url, server.username);
+    this.cache.invalidate(server.id);
   }
 
   private read(input: Record<string, unknown>, partial: boolean, current?: HostingServer): ServerInput {
@@ -147,14 +150,14 @@ export class ServerService {
 
   async packages(id: number) {
     const { client } = await this.clientById(id);
-    return { packages: await panelCall(() => client.accounts.packages()) };
+    return { packages: await panelCall(() => this.cache.get(id, 'packages', () => client.accounts.packages())) };
   }
 
   /** Користувачі панелі + чи привʼязані до платформи */
   async panelAccounts(id: number) {
     const { client } = await this.clientById(id);
     const [accounts, linked] = await Promise.all([
-      panelCall(() => client.accounts.list()),
+      panelCall(() => this.cache.get(id, 'accounts', () => client.accounts.list())),
       HostingAccount.findAll({ where: { serverId: id, status: { [Op.ne]: 'deleted' } }, attributes: ['id', 'panelUser'] }),
     ]);
     const byLogin = new Map(linked.map((account) => [account.panelUser, account.id]));

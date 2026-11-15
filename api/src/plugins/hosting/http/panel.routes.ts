@@ -17,6 +17,11 @@ export function panelRoutes(router: Router, hosting: HostingModule): void {
     router[method](`${P}${path}`, ...guard.manage, asyncRoute(async (req, res) => done(res)(await fn(req))));
 
   get('/overview', (req) => panel.overview(params.server(req)));
+  // Оновити дані з панелі (скинути кеш читань сервера) — для перегляду достатньо view
+  router.post(`${P}/refresh`, ...guard.view, asyncRoute(async (req, res) => {
+    panel.refresh(params.server(req));
+    res.status(204).end();
+  }));
 
   /* Користувачі панелі */
   get('/users', (req) => hosting.servers.panelAccounts(params.server(req)));

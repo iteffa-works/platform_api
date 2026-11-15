@@ -102,7 +102,8 @@ export class OrderService {
 
       const password = generatePassword();
       try {
-        await this.servers.client(server).accounts.create({ login, password, package: plan.package, name: user.email });
+        await this.servers.client(server).accounts.create({ login, password, package: plan.package, name: user.email })
+          .finally(() => this.servers.cache.invalidate(server.id));
       } catch (error) {
         await sequelize.transaction(async (transaction) => {
           await refundService(userId, price, `Повернення: ${note}`, transaction);
@@ -165,7 +166,8 @@ export class OrderService {
       if (cost > 0) await sequelize.transaction((transaction) => chargeService(userId, cost, note, transaction));
 
       try {
-        await this.accounts.client(account).accounts.setPackage(account.panelUser, plan.package);
+        await this.accounts.client(account).accounts.setPackage(account.panelUser, plan.package)
+          .finally(() => this.servers.cache.invalidate(account.serverId));
       } catch (error) {
         if (cost > 0) await sequelize.transaction((transaction) => refundService(userId, cost, `Повернення: ${note}`, transaction));
         if (error instanceof PanelError) throw new HttpError(502, `Панель хостингу: ${error.message}`);

@@ -1,8 +1,8 @@
 /** /admin/hosting/servers/[id] — консоль панелі сервера: розділи вкладками (`?tab=`) */
-import { ui, type UiNode, type UiPage } from '../../../../../../core/ui/index.js';
+import { ui, type UiButton, type UiNode, type UiPage } from '../../../../../../core/ui/index.js';
 import { HttpError } from '../../../../../../shared/http/index.js';
 import { hosting } from '../../../../module.js';
-import { action, ADMIN, badge, CONSOLE_TABS, consoleTabs, errorBanner, type ConsoleTab } from '../../../kit.js';
+import { ADMIN, badge, CONSOLE_TABS, consoleTabs, errorBanner, type ConsoleTab } from '../../../kit.js';
 import { ConsoleContext, type ConsoleSection } from './context.js';
 import { cronSection } from '../../../sections/cron.js';
 import { databasesSection } from '../../../sections/databases.js';
@@ -60,23 +60,27 @@ export const consolePage: UiPage = {
               ]),
             ], 2),
           ]),
-          ui.row(console.manage ? [
-            action(ctx.t('check'), { method: 'POST', url: `${ADMIN}/servers/${id}/check`, success: { notice: ctx.t('checkOk', { server: server.name, accounts: '{accounts}', packages: '{packages}' }), errorKey: 'error', reload: false } }),
-            action(ctx.t('diagnostics'), { method: 'GET', url: `${ADMIN}/servers/${id}/diagnostics`, success: { result: { key: 'diagnostics', format: 'json', title: ctx.t('diagnostics'), text: ctx.t('diagnosticsHint') }, reload: false } }),
-          ] : []),
         ],
       },
       consoleTabs(ctx, id, tab, console.owner),
     ];
+    // Дії консолі — у шапці сторінки: оновити дані панелі (скинути кеш), перевірити, діагностика
+    const actions: UiButton[] = [
+      { type: 'button', variant: 'ghost', label: ctx.t('refreshData'), icon: 'refresh', action: { method: 'POST', url: `${ADMIN}/servers/${id}/panel/refresh` } },
+      ...(console.manage ? [
+        { type: 'button' as const, variant: 'ghost' as const, label: ctx.t('check'), icon: 'check', action: { method: 'POST' as const, url: `${ADMIN}/servers/${id}/check`, success: { notice: ctx.t('checkOk', { server: server.name, accounts: '{accounts}', packages: '{packages}' }), errorKey: 'error', reload: false } } },
+        { type: 'button' as const, variant: 'ghost' as const, label: ctx.t('diagnostics'), icon: 'help', action: { method: 'GET' as const, url: `${ADMIN}/servers/${id}/diagnostics`, success: { result: { key: 'diagnostics', format: 'json' as const, title: ctx.t('diagnostics'), text: ctx.t('diagnosticsHint') }, reload: false } } },
+      ] : []),
+    ];
 
     if (!server.isActive && tab !== 'settings') {
-      return [...header, { type: 'banner', tone: 'orange', text: ctx.t('serverDisabled') }];
+      return { nodes: [...header, { type: 'banner', tone: 'orange', text: ctx.t('serverDisabled') }], actions };
     }
     try {
-      return [...header, ...(await SECTIONS[tab](console))];
+      return { nodes: [...header, ...(await SECTIONS[tab](console))], actions };
     } catch (error) {
       if (error instanceof HttpError && error.status !== 502) throw error;
-      return [...header, errorBanner(ctx, error)];
+      return { nodes: [...header, errorBanner(ctx, error)], actions };
     }
   },
 };

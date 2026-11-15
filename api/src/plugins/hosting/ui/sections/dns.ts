@@ -1,15 +1,75 @@
-/** DNS: зони й записи (`?zone=` — записи зони) */
+/** DNS: зони; обрана зона (`?zone=`) — її записи (замість списку зон) */
 import { ui, type UiNode } from '../../../../core/ui/index.js';
 import { DNS_TYPES } from '../../domain/rules.js';
 import { hosting } from '../../module.js';
-import { badge, code, dialogButton, enc, menu, panel, removeAction, table } from '../kit.js';
-import type { PanelSectionRenderer } from './scope.js';
+import { badge, code, dialogButton, enc, panel } from '../kit.js';
+import type { PanelScope, PanelSectionRenderer } from './scope.js';
+
+async function recordsView(scope: PanelScope, zoneName: string): Promise<UiNode[]> {
+  const { t } = scope;
+  const records = await hosting.panel.records(scope.serverId, zoneName, scope.fixed ? scope.owner : undefined);
+  const recordsUrl = `${scope.api}/dns/${enc(zoneName)}/records`;
+  const types = [...new Set(records.map((record) => record.type))].sort();
+  const type = types.includes(scope.ctx.state.type ?? '') ? scope.ctx.state.type! : '';
+  const visible = type ? records.filter((record) => record.type === type) : records;
+
+  const actions: UiNode[] = [
+    { type: 'button', variant: 'ghost', label: `← ${t('zones')}`, href: scope.href({ tab: 'dns' }) },
+    ...(scope.manage ? [dialogButton(t('newRecord'), `${t('newRecord')} · ${zoneName}`, [{
+      type: 'form',
+      layout: 'stack',
+      fields: [
+        { name: 'type', kind: 'select', label: t('type'), value: 'A', options: DNS_TYPES.map((item) => ({ value: item, label: item })) },
+        { name: 'name', kind: 'text', label: t('recordName'), required: true, placeholder: `www / @ / mail.${zoneName}.`, hint: t('recordNameHint') },
+        { name: 'value', kind: 'text', label: t('recordValue'), required: true },
+        { name: 'ttl', kind: 'number', label: 'TTL', value: '3600' },
+        { name: 'priority', kind: 'number', label: t('priority'), hint: t('priorityHint') },
+      ],
+      submit: { label: t('create'), action: { method: 'POST', url: recordsUrl, success: { notice: t('saved') } } },
+    }])] : []),
+  ];
+
+  const grid = await scope.grid(visible, {
+    defaultSort: 'type',
+    sort: { name: (record) => record.name, type: (record) => record.type, ttl: (record) => record.ttl },
+    text: (record) => `${record.name} ${record.type} ${record.value}`,
+    segments: {
+      name: 'type',
+      value: type,
+      items: [{ label: t('statusAll'), value: '', count: records.length }, ...types.map((item) => ({ label: item, value: item, count: records.filter((record) => record.type === item).length }))],
+    },
+    columns: [
+      { key: 'name', label: t('recordName') },
+      { key: 'type', label: t('type'), width: '90px' },
+      { key: 'value', label: t('recordValue') },
+      { key: 'ttl', label: 'TTL', align: 'right', width: '80px' },
+      { key: 'actions', label: '', align: 'right', width: '1%' },
+    ],
+    row: (record) => ({
+      key: record.key,
+      cells: {
+        name: [ui.text(record.name, { size: 'sm' })],
+        type: [badge(record.type, 'blue')],
+        value: [code(record.value)],
+        ttl: [ui.muted(String(record.ttl ?? '—'))],
+        actions: [{
+          type: 'actions',
+          items: scope.manage && record.type !== 'SOA'
+            ? [{ type: 'button', label: t('delete'), icon: 'trash', variant: 'danger', action: { method: 'DELETE', url: recordsUrl, body: { record: record.key }, confirm: t('deleteRecordConfirm', { name: record.name, type: record.type }) } }]
+            : [],
+        }],
+      },
+    }),
+    empty: t('empty'),
+  });
+  return [panel(`${t('records')} · ${zoneName}`, [grid], { flush: true, actions })];
+}
 
 export const dnsSection: PanelSectionRenderer = async (scope) => {
   const { t } = scope;
   const zoneName = scope.ctx.state.zone;
   const zones = await hosting.panel.zones(scope.serverId, scope.owner);
-  const zoneHref = (name?: string) => scope.href({ tab: 'dns', zone: name });
+  if (zoneName && zones.some((zone) => zone.name === zoneName)) return recordsView(scope, zoneName);
 
   const actions: UiNode[] = scope.manage ? [dialogButton(t('newZone'), t('newZone'), [{
     type: 'form',
@@ -22,67 +82,34 @@ export const dnsSection: PanelSectionRenderer = async (scope) => {
     submit: { label: t('create'), action: { method: 'POST', url: `${scope.api}/dns`, success: { notice: t('saved') } } },
   }])] : [];
 
-  const nodes: UiNode[] = [...(await scope.ownerFilter()), panel(`${t('zones')} · ${zones.length}`, [table(
-    scope.columns([
+  const grid = await scope.grid(zones, {
+    defaultSort: 'name',
+    sort: { name: (zone) => zone.name, owner: (zone) => zone.owner },
+    text: (zone) => `${zone.name} ${zone.owner}`,
+    columns: [
       { key: 'name', label: t('domain') },
       { key: 'owner', label: t('owner') },
       { key: 'type', label: t('type') },
       { key: 'dnssec', label: 'DNSSEC' },
-      { key: 'actions', label: '', align: 'right', width: '48px' },
-    ]),
-    zones.map((zone) => ({
+      { key: 'actions', label: '', align: 'right', width: '1%' },
+    ],
+    row: (zone) => ({
       key: zone.name,
       cells: {
-        name: [{ type: 'link', text: zone.name, href: zoneHref(zone.name) }],
+        name: [{ type: 'link', text: zone.name, href: scope.href({ tab: 'dns', zone: zone.name }) }],
         owner: [ui.text(zone.owner, { size: 'sm' })],
         type: [ui.muted(zone.type)],
         dnssec: [zone.dnssec ? badge(zone.dnssec, zone.dnssec === 'signed' ? 'green' : 'slate') : ui.muted('—')],
-        actions: [menu([
-          { type: 'button', variant: 'ghost', label: t('records'), href: zoneHref(zone.name) },
-          scope.manage && removeAction(t('delete'), `${scope.api}/dns/${enc(zone.name)}?owner=${enc(zone.owner)}`, t('deleteZoneConfirm', { name: zone.name })),
-        ])],
+        actions: [{
+          type: 'actions',
+          items: [
+            { type: 'button', label: t('records'), icon: 'list', href: scope.href({ tab: 'dns', zone: zone.name }) },
+            ...(scope.manage ? [{ type: 'button' as const, label: t('delete'), icon: 'trash', variant: 'danger' as const, action: { method: 'DELETE' as const, url: `${scope.api}/dns/${enc(zone.name)}?owner=${enc(zone.owner)}`, confirm: t('deleteZoneConfirm', { name: zone.name }) } }] : []),
+          ],
+        }],
       },
-    })),
-    scope.fixed ? t('noZonesYet') : t('empty'),
-    t('search'),
-  )], { flush: true, actions })];
-
-  if (zoneName && zones.some((zone) => zone.name === zoneName)) {
-    const records = await hosting.panel.records(scope.serverId, zoneName, scope.fixed ? scope.owner : undefined);
-    const recordsUrl = `${scope.api}/dns/${enc(zoneName)}/records`;
-    const recordActions: UiNode[] = scope.manage ? [dialogButton(t('newRecord'), `${t('newRecord')} · ${zoneName}`, [{
-      type: 'form',
-      layout: 'stack',
-      fields: [
-        { name: 'type', kind: 'select', label: t('type'), value: 'A', options: DNS_TYPES.map((type) => ({ value: type, label: type })) },
-        { name: 'name', kind: 'text', label: t('recordName'), required: true, placeholder: `www / @ / mail.${zoneName}.`, hint: t('recordNameHint') },
-        { name: 'value', kind: 'text', label: t('recordValue'), required: true },
-        { name: 'ttl', kind: 'number', label: 'TTL', value: '3600' },
-        { name: 'priority', kind: 'number', label: t('priority'), hint: t('priorityHint') },
-      ],
-      submit: { label: t('create'), action: { method: 'POST', url: recordsUrl, success: { notice: t('saved') } } },
-    }])] : [];
-    nodes.push(panel(`${t('records')} · ${zoneName}`, [table(
-      [
-        { key: 'name', label: t('recordName') },
-        { key: 'type', label: t('type'), width: '90px' },
-        { key: 'value', label: t('recordValue') },
-        { key: 'ttl', label: 'TTL', align: 'right', width: '80px' },
-        { key: 'actions', label: '', align: 'right', width: '48px' },
-      ],
-      records.map((record) => ({
-        key: record.key,
-        cells: {
-          name: [ui.text(record.name, { size: 'sm' })],
-          type: [badge(record.type, 'blue')],
-          value: [code(record.value)],
-          ttl: [ui.muted(String(record.ttl ?? '—'))],
-          actions: scope.manage && record.type !== 'SOA' ? [menu([removeAction(t('delete'), recordsUrl, t('deleteRecordConfirm', { name: record.name, type: record.type }), { record: record.key })])] : [],
-        },
-      })),
-      t('empty'),
-      t('search'),
-    )], { flush: true, actions: [...recordActions, { type: 'button', variant: 'ghost', label: t('close'), href: zoneHref() }] }));
-  }
-  return nodes;
+    }),
+    empty: scope.fixed ? t('noZonesYet') : t('empty'),
+  });
+  return [panel(`${t('zones')} · ${zones.length}`, [grid], { flush: true, actions })];
 };
