@@ -12,7 +12,8 @@ import type { PanelClient } from '../providers/contracts.js';
 import { panelCall } from './panel-call.js';
 import type { ServerService } from './server.service.js';
 
-export type Actor = { req: Request; actorId: number };
+/** Хто діє: адміністратор (консоль) або клієнт (`client: true`, кабінет — лише свої обʼєкти) */
+export type Actor = { req: Request; actorId: number; client?: boolean };
 
 function readOwner(input: unknown): string {
   const owner = String(input ?? '').trim();
@@ -133,8 +134,17 @@ export class PanelService {
     return this.read(serverId, (client) => client.dns.zones(owner));
   }
 
-  records(serverId: number, zone: string) {
-    return this.read(serverId, (client) => client.dns.records(readDomain(zone)));
+  /** Зона належить власнику (кабінет): записи зон читаються без su — інакше видно чужі */
+  private async ensureZone(client: PanelClient, zone: string, owner?: string): Promise<void> {
+    if (owner && !(await client.dns.zones(owner)).some((item) => item.name === zone)) throw new HttpError(404, 'DNS-зону не знайдено');
+  }
+
+  records(serverId: number, zoneInput: string, owner?: string) {
+    const zone = readDomain(zoneInput);
+    return this.read(serverId, async (client) => {
+      await this.ensureZone(client, zone, owner);
+      return client.dns.records(zone);
+    });
   }
 
   async createZone(actor: Actor, serverId: number, input: Record<string, unknown>) {
@@ -152,7 +162,7 @@ export class PanelService {
     await this.change(actor, serverId, 'dns', 'delete', name, (client) => client.dns.removeZone(name, owner));
   }
 
-  async addRecord(actor: Actor, serverId: number, zoneInput: string, input: Record<string, unknown>) {
+  async addRecord(actor: Actor, serverId: number, zoneInput: string, input: Record<string, unknown>, owner?: string) {
     const zone = readDomain(zoneInput);
     const type = readDnsType(input.type);
     const name = String(input.name ?? '').trim();
@@ -163,12 +173,18 @@ export class PanelService {
     if (ttl !== undefined && (!Number.isFinite(ttl) || ttl < 60 || ttl > 604800)) throw new HttpError(400, 'TTL: 60–604800 с');
     const priority = input.priority !== undefined && input.priority !== '' ? Math.trunc(Number(input.priority)) : undefined;
     const fqdn = name === '@' ? `${zone}.` : name;
-    await this.change(actor, serverId, 'dns', 'create', `${type} ${name}.${zone}`, (client) =>
-      client.dns.addRecord(zone, { name: fqdn, type, value, ttl, priority }));
+    await this.change(actor, serverId, 'dns', 'create', `${type} ${name}.${zone}`, async (client) => {
+      await this.ensureZone(client, zone, owner);
+      await client.dns.addRecord(zone, { name: fqdn, type, value, ttl, priority });
+    });
   }
 
-  async removeRecord(actor: Actor, serverId: number, zone: string, key: string) {
-    await this.change(actor, serverId, 'dns', 'delete', `${zone}: ${key}`, (client) => client.dns.removeRecord(readDomain(zone), key));
+  async removeRecord(actor: Actor, serverId: number, zoneInput: string, key: string, owner?: string) {
+    const zone = readDomain(zoneInput);
+    await this.change(actor, serverId, 'dns', 'delete', `${zone}: ${key}`, async (client) => {
+      await this.ensureZone(client, zone, owner);
+      await client.dns.removeRecord(zone, key);
+    });
   }
 
   /* ---------- Пошта ---------- */

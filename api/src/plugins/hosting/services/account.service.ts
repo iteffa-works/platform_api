@@ -17,7 +17,7 @@ import type { ServerService } from './server.service.js';
 const STATUSES: AccountStatus[] = ['pending', 'active', 'suspended', 'deleted'];
 
 /** Запити до панелі від користувача — з лімітом: кожен навантажує панель */
-const panelLimiter = createRateLimiter({ windowMs: 60_000, max: 20, message: 'Забагато запитів до панелі — зачекайте хвилину' });
+const panelLimiter = createRateLimiter({ windowMs: 60_000, max: 60, message: 'Забагато запитів до панелі — зачекайте хвилину' });
 
 export const withRelations = [
   { model: HostingServer, as: 'server' },

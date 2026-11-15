@@ -52,6 +52,13 @@ abstract class SandboxSection {
   protected owned<T extends { owner: string | null }>(items: T[], owner?: string): T[] {
     return owner ? items.filter((item) => item.owner === owner) : items;
   }
+
+  /** Видалити обʼєкт; з owner — лише власний (як `su` у реальній панелі), інакше «не знайдено» */
+  protected removeFrom<T extends { owner: string | null }>(items: T[], match: (item: T) => boolean, owner: string | undefined, label: string): T[] {
+    const target = items.find((item) => match(item) && (!owner || item.owner === owner));
+    if (!target) throw new PanelError(`«${label}» не знайдено`, 'missed');
+    return items.filter((item) => item !== target);
+  }
 }
 
 class Accounts extends SandboxSection implements AccountsApi {
@@ -143,8 +150,8 @@ class Sites extends SandboxSection implements SitesApi {
     });
   }
 
-  remove(name: string) {
-    return this.mutate(name, () => void (this.state.sites = this.state.sites.filter((site) => site.name !== name)));
+  remove(name: string, owner?: string) {
+    return this.mutate(name, () => void (this.state.sites = this.removeFrom(this.state.sites, (site) => site.name === name, owner, name)));
   }
 }
 
@@ -162,9 +169,9 @@ class Dns extends SandboxSection implements DnsApi {
     });
   }
 
-  removeZone(name: string) {
+  removeZone(name: string, owner?: string) {
     return this.mutate(name, () => {
-      this.state.zones = this.state.zones.filter((zone) => zone.name !== name);
+      this.state.zones = this.removeFrom(this.state.zones, (zone) => zone.name === name, owner, name);
       delete this.state.records[name];
     });
   }
@@ -200,9 +207,9 @@ class Mail extends SandboxSection implements MailApi {
     });
   }
 
-  removeDomain(name: string) {
+  removeDomain(name: string, owner?: string) {
     return this.mutate(name, () => {
-      this.state.mailDomains = this.state.mailDomains.filter((domain) => domain.name !== name);
+      this.state.mailDomains = this.removeFrom(this.state.mailDomains, (domain) => domain.name === name, owner, name);
       this.state.boxes = this.state.boxes.filter((box) => !box.address.endsWith(`@${name}`));
     });
   }
@@ -221,13 +228,13 @@ class Mail extends SandboxSection implements MailApi {
     });
   }
 
-  removeBox(address: string) {
-    return this.mutate(address, () => void (this.state.boxes = this.state.boxes.filter((box) => box.address !== address)));
+  removeBox(address: string, owner?: string) {
+    return this.mutate(address, () => void (this.state.boxes = this.removeFrom(this.state.boxes, (box) => box.address === address, owner, address)));
   }
 
-  setBoxPassword(address: string) {
+  setBoxPassword(address: string, _password: string, owner?: string) {
     return this.mutate(address, () => {
-      if (!this.state.boxes.some((box) => box.address === address)) throw new PanelError(`Скриньки ${address} немає`, 'missed');
+      if (!this.state.boxes.some((box) => box.address === address && (!owner || box.owner === owner))) throw new PanelError(`Скриньки ${address} немає`, 'missed');
     });
   }
 }
@@ -245,8 +252,8 @@ class Databases extends SandboxSection implements DatabasesApi {
     });
   }
 
-  remove(key: string) {
-    return this.mutate(key, () => void (this.state.databases = this.state.databases.filter((db) => db.key !== key)));
+  remove(key: string, owner?: string) {
+    return this.mutate(key, () => void (this.state.databases = this.removeFrom(this.state.databases, (db) => db.key === key, owner, key)));
   }
 }
 
@@ -263,8 +270,8 @@ class Ftp extends SandboxSection implements FtpApi {
     });
   }
 
-  remove(name: string) {
-    return this.mutate(name, () => void (this.state.ftp = this.state.ftp.filter((user) => user.name !== name)));
+  remove(name: string, owner?: string) {
+    return this.mutate(name, () => void (this.state.ftp = this.removeFrom(this.state.ftp, (user) => user.name === name, owner, name)));
   }
 }
 
@@ -287,8 +294,8 @@ class Cron extends SandboxSection implements CronApi {
     });
   }
 
-  remove(key: string) {
-    return this.mutate(key, () => void (this.state.cron = this.state.cron.filter((job) => job.key !== key)));
+  remove(key: string, owner?: string) {
+    return this.mutate(key, () => void (this.state.cron = this.removeFrom(this.state.cron, (job) => job.key === key, owner, key)));
   }
 }
 

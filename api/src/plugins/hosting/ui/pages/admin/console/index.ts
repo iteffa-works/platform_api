@@ -4,15 +4,15 @@ import { HttpError } from '../../../../../../shared/http/index.js';
 import { hosting } from '../../../../module.js';
 import { action, ADMIN, badge, CONSOLE_TABS, consoleTabs, errorBanner, type ConsoleTab } from '../../../kit.js';
 import { ConsoleContext, type ConsoleSection } from './context.js';
-import { cronSection } from './cron.js';
-import { databasesSection } from './databases.js';
-import { dnsSection } from './dns.js';
-import { ftpSection } from './ftp.js';
-import { mailSection } from './mail.js';
+import { cronSection } from '../../../sections/cron.js';
+import { databasesSection } from '../../../sections/databases.js';
+import { dnsSection } from '../../../sections/dns.js';
+import { ftpSection } from '../../../sections/ftp.js';
+import { mailSection } from '../../../sections/mail.js';
 import { overviewSection } from './overview.js';
 import { settingsSection } from './settings.js';
-import { sitesSection } from './sites.js';
-import { sslSection } from './ssl.js';
+import { sitesSection } from '../../../sections/sites.js';
+import { sslSection } from '../../../sections/ssl.js';
 import { usersSection } from './users.js';
 
 const SECTIONS: Record<ConsoleTab, ConsoleSection> = {

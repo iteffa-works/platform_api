@@ -1,41 +1,35 @@
 /** DNS: зони й записи (`?zone=` — записи зони) */
-import { ui, type UiNode } from '../../../../../../core/ui/index.js';
-import { DNS_TYPES } from '../../../../domain/rules.js';
-import { hosting } from '../../../../module.js';
-import { badge, code, dialogButton, enc, menu, ownerField, ownerFilter, panel, removeAction, table } from '../../../kit.js';
-import type { ConsoleSection } from './context.js';
+import { ui, type UiNode } from '../../../../core/ui/index.js';
+import { DNS_TYPES } from '../../domain/rules.js';
+import { hosting } from '../../module.js';
+import { badge, code, dialogButton, enc, menu, panel, removeAction, table } from '../kit.js';
+import type { PanelSectionRenderer } from './scope.js';
 
-export const dnsSection: ConsoleSection = async (console) => {
-  const { t } = console;
-  const zoneName = console.ctx.state.zone;
-  const [zones, owners] = await Promise.all([hosting.panel.zones(console.server.id, console.owner), console.owners()]);
-  const zoneHref = (name?: string) => {
-    const params = new URLSearchParams({ tab: 'dns' });
-    if (console.owner) params.set('owner', console.owner);
-    if (name) params.set('zone', name);
-    return `${console.page}?${params}`;
-  };
+export const dnsSection: PanelSectionRenderer = async (scope) => {
+  const { t } = scope;
+  const zoneName = scope.ctx.state.zone;
+  const zones = await hosting.panel.zones(scope.serverId, scope.owner);
+  const zoneHref = (name?: string) => scope.href({ tab: 'dns', zone: name });
 
-  const nodes: UiNode[] = [ownerFilter(console.ctx, owners, console.owner)];
-  const actions: UiNode[] = console.manage ? [dialogButton(t('newZone'), t('newZone'), [{
+  const actions: UiNode[] = scope.manage ? [dialogButton(t('newZone'), t('newZone'), [{
     type: 'form',
     layout: 'stack',
     fields: [
-      ownerField(console.ctx, owners, console.owner),
+      await scope.ownerFieldWithOptions(),
       { name: 'name', kind: 'text', label: t('domain'), required: true, placeholder: 'example.com', autocomplete: 'off' },
-      { name: 'ip', kind: 'text', label: t('zoneIp'), hint: t('zoneIpHint') },
+      ...(scope.fixed ? [] : [{ name: 'ip', kind: 'text' as const, label: t('zoneIp'), hint: t('zoneIpHint') }]),
     ],
-    submit: { label: t('create'), action: { method: 'POST', url: `${console.api}/dns`, success: { notice: t('saved') } } },
+    submit: { label: t('create'), action: { method: 'POST', url: `${scope.api}/dns`, success: { notice: t('saved') } } },
   }])] : [];
 
-  nodes.push(panel(`${t('zones')} · ${zones.length}`, [table(
-    [
+  const nodes: UiNode[] = [...(await scope.ownerFilter()), panel(`${t('zones')} · ${zones.length}`, [table(
+    scope.columns([
       { key: 'name', label: t('domain') },
       { key: 'owner', label: t('owner') },
       { key: 'type', label: t('type') },
       { key: 'dnssec', label: 'DNSSEC' },
       { key: 'actions', label: '', align: 'right', width: '48px' },
-    ],
+    ]),
     zones.map((zone) => ({
       key: zone.name,
       cells: {
@@ -45,18 +39,18 @@ export const dnsSection: ConsoleSection = async (console) => {
         dnssec: [zone.dnssec ? badge(zone.dnssec, zone.dnssec === 'signed' ? 'green' : 'slate') : ui.muted('—')],
         actions: [menu([
           { type: 'button', variant: 'ghost', label: t('records'), href: zoneHref(zone.name) },
-          console.manage && removeAction(t('delete'), `${console.api}/dns/${enc(zone.name)}?owner=${enc(zone.owner)}`, t('deleteZoneConfirm', { name: zone.name })),
+          scope.manage && removeAction(t('delete'), `${scope.api}/dns/${enc(zone.name)}?owner=${enc(zone.owner)}`, t('deleteZoneConfirm', { name: zone.name })),
         ])],
       },
     })),
-    t('empty'),
+    scope.fixed ? t('noZonesYet') : t('empty'),
     t('search'),
-  )], { flush: true, actions }));
+  )], { flush: true, actions })];
 
   if (zoneName && zones.some((zone) => zone.name === zoneName)) {
-    const records = await hosting.panel.records(console.server.id, zoneName);
-    const recordsUrl = `${console.api}/dns/${enc(zoneName)}/records`;
-    const recordActions: UiNode[] = console.manage ? [dialogButton(t('newRecord'), `${t('newRecord')} · ${zoneName}`, [{
+    const records = await hosting.panel.records(scope.serverId, zoneName, scope.fixed ? scope.owner : undefined);
+    const recordsUrl = `${scope.api}/dns/${enc(zoneName)}/records`;
+    const recordActions: UiNode[] = scope.manage ? [dialogButton(t('newRecord'), `${t('newRecord')} · ${zoneName}`, [{
       type: 'form',
       layout: 'stack',
       fields: [
@@ -83,7 +77,7 @@ export const dnsSection: ConsoleSection = async (console) => {
           type: [badge(record.type, 'blue')],
           value: [code(record.value)],
           ttl: [ui.muted(String(record.ttl ?? '—'))],
-          actions: console.manage ? [menu([removeAction(t('delete'), recordsUrl, t('deleteRecordConfirm', { name: record.name, type: record.type }), { record: record.key })])] : [],
+          actions: scope.manage && record.type !== 'SOA' ? [menu([removeAction(t('delete'), recordsUrl, t('deleteRecordConfirm', { name: record.name, type: record.type }), { record: record.key })])] : [],
         },
       })),
       t('empty'),

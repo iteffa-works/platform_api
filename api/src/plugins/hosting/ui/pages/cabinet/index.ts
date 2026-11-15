@@ -4,6 +4,14 @@ import { ui, type UiContext, type UiNode, type UiPage } from '../../../../../cor
 import { HttpError } from '../../../../../shared/http/index.js';
 import { hosting } from '../../../module.js';
 import { accountTone, countryName, formatSize, freeSize, paidLabel, percent, type AccountView } from '../../format.js';
+import { cronSection } from '../../sections/cron.js';
+import { databasesSection } from '../../sections/databases.js';
+import { dnsSection } from '../../sections/dns.js';
+import { ftpSection } from '../../sections/ftp.js';
+import { mailSection } from '../../sections/mail.js';
+import { PanelScope, type PanelSectionRenderer } from '../../sections/scope.js';
+import { sitesSection } from '../../sections/sites.js';
+import { sslSection } from '../../sections/ssl.js';
 
 const periods = () => hosting.config.periods;
 
@@ -335,28 +343,75 @@ const account: UiPage = {
 
     if (!active) return nodes;
 
-    // Сайти (запит до панелі — лише на вимогу)
-    let sites: UiNode[];
-    if (ctx.state.sites === '1') {
-      try {
-        const list = (await hosting.accounts.sitesMine(ctx.userId, id)).sites;
-        sites = list.length
-          ? list.map((site) => ui.row([
-            ui.text({ b: site.name }),
-            ...(site.ssl ? [ui.badge('SSL', 'green')] : []),
-            ...(site.active ? [] : [ui.badge(ctx.t('off'))]),
-            ...(site.docroot ? [ui.muted(site.docroot)] : []),
-          ]))
-          : [ui.muted(ctx.t('noSites'))];
-      } catch (error) {
-        sites = [{ type: 'banner', tone: 'orange', text: ctx.t('panelError', { error: error instanceof Error ? error.message : '' }) }];
-      }
-    } else {
-      sites = [{ type: 'button', variant: 'ghost', label: ctx.t('showSites'), href: `${base}?sites=1` }];
-    }
-    nodes.push(ui.panel(ctx.t('sites'), sites));
+    /* Вкладки керування: ті самі розділи, що й у консолі адміністратора, — з власником = цей акаунт */
+    const tab = (CABINET_TABS as readonly string[]).includes(ctx.state.tab ?? '') ? ctx.state.tab as CabinetTab : 'overview';
+    nodes.push({
+      type: 'tabs',
+      items: CABINET_TABS.map((item) => ({ label: ctx.t(`tab.${item}`), href: item === 'overview' ? base : `${base}?tab=${item}`, active: item === tab })),
+    });
 
-    nodes.push(ui.panel(ctx.t('settings'), [
+    if (tab === 'overview') {
+      nodes.push(...quickStart(ctx, base, account));
+      return nodes;
+    }
+    if (tab === 'settings') {
+      nodes.push(...settingsNodes(ctx, url, account));
+      return nodes;
+    }
+
+    // Розділ панелі: перевірка «свій, активний, сервер увімкнено» + ліміт запитів
+    const owned = await hosting.accounts.usable(ctx.userId, id);
+    const scope = new PanelScope(ctx, owned.serverId, { api: `${url}/panel`, page: base, owner: owned.panelUser, manage: true });
+    try {
+      nodes.push(...(await SECTIONS[tab](scope)));
+    } catch (error) {
+      if (error instanceof HttpError && error.status !== 502) throw error;
+      nodes.push({ type: 'banner', tone: 'orange', text: ctx.t('panelError', { error: error instanceof Error ? error.message : '' }) });
+    }
+    return nodes;
+  },
+};
+
+const CABINET_TABS = ['overview', 'sites', 'dns', 'mail', 'databases', 'ftp', 'ssl', 'cron', 'settings'] as const;
+type CabinetTab = (typeof CABINET_TABS)[number];
+
+const SECTIONS: Record<Exclude<CabinetTab, 'overview' | 'settings'>, PanelSectionRenderer> = {
+  sites: sitesSection,
+  dns: dnsSection,
+  mail: mailSection,
+  databases: databasesSection,
+  ftp: ftpSection,
+  ssl: sslSection,
+  cron: cronSection,
+};
+
+/** Швидкий старт: що робити з новим хостингом — крок за кроком */
+function quickStart(ctx: UiContext, base: string, account: AccountView): UiNode[] {
+  const step = (icon: string, title: string, text: string, tab: string, label: string): UiNode => ui.panel(undefined, [
+    ui.row([{ type: 'status', tone: 'blue', icon }, ui.stack([ui.text({ b: title }), ui.muted(text)], 2)]),
+    { type: 'button', variant: 'ghost', label, href: `${base}?tab=${tab}` },
+  ]);
+  return [
+    ui.panel(ctx.t('quickStart'), [ui.muted(ctx.t('quickStartHint', { login: account.login }))]),
+    {
+      type: 'grid',
+      min: 240,
+      children: [
+        step('apps', ctx.t('qs.site'), ctx.t('qs.siteText'), 'sites', ctx.t('tab.sites')),
+        step('list', ctx.t('qs.dns'), ctx.t('qs.dnsText'), 'dns', ctx.t('tab.dns')),
+        step('bell', ctx.t('qs.mail'), ctx.t('qs.mailText'), 'mail', ctx.t('tab.mail')),
+        step('layers', ctx.t('qs.db'), ctx.t('qs.dbText'), 'databases', ctx.t('tab.databases')),
+        step('upload', ctx.t('qs.ftp'), ctx.t('qs.ftpText'), 'ftp', ctx.t('tab.ftp')),
+        step('clock', ctx.t('qs.cron'), ctx.t('qs.cronText'), 'cron', ctx.t('tab.cron')),
+      ],
+    },
+  ];
+}
+
+/** Налаштування: автопродовження, пароль панелі, видалення */
+function settingsNodes(ctx: UiContext, url: string, account: AccountView): UiNode[] {
+  return [
+    ui.panel(ctx.t('settings'), [
       ui.row([
         ui.text(ctx.t('autoRenewState', { state: account.autoRenew ? ctx.t('on') : ctx.t('off') }), { bold: true }),
         {
@@ -372,9 +427,8 @@ const account: UiPage = {
         fields: [{ name: 'password', kind: 'password', label: ctx.t('newPassword'), required: true, minlength: 10, autocomplete: 'new-password', grow: true, hint: ctx.t('passwordHint') }],
         submit: { label: ctx.t('save'), variant: 'ghost', action: { method: 'POST', url: `${url}/password`, success: { notice: ctx.t('passwordChanged') } } },
       },
-    ]));
-
-    nodes.push(ui.panel(ctx.t('danger'), [{
+    ]),
+    ui.panel(ctx.t('danger'), [{
       type: 'form',
       fields: [{ name: 'confirm', kind: 'text', label: ctx.t('deleteType', { login: account.login }), required: true, autocomplete: 'off', grow: true, hint: ctx.t('deleteHint') }],
       submit: {
@@ -382,10 +436,8 @@ const account: UiPage = {
         variant: 'danger',
         action: { method: 'DELETE', url, confirm: ctx.t('deleteConfirm', { login: account.login }), success: { redirect: '/app/hosting?tab=deleted' } },
       },
-    }]));
-
-    return nodes;
-  },
-};
+    }]),
+  ];
+}
 
 export const cabinetPages = [list, order, account];

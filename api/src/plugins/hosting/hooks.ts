@@ -31,7 +31,7 @@ declare module '../../core/hooks/index.js' {
     'hosting.account.password_changed': AccountEvent;
     'hosting.account.panel_login': AccountEvent;
     /** Зміна в консолі панелі (адмінка): створення / видалення обʼєкта */
-    'hosting.panel.changed': Actor & { serverId: number; section: PanelSection; action: 'create' | 'delete' | 'update'; name: string };
+    'hosting.panel.changed': Actor & { serverId: number; section: PanelSection; action: 'create' | 'delete' | 'update'; name: string; client?: boolean };
   }
   interface HookFilters {
     /** Ціна замовлення / продовження в копійках (знижки, промокоди, акції) */
@@ -107,6 +107,10 @@ export function registerHostingSubscribers(): void {
   hooks.addAction('hosting.account.panel_login', (event) =>
     track(event.req ?? null, event.account.userId, 'hosting.panel_login', { login: event.account.panelUser }), options);
 
-  hooks.addAction('hosting.panel.changed', (event) =>
-    admin(event, 'admin.hosting_panel', { server: event.serverId, section: event.section, action: event.action, name: event.name }), options);
+  // Консоль адміністратора — admin.hosting_panel; кабінет клієнта — hosting.panel_changed у його журналі
+  hooks.addAction('hosting.panel.changed', (event) => {
+    const meta = { server: event.serverId, section: event.section, action: event.action, name: event.name };
+    if (event.client) return event.actorId ? track(event.req ?? null, event.actorId, 'hosting.panel_changed', meta) : undefined;
+    return admin(event, 'admin.hosting_panel', meta);
+  }, options);
 }

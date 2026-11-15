@@ -12,7 +12,8 @@
     "test": "vitest run",
     "migrate": "tsx src/core/db/cli.ts",
     "roles:set-developer": "tsx src/modules/auth/cli/set-developer.ts",
-    "hosting:probe": "tsx src/plugins/hosting/cli/probe.ts"
+    "hosting:probe": "tsx src/plugins/hosting/cli/probe.ts",
+    "hosting:demo": "tsx src/plugins/hosting/cli/demo.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

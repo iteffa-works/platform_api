@@ -1,24 +1,24 @@
 /** SSL-сертифікати: строк дії (попередження за 14 днів), Let's Encrypt, домени */
-import { ui } from '../../../../../../core/ui/index.js';
-import { hosting } from '../../../../module.js';
-import { daysLeft } from '../../../format.js';
-import { badge, ownerFilter, panel, table } from '../../../kit.js';
-import type { ConsoleSection } from './context.js';
+import { ui } from '../../../../core/ui/index.js';
+import { hosting } from '../../module.js';
+import { daysLeft } from '../format.js';
+import { badge, panel, table } from '../kit.js';
+import type { PanelSectionRenderer } from './scope.js';
 
-export const sslSection: ConsoleSection = async (console) => {
-  const { t } = console;
-  const [certificates, owners] = await Promise.all([hosting.panel.certificates(console.server.id, console.owner), console.owners()]);
+export const sslSection: PanelSectionRenderer = async (scope) => {
+  const { t } = scope;
+  const certificates = await hosting.panel.certificates(scope.serverId, scope.owner);
 
   return [
-    ownerFilter(console.ctx, owners, console.owner),
+    ...(await scope.ownerFilter()),
     panel(`${t('tab.ssl')} · ${certificates.length}`, [table(
-      [
+      scope.columns([
         { key: 'name', label: t('certificate') },
         { key: 'owner', label: t('owner') },
         { key: 'domains', label: t('domains') },
         { key: 'valid', label: t('validUntil') },
         { key: 'type', label: t('type') },
-      ],
+      ]),
       certificates.map((cert) => {
         const days = daysLeft(cert.validUntil);
         const tone = days === null ? 'slate' : days < 0 ? 'red' : days <= 14 ? 'orange' : 'green';

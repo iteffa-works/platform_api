@@ -4,6 +4,13 @@
 
 ## 2026-11-15
 
+### Кабінет клієнта хостингу й демо-дані
+
+- Картка акаунта з вкладками: швидкий старт, сайти, DNS, пошта, БД, FTP, SSL, cron, налаштування — ті самі розділи, що в консолі адміністратора (`ui/sections` + `PanelScope`), власник зафіксований сервером.
+- REST `/cabinet/hosting/:id/panel/*`: owner з запиту ігнорується, DNS-записи лише власних зон, Sandbox поважає власника при видаленні; дії клієнта — `hosting.panel_changed` у його журналі.
+- `npm run hosting:demo -w api` — демо-сервери Sandbox (UA / DE), тарифи, три акаунти в різних станах.
+
+
 ### Хуки, ООП-плагін хостингу, повна консоль ISPmanager, Sandbox
 
 - **Хуки й фільтри** (`core/hooks`): `addAction / doAction`, `addFilter / applyFilters`, пріоритети, ізоляція помилок, умова `when`, типи через declaration merging. `core/events` — аліас.
