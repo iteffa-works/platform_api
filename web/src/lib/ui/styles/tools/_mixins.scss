@@ -1,0 +1,116 @@
+@use 'functions' as *;
+
+/// Тони інтерфейсу → токен кольору. Один список для бейджів, плашок, рядків таблиць
+$tones: (
+  blue: var(--ui-tone-blue),
+  purple: var(--ui-tone-purple),
+  green: var(--ui-tone-green),
+  orange: var(--ui-tone-orange),
+  red: var(--ui-danger),
+  slate: var(--ui-tone-slate),
+  warn: var(--ui-warn),
+);
+
+/// `[data-tone=…]` → змінна `--tone` (далі `color: var(--tone)`, `soft(var(--tone))`)
+@mixin tones($attr: 'data-tone', $var: --tone) {
+  @each $name, $color in $tones {
+    &[#{$attr}='#{$name}'] {
+      #{$var}: #{$color};
+    }
+  }
+}
+
+/// Скинути стилі кнопки
+@mixin reset-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+/// Кільце фокусу з клавіатури
+@mixin focus-ring($offset: 2px) {
+  &:focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: $offset;
+  }
+}
+
+/// Картка: поверхня, рамка, радіус, легка тінь
+@mixin surface($radius: var(--ui-radius-lg), $shadow: var(--ui-shadow-sm)) {
+  border: 1px solid var(--ui-border-soft);
+  border-radius: $radius;
+  background: var(--ui-surface);
+  box-shadow: $shadow;
+}
+
+/// Поле вводу / select / кнопка-фільтр однієї висоти
+@mixin control($height: var(--ui-control-sm)) {
+  display: inline-flex;
+  align-items: center;
+  gap: space(2);
+  height: $height;
+  padding: 0 space(3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: var(--ui-fs-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--ui-border-strong);
+  }
+
+  &:focus-within,
+  &:focus-visible {
+    border-color: var(--ui-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px soft(var(--ui-accent), 18%);
+  }
+}
+
+/// Квадратна кнопка-іконка
+@mixin icon-button($size: 32px) {
+  @include reset-button;
+  @include focus-ring(0);
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: $size;
+  height: $size;
+  border-radius: var(--ui-radius-md);
+  color: var(--ui-muted);
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--ui-surface-muted);
+    color: var(--ui-text);
+  }
+}
+
+/// Текст в один рядок з «…»
+@mixin truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/// Дрібний заголовок групи (верхній регістр)
+@mixin eyebrow {
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/// Тонка смуга прокрутки
+@mixin thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-strong) transparent;
+}

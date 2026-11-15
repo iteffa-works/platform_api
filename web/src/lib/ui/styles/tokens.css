@@ -38,6 +38,31 @@
   --ui-bar-bg: #1e293b;
   --ui-bar-text: #e2e8f0;
   --ui-bar-muted: #94a3b8;
+
+  /* ---------- Робочий простір (адмінка): світлий, строгий, «продуктовий» ---------- */
+  --ui-app-bg: #f4f6fa;
+  --ui-border-soft: #e6eaf0;
+  --ui-text-2: #3b4250;
+  --ui-warn: #e0a400;
+  --ui-warn-soft: #fff8e1;
+  --ui-danger-soft: #fdeced;
+  --ui-row-hover: #f7f9fc;
+  --ui-nav-active: #e8f0fe;
+
+  --ui-radius-sm: 4px;
+  --ui-radius-md: 6px;
+  --ui-radius-lg: 10px;
+  --ui-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --ui-shadow-md: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --ui-shadow-pop: 0 12px 32px rgba(16, 24, 40, 0.14);
+
+  --ui-fs-xs: 11px;
+  --ui-fs-sm: 13px;
+  --ui-fs-md: 14px;
+  --ui-control-sm: 34px;
+  --ui-sidebar-w: 232px;
+  --ui-sidebar-rail: 64px;
+  --ui-topbar-h: 56px;
 }
 
 /* Темна тема: <html data-theme="dark"> (cookie / акаунт) */
@@ -63,4 +88,16 @@
   --ui-tone-orange: #fb923c;
   --ui-tone-slate: #94a3b8;
   --ui-bar-bg: #0b0e14;
+
+  --ui-app-bg: #0d1016;
+  --ui-border-soft: #232a37;
+  --ui-text-2: #c3cad6;
+  --ui-warn: #f5c04a;
+  --ui-warn-soft: rgba(245, 192, 74, 0.1);
+  --ui-danger-soft: rgba(248, 113, 113, 0.1);
+  --ui-row-hover: #1a1f2b;
+  --ui-nav-active: rgba(59, 130, 246, 0.16);
+  --ui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ui-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --ui-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5);
 }

@@ -1,0 +1,8 @@
+// Інструменти Sass: лише міксини й функції, без CSS на виході.
+// Підключаються автоматично в кожен `<style lang="scss">` і .scss (vite.config.ts → additionalData),
+// тому в компонентах пишемо `@include surface;`, `bp(md)` тощо без імпортів.
+// Кольори — лише через CSS-змінні з tokens.css (тема перемикається в рантаймі).
+
+@forward 'breakpoints';
+@forward 'functions';
+@forward 'mixins';

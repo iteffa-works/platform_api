@@ -1,0 +1,14 @@
+/// Напівпрозорий відтінок токена: `soft(var(--ui-accent), 12%)`
+@function soft($color, $amount: 12%) {
+  @return color-mix(in srgb, #{$color} #{$amount}, transparent);
+}
+
+/// Змішати токен з поверхнею (непрозорий фон рядка, плашки)
+@function tint($color, $amount: 10%, $base: var(--ui-surface)) {
+  @return color-mix(in srgb, #{$color} #{$amount}, #{$base});
+}
+
+/// Відступ за кроком сітки 4px: `space(3)` → 12px
+@function space($step) {
+  @return $step * 4px;
+}

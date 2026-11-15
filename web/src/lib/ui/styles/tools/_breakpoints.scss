@@ -1,0 +1,23 @@
+@use 'sass:map';
+
+/// Точки зламу (ширина, з якої діє `up`)
+$breakpoints: (
+  sm: 560px,
+  md: 760px,
+  lg: 1024px,
+  xl: 1280px,
+);
+
+/// Від ширини і більше: `@include up(lg) { … }`
+@mixin up($name) {
+  @media (min-width: map.get($breakpoints, $name)) {
+    @content;
+  }
+}
+
+/// Вужче за точку: `@include down(md) { … }`
+@mixin down($name) {
+  @media (max-width: map.get($breakpoints, $name) - 0.02px) {
+    @content;
+  }
+}
