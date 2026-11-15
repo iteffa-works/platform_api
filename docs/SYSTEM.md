@@ -25,6 +25,8 @@ desktop / SDK ───/api/client/v1 (ключ)───▶       │
 | `core/activity` | `track(req, userId, action, meta)` → подія `activity` |
 | `core/db` | Sequelize, міграції (umzug) |
 | `core/events` | шина подій `on` / `emit` |
+| `core/hooks` | дії (`doAction`) і фільтри (`applyFilters`) з пріоритетами, типізація через declaration merging; `core/events` — аліас |
+| `core/ui` | server-driven UI: схема вузлів, реєстр сторінок плагінів, маніфест, переклади мовою запиту |
 | `core/plugins` | автозавантаження модулів з `modules/*` (ядро) і `plugins/*` (addon, вмикаються в адмінці) — [docs/plugins](plugins/README.md) |
 | `shared/` | crypto (bcrypt, AES-GCM, TOTP, підписані тікети), http (помилки, ліміти, cookies), i18n помилок |
 | `modules/` | плагіни (нижче) |
@@ -60,8 +62,9 @@ export const plugin: Plugin = {
 | `billing` | тарифи, рахунок (тариф + баланс), операції балансу |
 | `client-api` | черга завдань для desktop (скелет, у памʼяті) |
 | `plugins` | список плагінів, увімкнення / вимкнення addon, `GET /plugins` для web |
+| `ui` | `GET /ui/manifest` (маршрути, меню, сервіси, переклади), `POST /ui/page` (схема сторінки плагіна) |
 
-Addon (`api/src/plugins`): `ispmanager` — хостинг на ISPmanager 6 ([ТЗ](plugins/ispmanager.md)).
+Addon (`api/src/plugins`): `hosting` — хостинг, консоль панелі, провайдери ISPmanager 6 і Sandbox — еталонна структура плагіна ([опис](plugins/hosting.md)).
 
 ## Дані (MariaDB)
 
@@ -77,8 +80,9 @@ Addon (`api/src/plugins`): `ispmanager` — хостинг на ISPmanager 6 ([�
 | `billing_accounts` | billing | `userId` → `planId`, `balanceCents` |
 | `balance_transactions` | billing | незмінний журнал: сума, баланс після, тип, хто |
 | `plugin_states` | plugins | стан addon: `name`, `enabled` |
-| `isp_servers` | ispmanager | панелі: URL, логін, пароль (AES-GCM), `verifyTls` |
-| `isp_accounts` | ispmanager | `userId` ↔ `panelUser` на сервері, шаблон, стан |
+| `hosting_servers` | hosting | панелі: провайдер, URL, логін, пароль (AES-GCM), `verifyTls`, країна, IP |
+| `hosting_plans` | hosting | ціна за місяць → шаблон панелі |
+| `hosting_accounts` | hosting | `userId` ↔ логін панелі, стан, `paidUntil`, `autoRenew`, використання |
 | `migrations` | core | застосовані міграції |
 
 Усі `id` — `INT UNSIGNED AUTO_INCREMENT`; дочірні рядки видаляються каскадом разом з користувачем.
@@ -111,7 +115,7 @@ Addon (`api/src/plugins`): `ispmanager` — хостинг на ISPmanager 6 ([�
 | `constructor/` | реєстр сторінок / блоків / навігації з плагінів, `PageHost`, перевірка доступу |
 | `plugins/` | ядро: `site` (лендинг), `auth`, `cabinet`, `admin` |
 
-Addon — `web/src/plugins/<name>` з `export const plugin`, підхоплюються автоматично й діють, поки однойменний API-плагін увімкнено.
+Плагіни (addon) коду в web не мають: сторінки описує API (`plugin.ui`), рендерить `constructor/remote` (маніфест → `RemotePage` → `UiNode`). Див. [docs/plugins](plugins/README.md).
 | `ui/` | UI-kit: elements → components → patterns → templates, токени тем |
 
 ### Web-плагін
@@ -144,8 +148,9 @@ export const admin: WebPlugin = {
 | auth | `POST /auth/register` `{email,password,ref?}` · `POST /auth/login` → `{user}` або `{twoFactor,ticket}` · `POST /auth/login/2fa` · `POST /auth/logout` · `GET /auth/session` (гість → `{user:null}`) · `GET /auth/me` · `GET /auth/captcha` · `GET /avatars/:file` |
 | cabinet | `GET /cabinet/profile` · `PATCH /cabinet/account` · `DELETE /cabinet/account` · `PATCH /cabinet/preferences` · `POST /cabinet/password` · `GET\|DELETE /cabinet/sessions[/:id]` · `POST /cabinet/2fa/setup\|enable\|disable` · `PUT\|DELETE /cabinet/avatar` (тіло — файл) · `GET /cabinet/referrals` · `GET /cabinet/activity` · `GET /cabinet/notifications` · `POST /cabinet/notifications/read` · `GET /cabinet/billing[/summary]` · `POST /cabinet/billing/plan` |
 | admin | `GET /admin/overview` · `GET /admin/users` · `PATCH /admin/users/:id` · `GET /admin/permissions` · `GET\|POST /admin/roles` · `PATCH\|DELETE /admin/roles/:id` · `GET /admin/activity` · `GET /admin/billing` · `POST /admin/billing/adjust` · `POST\|PATCH\|DELETE /admin/billing/plans[/:id]` |
+| ui | `GET /ui/manifest` (гість — без сторінок) · `POST /ui/page` `{path, state}` → `{nodes}` |
 | plugins | `GET /plugins` (публічно, `{enabled}`) · `GET /admin/plugins` · `PATCH /admin/plugins/:name` `{enabled}` |
-| ispmanager | `/admin/ispmanager/servers…`, `/admin/ispmanager/accounts…`, `/cabinet/hosting…` — [ТЗ](plugins/ispmanager.md) |
+| hosting | `/cabinet/hosting…`, `/admin/hosting/{servers,plans,accounts,stats}…`, консоль `/admin/hosting/servers/:id/panel/{overview,users,sites,dns,mail,databases,ftp,ssl,cron}` — [опис](plugins/hosting.md) |
 | client | `GET /status` · `GET /work/next` · `POST /work/:id/result` |
 
 Помилки: `{ error }` з HTTP-статусом; 401 — немає сесії, 403 — прав / CSRF, 429 — ліміт.
@@ -163,8 +168,10 @@ export const admin: WebPlugin = {
 | `CLIENT_API_KEY`, `CLIENT_RATE_LIMIT_PER_MINUTE` | dev-client-key, 120 | Client API |
 | `DB_*` | Open Server | MariaDB |
 | `AUTH_CAPTCHA`, `AUTH_FORM` | true | auth-розширення |
+| `HOSTING_JOB_INTERVAL_MINUTES` | 15 | фонове завдання хостингу (строки, блокування) |
+| `HOSTING_DELETE_AFTER_DAYS` | 0 | видаляти в панелі заблоковані за несплату через N днів; 0 — ніколи |
 | `MIGRATIONS_DRAFTS` | — | `1` — застосовувати `*.draft.ts` (лише тестова БД) |
 
 ## Перевірки
 
-`npm run typecheck` (tsc + svelte-check з типізованими ключами перекладів) · `npm test -w api` (vitest: права, TOTP, гроші, id, відповіді ISPmanager).
+`npm run typecheck` (tsc + svelte-check з типізованими ключами перекладів) · `npm test -w api` (vitest: права, TOTP, гроші, id, відповіді ISPmanager, правила хостингу).
