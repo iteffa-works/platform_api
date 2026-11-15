@@ -3,7 +3,6 @@
   import { page as route } from '$app/stores';
   import { can, user } from '$lib/domain/auth';
   import { useI18n, type TextKey } from '$lib/i18n';
-  import { adminError } from '$lib/plugins/admin/store';
   import type { IconName } from '$lib/ui/elements';
   import { AdminTemplate, AuthTemplate, CabinetTemplate, LandingTemplate } from '$lib/ui/templates';
   import BlockSlot from './BlockSlot.svelte';
@@ -51,7 +50,7 @@
     <BlockSlot items={slots.default} />
   </CabinetTemplate>
 {:else if page.template === 'admin'}
-  <AdminTemplate title={page.title} subtitle={page.subtitle} error={$adminError} {nav} {current}>
+  <AdminTemplate title={page.title} subtitle={page.subtitle} {nav} {current}>
     <BlockSlot items={slots.default} />
   </AdminTemplate>
 {/if}

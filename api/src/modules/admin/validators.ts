@@ -51,6 +51,17 @@ function readPermissions(value: unknown): Permissions {
   }
 }
 
+/**
+ * Права з тіла: `permissions` (обʼєкт) або плоскі поля форми `perm.<ресурс>` = рівень | `none`
+ * (server-driven форма матриці прав). undefined — права не передано.
+ */
+function permissionsOf(data: Body): unknown {
+  if (data.permissions !== undefined) return data.permissions;
+  const flat = Object.entries(data).filter(([key]) => key.startsWith('perm.'));
+  if (!flat.length) return undefined;
+  return Object.fromEntries(flat.filter(([, level]) => level && level !== 'none').map(([key, level]) => [key.slice(5), level]));
+}
+
 function readDescription(value: unknown): string | null {
   if (value === null) return null;
   return readString(value, 'Опис', 0, 255) || null;
@@ -63,7 +74,7 @@ export function readNewRole(value: unknown): NewRoleInput {
     slug: readSlug(data.slug),
     name: readString(data.name, 'Назва ролі', 1, 80),
     description: data.description === undefined ? null : readDescription(data.description),
-    permissions: readPermissions(data.permissions),
+    permissions: readPermissions(permissionsOf(data)),
   };
 }
 
@@ -74,6 +85,7 @@ export function readRolePatch(value: unknown): RoleInput {
   if (data.slug !== undefined) input.slug = readSlug(data.slug);
   if (data.name !== undefined) input.name = readString(data.name, 'Назва ролі', 1, 80);
   if (data.description !== undefined) input.description = readDescription(data.description);
-  if (data.permissions !== undefined) input.permissions = readPermissions(data.permissions);
+  const permissions = permissionsOf(data);
+  if (permissions !== undefined) input.permissions = readPermissions(permissions);
   return input;
 }
