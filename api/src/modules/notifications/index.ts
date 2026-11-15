@@ -23,6 +23,14 @@ const NOTIFY: Record<string, string[]> = {
   'plan.changed': ['plan'],
 };
 
+/**
+ * Дозволити плагіну (addon) власні сповіщення: `action` події → параметри з `meta`.
+ * Текст — переклад `notification.<action>` у web-плагіні.
+ */
+export function registerNotification(action: string, keys: string[] = []): void {
+  NOTIFY[action] = keys;
+}
+
 async function notify(payload?: unknown): Promise<void> {
   const event = payload as ActivityEvent;
   const keys = NOTIFY[event.action];

@@ -28,7 +28,7 @@
   let planDescription = $state('');
 
   const canManage = $derived(can($user, 'billing', 'manage'));
-  const TONE = { topup: 'green', charge: 'orange', adjustment: 'slate' } as const;
+  const TONE = { topup: 'green', charge: 'orange', adjustment: 'slate', refund: 'green' } as const;
 
   async function load() {
     const data = await adminApi.fetchBillingAdmin();

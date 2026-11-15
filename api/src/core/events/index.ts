@@ -1,19 +1,15 @@
+/**
+ * Шина подій — сумісний інтерфейс над хуками-діями (`core/hooks`): `on` = addAction, `emit` = doAction.
+ * Новий код — одразу `hooks.addAction` / `hooks.doAction` з типізованими іменами.
+ */
+import { hooks, type HookOptions } from '../hooks/index.js';
+
 export type EventHandler = (payload?: unknown) => void | Promise<void>;
 
-const listeners = new Map<string, Set<EventHandler>>();
-
-export function on(name: string, handler: EventHandler): void {
-  const current = listeners.get(name) ?? new Set<EventHandler>();
-  current.add(handler);
-  listeners.set(name, current);
+export function on(name: string, handler: EventHandler, options?: HookOptions): () => void {
+  return hooks.addAction(name, handler, options);
 }
 
-export async function emit(name: string, payload?: unknown): Promise<void> {
-  for (const handler of listeners.get(name) ?? []) {
-    try {
-      await handler(payload);
-    } catch (error) {
-      console.error(`[events] ${name}`, error);
-    }
-  }
+export function emit(name: string, payload?: unknown): Promise<void> {
+  return hooks.doAction(name, payload);
 }

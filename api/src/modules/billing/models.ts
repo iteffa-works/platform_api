@@ -56,7 +56,8 @@ BillingAccount.init({
 
 BillingAccount.belongsTo(Plan, { as: 'plan', foreignKey: 'planId' });
 
-export type TransactionKind = 'topup' | 'charge' | 'adjustment';
+/** refund — повернення за послугу (напр. невдале створення хостингу) */
+export type TransactionKind = 'topup' | 'charge' | 'adjustment' | 'refund';
 
 /** Операція балансу (незмінний журнал) */
 export class BalanceTransaction extends Model<

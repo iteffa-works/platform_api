@@ -51,7 +51,7 @@ export type BalanceTransaction = {
   id: number;
   amount: string;
   balanceAfter: string;
-  kind: 'topup' | 'charge' | 'adjustment';
+  kind: 'topup' | 'charge' | 'adjustment' | 'refund';
   note: string | null;
   createdAt: string;
   user?: { id: number; email: string };

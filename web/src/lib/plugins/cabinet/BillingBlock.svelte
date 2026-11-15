@@ -37,7 +37,7 @@
     load().catch((err) => (error = errorMessage(err)));
   });
 
-  const TONE = { topup: 'green', charge: 'orange', adjustment: 'slate' } as const;
+  const TONE = { topup: 'green', charge: 'orange', adjustment: 'slate', refund: 'green' } as const;
 </script>
 
 {#if details}

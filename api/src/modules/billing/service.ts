@@ -101,6 +101,32 @@ export async function changePlan(req: Request, userId: number, planId: unknown) 
   return summary(userId);
 }
 
+/* ---------- Оплата послуг (для інших модулів: хостинг, …) ---------- */
+
+/** Баланс користувача в копійках */
+export async function balanceCents(userId: number, transaction?: Transaction): Promise<number> {
+  return (await ensureAccount(userId, transaction)).balanceCents;
+}
+
+/**
+ * Списати оплату послуги в транзакції БД викликача (рядок рахунку блокується).
+ * Недостатньо коштів → 402; разом з рештою транзакції відкочується.
+ */
+export async function chargeService(userId: number, amountCents: number, note: string, transaction: Transaction): Promise<void> {
+  if (!Number.isInteger(amountCents) || amountCents < 0) throw new Error('Сума списання — ціле число копійок ≥ 0');
+  if (amountCents === 0) return;
+  const account = await ensureAccount(userId, transaction, true);
+  if (account.balanceCents < amountCents) throw new HttpError(402, 'Недостатньо коштів на балансі');
+  await move(account, -amountCents, 'charge', note.slice(0, 255), null, transaction);
+}
+
+/** Повернути кошти за послугу (компенсація невдалої операції) */
+export async function refundService(userId: number, amountCents: number, note: string, transaction: Transaction): Promise<void> {
+  if (amountCents <= 0) return;
+  const account = await ensureAccount(userId, transaction, true);
+  await move(account, amountCents, 'refund', note.slice(0, 255), null, transaction);
+}
+
 /* ---------- Адмінка ---------- */
 
 export async function adminOverview() {
