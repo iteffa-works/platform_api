@@ -41,6 +41,8 @@ export type UiAction = {
     redirect?: string;
     /** Перерендерити сторінку (за замовчуванням так, якщо немає redirect) */
     reload?: boolean;
+    /** Перезавантажити маніфест (меню, сторінки плагінів) — після вмикання / вимикання плагіна */
+    manifest?: boolean;
   };
 };
 
@@ -131,8 +133,37 @@ export type UiNode =
   | { type: 'tile'; tone: Tone; media?: UiNode; children: UiNode[]; footer?: UiButton }
   | { type: 'empty'; text: string }
   | { type: 'code'; text: string; block?: boolean }
+  /**
+   * Таблиця робочого простору: тон рядка, панель фільтрів, сортування й пагінація на сервері.
+   * Керування пише в URL (?<name>=…, `sort`=key | -key, `page`, `perPage`) → сторінка рендериться з цим state.
+   */
+  | {
+      type: 'datagrid';
+      columns: Array<{ key: string; label: string; align?: 'left' | 'right' | 'center'; width?: string; sortable?: boolean }>;
+      rows: Array<{ key: string | number; tone?: GridTone; cells: Record<string, UiNode[]> }>;
+      toolbar?: {
+        segments?: { name: string; value: string; items: Array<{ label: string; value: string; count?: number }> };
+        filters?: Array<{ name: string; label: string; value: string; options: Array<{ value: string; label: string }> }>;
+        search?: { name: string; value: string; placeholder: string };
+      };
+      sort?: { key: string; dir: 'asc' | 'desc' };
+      page?: { page: number; perPage: number; total: number; summary?: string; perPageOptions?: number[] };
+      empty?: string;
+    }
+  /** Плашка-повідомлення: тон, текст, необовʼязкова дія праворуч */
+  | { type: 'alert'; tone?: 'info' | 'warn' | 'danger' | 'success'; text: Inline; action?: UiButton }
+  /** Людина: аватар (фото або ідентикон з seed), імʼя, підпис */
+  | { type: 'person'; name: string; caption?: string; seed: string; src?: string | null; href?: string }
+  /** Іконки-дії рядка (підпис кнопки — підказка); кнопки без icon не показуються */
+  | { type: 'actions'; items: UiButton[] }
   | UiButton
   | UiForm;
+
+/** Тон рядка datagrid */
+export type GridTone = 'warn' | 'danger' | 'success' | 'muted';
+
+/** Результат рендеру сторінки: вузли й дії в шапці сторінки (поруч із заголовком) */
+export type UiRendered = { nodes: UiNode[]; actions?: UiButton[] };
 
 /** Пункт меню розділу; `label` / `group` — ключі перекладів плагіна */
 export type UiNavItem = {

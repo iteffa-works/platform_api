@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Пагінація: «Результати: 1–50 з 168» ліворуч, сторінки й розмір сторінки праворуч */
-  import Glyph from './Glyph.svelte';
+  import { Icon } from '$lib/ui/elements';
 
   let {
     page,
@@ -45,7 +45,7 @@
   <span class="pager__summary">{summary ?? `${from}–${to} / ${total}`}</span>
   <div class="pager__nav">
     <button type="button" class="pager__btn" disabled={page <= 1} onclick={() => onpage(page - 1)} aria-label={labels.prev}>
-      <Glyph name="chevron-left" size={14} />
+      <Icon name="chevron-left" size={14} />
     </button>
     {#each items as item, index (index)}
       {#if item === 'gap'}
@@ -55,7 +55,7 @@
       {/if}
     {/each}
     <button type="button" class="pager__btn" disabled={page >= pages} onclick={() => onpage(page + 1)} aria-label={labels.next}>
-      <Glyph name="chevron-right" size={14} />
+      <Icon name="chevron-right" size={14} />
     </button>
     {#if onperpage}
       <select class="pager__size" value={perPage} aria-label={labels.perPage} onchange={(event) => onperpage(Number(event.currentTarget.value))}>

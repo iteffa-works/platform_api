@@ -2,13 +2,13 @@
 
 /// Тони інтерфейсу → токен кольору. Один список для бейджів, плашок, рядків таблиць
 $tones: (
-  blue: var(--ui-tone-blue),
-  purple: var(--ui-tone-purple),
-  green: var(--ui-tone-green),
-  orange: var(--ui-tone-orange),
-  red: var(--ui-danger),
-  slate: var(--ui-tone-slate),
-  warn: var(--ui-warn),
+  'blue': var(--ui-tone-blue),
+  'purple': var(--ui-tone-purple),
+  'green': var(--ui-tone-green),
+  'orange': var(--ui-tone-orange),
+  'red': var(--ui-danger),
+  'slate': var(--ui-tone-slate),
+  'warn': var(--ui-warn),
 );
 
 /// `[data-tone=…]` → змінна `--tone` (далі `color: var(--tone)`, `soft(var(--tone))`)

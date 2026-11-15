@@ -3,8 +3,8 @@
    * Таблиця робочого простору: липка шапка, сортування, тон рядка (попередження / помилка),
    * порожній стан і скелетон завантаження. Вміст клітинок — сніпет `cell(row, column)`.
    */
+  import { Icon } from '$lib/ui/elements';
   import type { Snippet } from 'svelte';
-  import Glyph from './Glyph.svelte';
 
   import type { GridColumn, GridSort, GridTone } from './types.js';
 
@@ -55,7 +55,7 @@
               {#if column.sortable && onsort}
                 <button type="button" class="grid__sort" class:is-active={sort?.key === column.key} onclick={() => toggle(column)}>
                   {column.label}
-                  <span class="grid__arrow" class:is-desc={sort?.key === column.key && sort.dir === 'desc'}><Glyph name="chevron-down" size={12} /></span>
+                  <span class="grid__arrow" class:is-desc={sort?.key === column.key && sort.dir === 'desc'}><Icon name="chevron-down" size={12} /></span>
                 </button>
               {:else}
                 {column.label}

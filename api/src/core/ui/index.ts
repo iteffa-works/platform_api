@@ -4,7 +4,7 @@
  */
 import type { Request } from 'express';
 import { can, type Permissions } from '../access/index.js';
-import type { Inline, UiMessages, UiNavItem, UiNode, UiService } from './schema.js';
+import type { Inline, UiMessages, UiNavItem, UiNode, UiRendered, UiService } from './schema.js';
 
 export type * from './schema.js';
 
@@ -31,7 +31,8 @@ export type UiPage = {
   title: string;
   subtitle?: string;
   permission?: UiNavItem['permission'];
-  render: (ctx: UiContext) => Promise<UiNode[]>;
+  /** Вузли сторінки; `{ nodes, actions }` — ще й кнопки в шапці сторінки */
+  render: (ctx: UiContext) => Promise<UiNode[] | UiRendered>;
 };
 
 export type PluginUi = {

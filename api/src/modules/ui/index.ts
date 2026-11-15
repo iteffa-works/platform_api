@@ -42,7 +42,7 @@ function routes(router: Router): void {
     if (found.page.permission && !can(permissions, ...found.page.permission)) throw new HttpError(403, 'Недостатньо прав');
 
     const lang = languageOf(req);
-    const nodes = await found.page.render({
+    const rendered = await found.page.render({
       req,
       userId: userIdOf(req),
       lang,
@@ -51,7 +51,7 @@ function routes(router: Router): void {
       t: translator(found.ui.messages, lang),
       can: (resource, level) => can(permissions, resource, level),
     });
-    res.json({ nodes });
+    res.json(Array.isArray(rendered) ? { nodes: rendered } : rendered);
   }));
 }
 

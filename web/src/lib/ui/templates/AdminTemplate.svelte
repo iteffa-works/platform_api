@@ -9,7 +9,7 @@
   import { signOut, user } from '$lib/domain/auth';
   import type { TextKey } from '$lib/i18n';
   import { roleName, useI18n } from '$lib/i18n';
-  import { Breadcrumbs, Glyph, PageHeader, type Crumb } from '$lib/ui/admin';
+  import { Breadcrumbs, headerTarget, PageHeader, type Crumb } from '$lib/ui/admin';
   import { Dropdown, ErrorText, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
 
@@ -110,7 +110,7 @@
     <div class="side__brand">
       <Brand href={nav[0]?.href ?? '/admin'} image />
       <button class="side__rail" type="button" onclick={toggleRail} aria-pressed={rail} aria-label="Sidebar" title="Sidebar">
-        <Glyph name={rail ? 'chevrons-right' : 'chevrons-left'} />
+        <Icon name={rail ? 'chevrons-right' : 'chevrons-left'} />
       </button>
     </div>
 
@@ -125,7 +125,7 @@
         <div class="side__group">
           <button class="side__group-head" type="button" aria-expanded={open} onclick={() => toggleGroup(group)}>
             <span>{$t(group)}</span>
-            <Glyph name="chevron-down" size={14} />
+            <Icon name="chevron-down" size={14} />
           </button>
           {#if open || rail}
             <ul>
@@ -162,7 +162,7 @@
   <div class="main">
     <header class="top">
       <button class="top__burger" type="button" onclick={() => (drawer = true)} aria-label={$t('admin.quickNav')}>
-        <Glyph name="menu" size={18} />
+        <Icon name="menu" size={18} />
       </button>
       <Breadcrumbs items={crumbs} />
 
@@ -190,7 +190,11 @@
     </header>
 
     <main class="content">
-      {#if title}<PageHeader title={$t(title)} subtitle={subtitle ? $t(subtitle) : undefined} />{/if}
+      {#if title}
+        <PageHeader title={$t(title)} subtitle={subtitle ? $t(subtitle) : undefined}>
+          {#snippet actions()}<div class="head-slot" use:headerTarget></div>{/snippet}
+        </PageHeader>
+      {/if}
       <ErrorText message={error} />
       {@render children()}
     </main>
@@ -294,11 +298,11 @@
     padding: space(1) space(2) + 2px;
     border-radius: var(--ui-radius-sm);
 
-    :global(.glyph) {
+    :global(.ui-icon) {
       transition: transform 0.15s;
     }
 
-    &[aria-expanded='false'] :global(.glyph) {
+    &[aria-expanded='false'] :global(.ui-icon) {
       transform: rotate(-90deg);
     }
 
@@ -528,6 +532,10 @@
   }
 
   /* ---------- Контент ---------- */
+
+  .head-slot {
+    display: contents;
+  }
 
   .content {
     display: flex;

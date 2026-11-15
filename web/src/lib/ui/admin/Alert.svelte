@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Плашка-повідомлення над таблицею (прогрес задачі, попередження); праворуч — дія або закриття */
+  import { Icon, type IconName } from '$lib/ui/elements';
   import type { Snippet } from 'svelte';
-  import Glyph, { type GlyphName } from './Glyph.svelte';
 
   type Tone = 'info' | 'warn' | 'danger' | 'success';
 
@@ -19,15 +19,15 @@
     closeLabel?: string;
   } = $props();
 
-  const ICON: Record<Tone, GlyphName> = { info: 'info', warn: 'alert', danger: 'alert', success: 'info' };
+  const ICON: Record<Tone, IconName> = { info: 'info', warn: 'alert', danger: 'alert', success: 'info' };
 </script>
 
 <div class="alert" data-tone={tone} role={tone === 'danger' ? 'alert' : 'status'}>
-  <Glyph name={ICON[tone]} />
+  <Icon name={ICON[tone]} />
   <div class="alert__text">{@render children()}</div>
   {#if action}{@render action()}{/if}
   {#if onclose}
-    <button class="alert__close" type="button" onclick={onclose} aria-label={closeLabel}><Glyph name="close" size={14} /></button>
+    <button class="alert__close" type="button" onclick={onclose} aria-label={closeLabel}><Icon name="close" size={14} /></button>
   {/if}
 </div>
 
@@ -43,7 +43,7 @@
     color: var(--ui-text-2);
     font-size: var(--ui-fs-sm);
 
-    > :global(.glyph) {
+    > :global(.ui-icon) {
       color: var(--tone);
     }
 

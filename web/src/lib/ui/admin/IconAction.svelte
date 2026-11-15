@@ -1,7 +1,6 @@
 <script lang="ts">
   /** Іконка-дія в рядку таблиці (документ, надіслати, видалити); підпис — у title / aria-label */
   import { Icon, type IconName } from '$lib/ui/elements';
-  import Glyph, { GLYPHS, type GlyphName } from './Glyph.svelte';
 
   let {
     icon,
@@ -11,19 +10,17 @@
     disabled = false,
     onclick,
   }: {
-    icon: IconName | GlyphName;
+    icon: IconName;
     label: string;
     href?: string;
     tone?: 'accent' | 'muted' | 'danger';
     disabled?: boolean;
     onclick?: () => void;
   } = $props();
-
-  const isGlyph = $derived(icon in GLYPHS);
 </script>
 
 {#snippet face()}
-  {#if isGlyph}<Glyph name={icon as GlyphName} />{:else}<Icon name={icon as IconName} />{/if}
+  <Icon name={icon} />
 {/snippet}
 
 {#if href && !disabled}

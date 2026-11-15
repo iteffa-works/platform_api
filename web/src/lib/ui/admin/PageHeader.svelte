@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Шапка сторінки: «назад», заголовок, підзаголовок; праворуч — дії (головна кнопка, «Дії ▾») */
+  import { Icon } from '$lib/ui/elements';
   import type { Snippet } from 'svelte';
-  import Glyph from './Glyph.svelte';
 
   let {
     title,
@@ -22,7 +22,7 @@
 <header class="head">
   <div class="head__title">
     {#if back}
-      <a class="head__back" href={back} aria-label={backLabel} title={backLabel}><Glyph name="chevron-left" /></a>
+      <a class="head__back" href={back} aria-label={backLabel} title={backLabel}><Icon name="chevron-left" /></a>
     {/if}
     <div>
       <h1>{title}</h1>

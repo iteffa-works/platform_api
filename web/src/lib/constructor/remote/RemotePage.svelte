@@ -9,14 +9,18 @@
   import { onDestroy } from 'svelte';
   import { get, writable } from 'svelte/store';
   import { api } from '$lib/core/api';
+  import { user } from '$lib/domain/auth';
   import { useI18n } from '$lib/i18n';
   import { errorMessage } from '$lib/shared/utils';
+  import { headerSlot, portal } from '$lib/ui/admin';
   import { ErrorText, Panel } from '$lib/ui/components';
   import { Button, Text } from '$lib/ui/elements';
   import { sectionLoad } from '../sections.js';
   import { callAction, interpolate, pendingResult, type ShownResult, type Values } from './actions.js';
   import { provideRemote } from './context.js';
-  import type { UiAction, UiNode as Node } from './schema.js';
+  import { loadManifest } from './manifest.js';
+  import type { UiAction, UiButton, UiNode as Node, UiRendered } from './schema.js';
+  import UiButtonNode from './UiButtonNode.svelte';
   import UiNode from './UiNode.svelte';
 
   let { section }: { section: string } = $props();
@@ -27,6 +31,8 @@
   const dialog = writable<string | null>(null);
 
   let nodes = $state<Node[] | null>(null);
+  /** Кнопки в шапці сторінки (шаблон надає слот; без слота — над вмістом) */
+  let actions = $state<UiButton[]>([]);
   let version = $state(0);
   let error = $state('');
   $effect(() => errorStore.set(error));
@@ -43,12 +49,13 @@
   async function render() {
     const id = ++request;
     try {
-      const data = await api<{ nodes: Node[] }>('/ui/page', {
+      const data = await api<UiRendered>('/ui/page', {
         method: 'POST',
         body: { path: get(route).url.pathname, state: { ...queryState(), ...live } },
       });
       if (id !== request) return;
       nodes = data.nodes;
+      actions = data.actions ?? [];
       version += 1;
       error = '';
     } catch (err) {
@@ -84,6 +91,8 @@
 
       // Шапка розділу (баланс, сповіщення) могла змінитися
       void sectionLoad(section)?.();
+      // Вмикання / вимикання плагіна: меню й сторінки addon — одразу
+      if (success.manifest) await loadManifest(get(locale), get(user)?.id ?? null, true);
 
       // Успіх — модальне вікно закривається (помилка лишає його відкритим із повідомленням)
       if (!failure) dialog.set(null);
@@ -175,6 +184,12 @@
     </Panel>
   {/if}
 
+  {#if actions.length}
+    <div class="page-actions" use:portal={$headerSlot}>
+      {#each actions as action, index (index)}<UiButtonNode node={action} />{/each}
+    </div>
+  {/if}
+
   {#if nodes}
     {#key version}
       {#each nodes as node, index (index)}<UiNode {node} />{/each}
@@ -183,6 +198,13 @@
 </div>
 
 <style>
+  .page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
   .remote {
     display: flex;
     flex-direction: column;

@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Компактний select-фільтр у стилі контролів тулбару (нативний список — доступність і мобільні) */
-  import Glyph from './Glyph.svelte';
+  import { Icon } from '$lib/ui/elements';
   import type { SelectOption } from './types.js';
 
   let {
@@ -20,7 +20,7 @@
   <select bind:value aria-label={label} onchange={() => onchange?.(value)}>
     {#each options as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
   </select>
-  <Glyph name="chevron-down" size={14} />
+  <Icon name="chevron-down" size={14} />
 </label>
 
 <style lang="scss">
@@ -30,7 +30,7 @@
     padding: 0;
     color: var(--ui-muted);
 
-    :global(.glyph) {
+    :global(.ui-icon) {
       position: absolute;
       right: space(2) + 2px;
       pointer-events: none;

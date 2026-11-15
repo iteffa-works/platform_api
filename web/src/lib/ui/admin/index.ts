@@ -6,7 +6,6 @@
 export { default as Alert } from './Alert.svelte';
 export { default as Breadcrumbs } from './Breadcrumbs.svelte';
 export { default as DataGrid } from './DataGrid.svelte';
-export { default as Glyph, type GlyphName } from './Glyph.svelte';
 export { default as IconAction } from './IconAction.svelte';
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as Pagination } from './Pagination.svelte';
@@ -17,4 +16,5 @@ export { default as Segmented } from './Segmented.svelte';
 export { default as Select } from './Select.svelte';
 export { default as StatTile } from './StatTile.svelte';
 export { default as Toolbar } from './Toolbar.svelte';
+export { headerSlot, headerTarget, portal } from './portal.js';
 export type * from './types.js';

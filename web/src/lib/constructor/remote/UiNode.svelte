@@ -4,11 +4,14 @@
    * UiTable (таблиця з пошуком), UiForm, UiButtonNode (дія / перехід / модальне вікно), UiMenu (⋯).
    * Новий тип вузла — тут і в schema.ts (API + web).
    */
+  import { Alert, PersonCell } from '$lib/ui/admin';
   import { EmptyState } from '$lib/ui/components';
   import { Badge, Flag, Icon, Ring, type IconName } from '$lib/ui/elements';
   import type { UiNode } from './schema.js';
   import Self from './UiNode.svelte';
+  import UiActions from './UiActions.svelte';
   import UiButtonNode from './UiButtonNode.svelte';
+  import UiDataGrid from './UiDataGrid.svelte';
   import UiForm from './UiForm.svelte';
   import UiInline from './UiInline.svelte';
   import UiMenu from './UiMenu.svelte';
@@ -90,6 +93,18 @@
   </dl>
 {:else if node.type === 'table'}
   <UiTable {node} />
+{:else if node.type === 'datagrid'}
+  <UiDataGrid {node} />
+{:else if node.type === 'alert'}
+  {@const button = node.action}
+  <Alert tone={node.tone ?? 'info'}>
+    <UiInline value={node.text} />
+    {#snippet action()}{#if button}<UiButtonNode node={button} />{/if}{/snippet}
+  </Alert>
+{:else if node.type === 'person'}
+  <PersonCell name={node.name} caption={node.caption} seed={node.seed} src={node.src} href={node.href} />
+{:else if node.type === 'actions'}
+  <UiActions items={node.items} />
 {:else if node.type === 'ring'}
   <Ring value={node.value} size={node.size} />
 {:else if node.type === 'flag'}
@@ -311,18 +326,23 @@
   }
 
   /* Вкладки */
+  /* Підкреслення — тінню всередині пункту: без відʼємних відступів, тож немає вертикального переповнення й смуги прокрутки */
   .tabs {
     display: flex;
     gap: 2px;
     overflow-x: auto;
-    border-bottom: 1px solid var(--ui-border);
-    scrollbar-width: thin;
+    overflow-y: hidden;
+    box-shadow: inset 0 -1px 0 var(--ui-border);
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tabs a {
-    margin-bottom: -1px;
+    flex: none;
     padding: 10px 14px;
-    border-bottom: 2px solid transparent;
     color: var(--ui-muted);
     font-size: 14px;
     font-weight: 600;
@@ -335,7 +355,7 @@
   }
 
   .tabs a.is-active {
-    border-bottom-color: var(--ui-accent);
+    box-shadow: inset 0 -2px 0 var(--ui-accent);
     color: var(--ui-accent);
   }
 
