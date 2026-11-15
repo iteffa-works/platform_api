@@ -16,11 +16,15 @@ const locale = () => {
  * Сторінка ядра (реєстр web) або плагіна (маніфест API → схема).
  * Захищені й сторінки плагінів перевіряються лише в браузері (стан користувача — модульні store).
  */
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ params, url, parent }) => {
   const path = `/${params.slug}`;
   let page: RegisteredPage | undefined = findPage(path);
 
   if (!browser) {
+    // Вхід / реєстрація з cookie сесії: рішення — у браузері (сесія може бути дійсна → кабінет), без мерехтіння форми
+    if (page?.access === 'guest' && !(await parent()).hasSession) {
+      return { page, ready: true };
+    }
     if (page?.access === 'public') {
       await page.load?.();
       return { page, ready: true };
@@ -31,7 +35,7 @@ export const load: PageLoad = async ({ params }) => {
   if (!page) {
     // Сторінки плагінів — лише в кабінеті / адмінці; гостю — вхід, інше — 404
     if (!(await ensureAuth())) {
-      if (/^\/(app|admin)(\/|$)/.test(path)) throw redirect(302, '/login');
+      if (/^\/(app|admin)(\/|$)/.test(path)) throw redirect(302, `/login?next=${encodeURIComponent(`${url.pathname}${url.search}`)}`);
       throw error(404, 'Сторінку не знайдено');
     }
     const ref = matchRemote(await loadManifest(locale(), get(user)?.id ?? null), path);
@@ -39,7 +43,7 @@ export const load: PageLoad = async ({ params }) => {
     page = remotePage(ref);
   }
 
-  const access = await guardAccess(page);
+  const access = await guardAccess(page, url);
   if (!access.ok) throw redirect(302, access.redirect);
 
   await page.load?.();

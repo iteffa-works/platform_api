@@ -16,6 +16,8 @@ export {
   loadMe,
   logout,
   restoreSession,
+  safeNext,
+  watchSession,
   signOut,
   user,
 } from './store.js';

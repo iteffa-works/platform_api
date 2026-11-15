@@ -10,6 +10,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   const theme = event.cookies.get(THEME_COOKIE);
   const lang = event.cookies.get(LOCALE_COOKIE);
   event.locals.locale = isLocale(lang) ? lang : DEFAULT_LOCALE;
+  // Cookie сесії API (httpOnly `sid`): гостьові сторінки з нею не рендеряться на сервері
+  event.locals.hasSession = Boolean(event.cookies.get('sid'));
   const safeTheme = isTheme(theme) ? theme : DEFAULT_THEME;
 
   return resolve(event, {

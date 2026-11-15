@@ -13,6 +13,7 @@
     postAuth,
     postTwoFactor,
     resolveAuthEndpoint,
+    safeNext,
     validateAuthExtensions,
     type AuthMode,
   } from '$lib/domain/auth';
@@ -84,7 +85,7 @@
         return;
       }
       acceptUser(result.user);
-      await goto('/app');
+      await goto(safeNext($page.url.searchParams.get('next')));
     });
   }
 
@@ -93,7 +94,7 @@
     void finish(async () => {
       const result = await postTwoFactor(ticket, code);
       acceptUser(result.user);
-      await goto('/app');
+      await goto(safeNext($page.url.searchParams.get('next')));
     });
   }
 </script>

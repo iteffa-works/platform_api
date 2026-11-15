@@ -4,7 +4,8 @@ import type { TextKey } from '$lib/i18n';
 import type { GrantLevel } from '$lib/shared/types';
 import type { IconName } from '$lib/ui/elements';
 
-export type AccessLevel = 'public' | 'user';
+/** public — усім; guest — лише гостям (вхід, реєстрація: з сесією → кабінет); user — після входу */
+export type AccessLevel = 'public' | 'guest' | 'user';
 
 /** Потрібне право: [ресурс, рівень] */
 export type PagePermission = [resource: string, level: GrantLevel];

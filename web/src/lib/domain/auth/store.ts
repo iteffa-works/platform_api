@@ -1,4 +1,4 @@
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { derived, writable } from 'svelte/store';
 import { bindAccount } from '$lib/core/preferences';
 import { applyAccountTheme } from '$lib/domain/theme';
@@ -14,9 +14,55 @@ import { fetchMe, fetchSession, postLogout } from './api.js';
 export const user = writable<User | null>(null);
 export const isAuthenticated = derived(user, ($user) => Boolean($user));
 
+/* ---------- Синхронізація вкладок ---------- */
+
+/** Канал між вкладками одного браузера: вхід / вихід / зміна акаунта */
+const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('auth');
+let knownId: number | null | undefined;
+
+/** Змінився акаунт (вхід, вихід, інший користувач) — повідомити інші вкладки */
+function announce(id: number | null): void {
+  if (knownId !== undefined && knownId !== id) channel?.postMessage({ type: 'changed', id });
+  knownId = id;
+}
+
+/**
+ * Безпечна адреса повернення після входу: лише шлях цього застосунку (не `//host`, не гостьові сторінки).
+ */
+export function safeNext(next: string | null | undefined): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\') || /^\/(login|register)(\/|\?|$)/.test(next)) return '/app';
+  return next;
+}
+
+let watching = false;
+let lastCheck = 0;
+
+/**
+ * Стежити за сесією: інша вкладка увійшла / вийшла (BroadcastChannel) або вкладка повернулась у фокус
+ * (сесію могли відкликати з іншого пристрою, вийшов строк). Зміна → перезапуск load поточної сторінки:
+ * охоронець сторінки сам переведе на вхід або в кабінет.
+ */
+export function watchSession(): void {
+  if (watching || typeof window === 'undefined') return;
+  watching = true;
+
+  const recheck = async () => {
+    lastCheck = Date.now();
+    const before = knownId;
+    const current = await restoreSession();
+    if ((current?.id ?? null) !== (before ?? null)) await invalidateAll();
+  };
+
+  channel?.addEventListener('message', () => void recheck());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastCheck > 15_000) void recheck();
+  });
+}
+
 /** Застосувати акаунт: користувач + його тема, мова, пояс */
 export function acceptUser(value: User): void {
   user.set(value);
+  announce(value.id);
   bindAccount(true);
   applyAccountTheme(value.preferences.theme);
   applyAccountLocale(value.preferences.language);
@@ -25,6 +71,7 @@ export function acceptUser(value: User): void {
 
 function clearUser(): void {
   user.set(null);
+  announce(null);
   bindAccount(false);
 }
 

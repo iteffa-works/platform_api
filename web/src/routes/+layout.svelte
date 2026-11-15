@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import '$lib/ui/styles/index.css';
   import { APP_NAME, APP_ORIGIN } from '$lib/config';
-  import { registerAllAuthExtensions, restoreSession } from '$lib/domain/auth';
+  import { registerAllAuthExtensions, restoreSession, watchSession } from '$lib/domain/auth';
   import { provideI18n, type Locale } from '$lib/i18n';
   import type { Snippet } from 'svelte';
 
@@ -16,6 +16,8 @@
   // Публічні сторінки: тихо підхопити сесію (кнопки «Кабінет» замість «Увійти»)
   onMount(() => {
     void restoreSession();
+    // Вхід / вихід в інших вкладках і повернення у вкладку — одразу тут
+    watchSession();
   });
 </script>
 

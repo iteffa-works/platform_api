@@ -4,6 +4,8 @@ declare global {
   namespace App {
     interface Locals {
       locale: import('$lib/i18n').Locale;
+      /** У запиті є cookie сесії (дійсність перевіряє API) */
+      hasSession: boolean;
     }
   }
 }

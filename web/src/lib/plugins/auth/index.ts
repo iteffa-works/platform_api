@@ -9,14 +9,14 @@ export const auth: WebPlugin = {
     {
       id: 'login',
       path: '/login',
-      access: 'public',
+      access: 'guest',
       template: 'auth',
       slots: { default: [{ block: 'auth.form', props: { mode: 'login' } }] },
     },
     {
       id: 'register',
       path: '/register',
-      access: 'public',
+      access: 'guest',
       template: 'auth',
       slots: { default: [{ block: 'auth.form', props: { mode: 'register' } }] },
     },
