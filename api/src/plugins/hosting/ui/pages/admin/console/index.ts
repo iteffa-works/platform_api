@@ -1,0 +1,82 @@
+/** /admin/hosting/servers/[id] — консоль панелі сервера: розділи вкладками (`?tab=`) */
+import { ui, type UiNode, type UiPage } from '../../../../../../core/ui/index.js';
+import { HttpError } from '../../../../../../shared/http/index.js';
+import { hosting } from '../../../../module.js';
+import { action, ADMIN, badge, CONSOLE_TABS, consoleTabs, errorBanner, type ConsoleTab } from '../../../kit.js';
+import { ConsoleContext, type ConsoleSection } from './context.js';
+import { cronSection } from './cron.js';
+import { databasesSection } from './databases.js';
+import { dnsSection } from './dns.js';
+import { ftpSection } from './ftp.js';
+import { mailSection } from './mail.js';
+import { overviewSection } from './overview.js';
+import { settingsSection } from './settings.js';
+import { sitesSection } from './sites.js';
+import { sslSection } from './ssl.js';
+import { usersSection } from './users.js';
+
+const SECTIONS: Record<ConsoleTab, ConsoleSection> = {
+  overview: overviewSection,
+  users: usersSection,
+  sites: sitesSection,
+  dns: dnsSection,
+  mail: mailSection,
+  databases: databasesSection,
+  ftp: ftpSection,
+  ssl: sslSection,
+  cron: cronSection,
+  settings: settingsSection,
+};
+
+export const consolePage: UiPage = {
+  path: `${ADMIN}/servers/[id]`,
+  section: 'admin',
+  title: 'console.title',
+  permission: ['hosting', 'view'],
+  async render(ctx) {
+    const id = Number(ctx.params.id);
+    if (!Number.isInteger(id) || id <= 0) throw new HttpError(404, 'Сервер не знайдено');
+    const [server, { providers }] = await Promise.all([hosting.servers.view(id), hosting.servers.list()]);
+    const console = new ConsoleContext(ctx, server, providers);
+    const tab = (CONSOLE_TABS as readonly string[]).includes(ctx.state.tab ?? '') ? ctx.state.tab as ConsoleTab : 'overview';
+    const provider = providers.find((item) => item.id === server.provider);
+
+    const header: UiNode[] = [
+      { type: 'breadcrumbs', items: [{ label: ctx.t('nav.overview'), href: ADMIN }, { label: ctx.t('servers'), href: `${ADMIN}/servers` }, { label: server.name }] },
+      {
+        type: 'row',
+        justify: 'between',
+        align: 'center',
+        children: [
+          ui.row([
+            { type: 'status', tone: server.isActive ? 'green' : 'slate', icon: 'server' },
+            ui.stack([
+              { type: 'heading', text: server.name },
+              ui.row([
+                badge(provider?.title ?? server.provider, server.provider === 'sandbox' ? 'purple' : 'blue'),
+                badge(server.isActive ? ctx.t('on') : ctx.t('off'), server.isActive ? 'green' : 'slate'),
+                ...(server.verifyTls ? [] : [badge(ctx.t('tlsOff'), 'orange')]),
+                ui.muted(server.url),
+              ]),
+            ], 2),
+          ]),
+          ui.row(console.manage ? [
+            action(ctx.t('check'), { method: 'POST', url: `${ADMIN}/servers/${id}/check`, success: { notice: ctx.t('checkOk', { server: server.name, accounts: '{accounts}', packages: '{packages}' }), errorKey: 'error', reload: false } }),
+            action(ctx.t('diagnostics'), { method: 'GET', url: `${ADMIN}/servers/${id}/diagnostics`, success: { result: { key: 'diagnostics', format: 'json', title: ctx.t('diagnostics'), text: ctx.t('diagnosticsHint') }, reload: false } }),
+          ] : []),
+        ],
+      },
+      consoleTabs(ctx, id, tab, console.owner),
+    ];
+
+    if (!server.isActive && tab !== 'settings') {
+      return [...header, { type: 'banner', tone: 'orange', text: ctx.t('serverDisabled') }];
+    }
+    try {
+      return [...header, ...(await SECTIONS[tab](console))];
+    } catch (error) {
+      if (error instanceof HttpError && error.status !== 502) throw error;
+      return [...header, errorBanner(ctx, error)];
+    }
+  },
+};
