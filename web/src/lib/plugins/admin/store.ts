@@ -1,5 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { can, DEVELOPER_ROLE, user } from '$lib/domain/auth';
+import type { Translate } from '$lib/i18n';
 import type { AdminUser, Permissions, Role } from '$lib/shared/types';
 import { createRunner } from '$lib/shared/utils';
 import * as adminApi from './api.js';
@@ -72,10 +73,10 @@ export function saveRolePermissions(id: number, permissions: Permissions): Promi
   });
 }
 
-export function removeRole(role: Role): Promise<void> {
+export function removeRole(role: Role, t: Translate): Promise<void> {
   const fallback = get(adminRoles).find((item) => item.slug === FALLBACK_ROLE);
-  const note = role.users && fallback ? ` Її користувачі (${role.users}) перейдуть у роль «${fallback.name}».` : '';
-  if (!fallback || !confirm(`Видалити роль «${role.name}»?${note}`)) return Promise.resolve();
+  const note = role.users && fallback ? ` ${t('roles.deleteMoves', { count: role.users, role: fallback.name })}` : '';
+  if (!fallback || !confirm(`${t('roles.deleteConfirm', { role: role.name })}${note}`)) return Promise.resolve();
   return run(async () => {
     await adminApi.deleteRole(role.id, fallback.id);
     await fetchRoles();

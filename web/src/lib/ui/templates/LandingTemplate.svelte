@@ -2,15 +2,18 @@
   /** Шаблон публічного лендингу: шапка, секції, футер */
   import type { Snippet } from 'svelte';
   import { APP_NAME } from '$lib/config';
-  import { ThemeToggle } from '$lib/ui/components';
+  import { useI18n } from '$lib/i18n';
+  import { LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Brand } from '$lib/ui/elements';
 
   let { actions, children }: { actions?: Snippet; children: Snippet } = $props();
 
+  const { t } = useI18n();
+
   const nav = [
-    { href: '#features', label: 'Можливості' },
-    { href: '#how', label: 'Як це працює' },
-    { href: '#api', label: 'API' },
+    { href: '#features', label: 'landing.nav.features' },
+    { href: '#how', label: 'landing.nav.how' },
+    { href: '#api', label: 'landing.nav.api' },
   ] as const;
 
   const year = new Date().getFullYear();
@@ -20,12 +23,13 @@
   <header class="site__header">
     <div class="ui-container site__bar">
       <Brand image />
-      <nav class="site__nav" aria-label="Розділи">
+      <nav class="site__nav" aria-label={$t('landing.nav.label')}>
         {#each nav as item (item.href)}
-          <a href={item.href}>{item.label}</a>
+          <a href={item.href}>{$t(item.label)}</a>
         {/each}
       </nav>
       <div class="site__actions">
+        <LanguageSwitcher />
         <ThemeToggle />
         {#if actions}{@render actions()}{/if}
       </div>
@@ -37,11 +41,11 @@
   <footer class="site__footer">
     <div class="ui-container site__footer-row">
       <span>© {year} {APP_NAME}</span>
-      <nav class="site__footer-nav" aria-label="Футер">
+      <nav class="site__footer-nav" aria-label={$t('landing.nav.footer')}>
         {#each nav as item (item.href)}
-          <a href={item.href}>{item.label}</a>
+          <a href={item.href}>{$t(item.label)}</a>
         {/each}
-        <a href="/login">Вхід</a>
+        <a href="/login">{$t('auth.signIn')}</a>
       </nav>
     </div>
   </footer>

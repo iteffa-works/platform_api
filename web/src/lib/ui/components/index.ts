@@ -4,6 +4,7 @@ export { default as Dropdown } from './Dropdown.svelte';
 export { default as EmptyState } from './EmptyState.svelte';
 export { default as ErrorText } from './ErrorText.svelte';
 export { default as Field } from './Field.svelte';
+export { default as LanguageSwitcher } from './LanguageSwitcher.svelte';
 export { default as LinkCard } from './LinkCard.svelte';
 export { default as Panel } from './Panel.svelte';
 export { default as PasswordField } from './PasswordField.svelte';

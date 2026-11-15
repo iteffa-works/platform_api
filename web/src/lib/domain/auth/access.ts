@@ -2,13 +2,13 @@ import type { GrantLevel, User } from '$lib/shared/types';
 
 const LEVELS = ['none', 'view', 'edit', 'manage'] as const;
 
-/** Підписи рівнів для UI */
-export const LEVEL_LABELS: Record<GrantLevel | 'none', string> = {
-  none: 'Немає',
-  view: 'Перегляд',
-  edit: 'Редагування',
-  manage: 'Керування',
-};
+/** Ключі перекладів рівнів (`$t(LEVEL_KEYS[level])`) */
+export const LEVEL_KEYS = {
+  none: 'level.none',
+  view: 'level.view',
+  edit: 'level.edit',
+  manage: 'level.manage',
+} as const satisfies Record<GrantLevel | 'none', string>;
 
 /** Розробник: роль з усіма правами */
 export const DEVELOPER_ROLE = 'developer';

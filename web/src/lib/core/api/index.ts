@@ -1,1 +1,1 @@
-export { api } from './client';
+export { api, setApiLanguage } from './client';

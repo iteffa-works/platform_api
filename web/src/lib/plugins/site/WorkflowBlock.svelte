@@ -1,31 +1,34 @@
 <script lang="ts">
   /** Як це працює: три кроки + приклад виклику Client API */
   import { APP_ORIGIN } from '$lib/config';
+  import { useI18n } from '$lib/i18n';
   import { SectionHeading } from '$lib/ui/components';
 
+  const { t } = useI18n();
+
   const steps = [
-    { title: 'Створіть акаунт', text: 'Реєстрація за email — перший користувач отримує роль адміністратора.' },
-    { title: 'Підключіть сервіси', text: 'Увімкніть потрібні модулі в кабінеті та запросіть команду.' },
-    { title: 'Автоматизуйте', text: 'Скрипти, desktop-клієнт і SDK працюють через Client API з ключем.' },
+    { title: 'landing.how.step1.title', text: 'landing.how.step1.text' },
+    { title: 'landing.how.step2.title', text: 'landing.how.step2.text' },
+    { title: 'landing.how.step3.title', text: 'landing.how.step3.text' },
   ] as const;
 
   const contours = [
-    { path: '/api/v1', text: 'Platform API — вебкабінет, JWT' },
-    { path: '/api/client/v1', text: 'Client API — скрипти й desktop, ключ + rate limit' },
+    { path: '/api/v1', text: 'landing.api.platform' },
+    { path: '/api/client/v1', text: 'landing.api.client' },
   ] as const;
 </script>
 
 <section class="flow" id="how">
   <div class="ui-container flow__grid">
     <div class="flow__steps">
-      <SectionHeading eyebrow="Як це працює" title="Від реєстрації до автоматизації" align="start" />
+      <SectionHeading eyebrow={$t('landing.nav.how')} title={$t('landing.how.title')} align="start" />
       <ol>
         {#each steps as step, index (step.title)}
           <li>
             <span class="flow__num">{index + 1}</span>
             <div>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
+              <h3>{$t(step.title)}</h3>
+              <p>{$t(step.text)}</p>
             </div>
           </li>
         {/each}
@@ -34,7 +37,7 @@
 
     <div class="flow__api" id="api">
       <div class="code">
-        <div class="code__head">Client API · отримати задачу</div>
+        <div class="code__head">{$t('landing.api.codeTitle')}</div>
         <pre><code><span class="c">$</span> curl {APP_ORIGIN}/api/client/v1/work/next \
     -H <span class="s">"Authorization: Bearer $CLIENT_API_KEY"</span>
 
@@ -42,7 +45,7 @@
       </div>
       <ul class="flow__contours">
         {#each contours as contour (contour.path)}
-          <li><code>{contour.path}</code><span>{contour.text}</span></li>
+          <li><code>{contour.path}</code><span>{$t(contour.text)}</span></li>
         {/each}
       </ul>
     </div>

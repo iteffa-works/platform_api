@@ -1,20 +1,23 @@
 <script lang="ts">
-  /** Акаунт: профіль (імʼя), зміна пароля, видалення акаунта */
+  /** Акаунт: аватар, імʼя, зміна пароля, видалення акаунта */
   import { goto } from '$app/navigation';
   import { displayName, loadMe, logout, user } from '$lib/domain/auth';
+  import { roleName, useI18n } from '$lib/i18n';
   import { errorMessage } from '$lib/shared/utils';
   import { ErrorText, Field, Panel, PasswordField } from '$lib/ui/components';
-  import { Avatar, Button, Text } from '$lib/ui/elements';
+  import { Avatar, Button, Icon, Text } from '$lib/ui/elements';
   import * as cabinetApi from './api.js';
   import { loadProfile, profile } from './store.js';
 
-  /** Стан окремої форми: busy / помилка / підтвердження */
-  function formState() {
-    return { busy: false, error: '', notice: '' };
-  }
+  const { t, tx } = useI18n();
+
+  type FormState = { busy: boolean; error: string; notice: string };
+  const formState = (): FormState => ({ busy: false, error: '', notice: '' });
 
   let name = $state($user?.name ?? '');
   let profileForm = $state(formState());
+  let avatarForm = $state(formState());
+  let fileInput: HTMLInputElement;
 
   let currentPassword = $state('');
   let newPassword = $state('');
@@ -26,7 +29,7 @@
 
   const isDeveloper = $derived(Boolean($user?.permissions['*']));
 
-  async function submit(form: { busy: boolean; error: string; notice: string }, action: () => Promise<string>) {
+  async function submit(form: FormState, action: () => Promise<string>) {
     form.busy = true;
     form.error = '';
     form.notice = '';
@@ -44,28 +47,49 @@
     void submit(profileForm, async () => {
       await cabinetApi.updateAccount(name);
       await Promise.all([loadMe(), loadProfile()]);
-      return 'Профіль збережено';
+      return $t('account.saved');
+    });
+  }
+
+  function pickAvatar(event: Event) {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+    void submit(avatarForm, async () => {
+      await cabinetApi.uploadAvatar(file);
+      await loadMe();
+      fileInput.value = '';
+      return '';
+    });
+  }
+
+  function dropAvatar() {
+    void submit(avatarForm, async () => {
+      await cabinetApi.removeAvatar();
+      await loadMe();
+      return '';
     });
   }
 
   function savePassword(event: Event) {
     event.preventDefault();
     void submit(passwordForm, async () => {
-      if (newPassword !== repeatPassword) throw new Error('Нові паролі не збігаються');
-      await cabinetApi.changePassword(currentPassword, newPassword);
+      if (newPassword !== repeatPassword) throw new Error($t('account.passwordMismatch'));
+      const result = await cabinetApi.changePassword(currentPassword, newPassword);
       currentPassword = '';
       newPassword = '';
       repeatPassword = '';
-      return 'Пароль змінено';
+      return result.revokedSessions
+        ? $t('account.passwordChangedSessions', { count: result.revokedSessions })
+        : $t('account.passwordChanged');
     });
   }
 
   function removeAccount(event: Event) {
     event.preventDefault();
-    if (!confirm('Видалити акаунт назавжди? Дію не можна скасувати.')) return;
+    if (!confirm($t('account.deleteConfirm'))) return;
     void submit(deleteForm, async () => {
       await cabinetApi.deleteAccount(deletePassword);
-      logout();
+      await logout();
       await goto('/');
       return '';
     });
@@ -73,46 +97,58 @@
 </script>
 
 <div class="columns">
-  <Panel title="Профіль">
+  <Panel title={$t('account.profile')}>
     <form class="form" onsubmit={saveProfile}>
       <div class="me">
-        <Avatar seed={$user?.email ?? ''} size={56} />
-        <div>
+        <Avatar seed={$user?.email ?? ''} src={$user?.avatarUrl} size={64} />
+        <div class="me__info">
           <strong>{displayName($user)}</strong>
-          <Text tone="muted">{$profile?.user.role.name}</Text>
+          <Text tone="muted">{roleName($tx, $profile?.user.role)}</Text>
+          <div class="me__actions">
+            <input bind:this={fileInput} type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden onchange={pickAvatar} />
+            <Button variant="ghost" disabled={avatarForm.busy} onclick={() => fileInput.click()}>
+              <Icon name="upload" />{$t('account.avatarUpload')}
+            </Button>
+            {#if $user?.avatarUrl}
+              <Button variant="ghost" disabled={avatarForm.busy} onclick={dropAvatar}>{$t('account.avatarRemove')}</Button>
+            {/if}
+          </div>
+          <p class="hint">{$t('account.avatarHint')}</p>
+          <ErrorText message={avatarForm.error} />
         </div>
       </div>
       <div class="pair">
-        <Field label="Імʼя" bind:value={name} autocomplete="name" />
-        <Field label="Email" value={$user?.email ?? ''} type="email" disabled />
+        <Field label={$t('account.name')} bind:value={name} autocomplete="name" />
+        <Field label={$t('auth.email')} value={$user?.email ?? ''} type="email" disabled />
       </div>
-      <p class="hint">Зміна email зʼявиться разом із підтвердженням пошти.</p>
+      <p class="hint">{$t('account.emailHint')}</p>
       <ErrorText message={profileForm.error} />
       {#if profileForm.notice}<p class="notice">{profileForm.notice}</p>{/if}
-      <div class="actions"><Button type="submit" disabled={profileForm.busy}>Зберегти</Button></div>
+      <div class="actions"><Button type="submit" disabled={profileForm.busy}>{$t('common.save')}</Button></div>
     </form>
   </Panel>
 
-  <Panel title="Зміна пароля">
+  <Panel title={$t('account.changePassword')}>
     <form class="form" onsubmit={savePassword}>
-      <PasswordField label="Поточний пароль" bind:value={currentPassword} autocomplete="current-password" required />
-      <PasswordField label="Новий пароль" bind:value={newPassword} autocomplete="new-password" required />
-      <PasswordField label="Повторіть новий пароль" bind:value={repeatPassword} autocomplete="new-password" required />
+      <PasswordField label={$t('account.currentPassword')} bind:value={currentPassword} autocomplete="current-password" required />
+      <PasswordField label={$t('account.newPassword')} bind:value={newPassword} autocomplete="new-password" required />
+      <PasswordField label={$t('account.repeatPassword')} bind:value={repeatPassword} autocomplete="new-password" required />
+      <p class="hint">{$t('account.passwordHint')}</p>
       <ErrorText message={passwordForm.error} />
       {#if passwordForm.notice}<p class="notice">{passwordForm.notice}</p>{/if}
-      <div class="actions"><Button type="submit" disabled={passwordForm.busy}>Оновити</Button></div>
+      <div class="actions"><Button type="submit" disabled={passwordForm.busy}>{$t('common.update')}</Button></div>
     </form>
   </Panel>
 </div>
 
-<Panel title="Видалення акаунта">
+<Panel title={$t('account.delete')}>
   {#if isDeveloper}
-    <Text tone="muted">Акаунт розробника не видаляється. Спершу передайте роль розробника іншому користувачу.</Text>
+    <Text tone="muted">{$t('account.deleteDeveloper')}</Text>
   {:else}
-    <Text tone="muted">Після видалення акаунта всі ваші дані буде стерто. Дію не можна скасувати.</Text>
+    <Text tone="muted">{$t('account.deleteText')}</Text>
     <form class="danger" onsubmit={removeAccount}>
-      <PasswordField label="Поточний пароль" bind:value={deletePassword} autocomplete="current-password" required />
-      <Button type="submit" variant="danger" disabled={deleteForm.busy}>Видалити</Button>
+      <PasswordField label={$t('account.currentPassword')} bind:value={deletePassword} autocomplete="current-password" required />
+      <Button type="submit" variant="danger" disabled={deleteForm.busy}>{$t('common.delete')}</Button>
     </form>
     <ErrorText message={deleteForm.error} />
   {/if}
@@ -133,12 +169,23 @@
 
   .me {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    align-items: flex-start;
+    gap: 16px;
   }
 
-  .me strong {
+  .me__info {
+    display: grid;
+    gap: 6px;
+  }
+
+  .me__info strong {
     font-size: 1.05rem;
+  }
+
+  .me__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .pair {
@@ -148,7 +195,7 @@
   }
 
   .hint {
-    margin: -4px 0 0;
+    margin: 0;
     color: var(--ui-muted);
     font-size: 12px;
   }

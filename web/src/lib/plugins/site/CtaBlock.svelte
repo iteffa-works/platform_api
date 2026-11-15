@@ -1,13 +1,16 @@
 <script lang="ts">
   /** Фінальний заклик до дії */
+  import { useI18n } from '$lib/i18n';
   import HomeActionsBlock from './HomeActionsBlock.svelte';
+
+  const { t } = useI18n();
 </script>
 
 <section class="cta">
   <div class="ui-container cta__box">
     <div>
-      <h2>Почніть з одного сервісу</h2>
-      <p>Створіть акаунт, а решту модулів підключайте, коли знадобляться.</p>
+      <h2>{$t('landing.cta.title')}</h2>
+      <p>{$t('landing.cta.text')}</p>
     </div>
     <div class="cta__actions"><HomeActionsBlock size="lg" /></div>
   </div>

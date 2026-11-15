@@ -1,2 +1,2 @@
 export { requireClient } from './require-client.js';
-export { requireUser, userIdOf } from './require-user.js';
+export { sessionIdOf, userIdOf } from './request-user.js';

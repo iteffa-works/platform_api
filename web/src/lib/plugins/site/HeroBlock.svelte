@@ -1,8 +1,11 @@
 <script lang="ts">
   /** Hero лендингу: оффер, CTA і превʼю кабінету */
+  import { useI18n } from '$lib/i18n';
   import HomeActionsBlock from './HomeActionsBlock.svelte';
 
-  const points = ['Єдиний вхід і ролі', 'REST API для автоматизації', 'Desktop-клієнт і SDK'] as const;
+  const { t } = useI18n();
+
+  const points = ['landing.hero.point1', 'landing.hero.point2', 'landing.hero.point3'] as const;
 
   const services = [
     { name: 'Identity', state: 'ok' },
@@ -18,16 +21,13 @@
 <section class="hero">
   <div class="ui-container hero__grid">
     <div class="hero__copy">
-      <p class="hero__badge"><span></span>Хмарна платформа для команд</p>
-      <h1 class="hero__title">Уся інфраструктура команди — <em>в одному кабінеті</em></h1>
-      <p class="hero__lead">
-        Доступи, секрети, сховище, пайплайни й моніторинг під одним акаунтом.
-        Керуйте з вебкабінету, автоматизуйте через API.
-      </p>
+      <p class="hero__badge"><span></span>{$t('landing.hero.badge')}</p>
+      <h1 class="hero__title">{$t('landing.hero.title')} <em>{$t('landing.hero.titleAccent')}</em></h1>
+      <p class="hero__lead">{$t('landing.hero.lead')}</p>
       <div class="hero__actions"><HomeActionsBlock size="lg" /></div>
       <ul class="hero__points">
         {#each points as point (point)}
-          <li>{point}</li>
+          <li>{$t(point)}</li>
         {/each}
       </ul>
     </div>
@@ -43,8 +43,8 @@
           </aside>
           <div class="preview__main">
             <div class="preview__stats">
-              <div><small>Сервіси</small><b>5</b></div>
-              <div><small>Запити / хв</small><b>1.2k</b></div>
+              <div><small>{$t('landing.preview.services')}</small><b>5</b></div>
+              <div><small>{$t('landing.preview.requests')}</small><b>1.2k</b></div>
               <div><small>Uptime</small><b>99.9%</b></div>
             </div>
             <div class="preview__chart">

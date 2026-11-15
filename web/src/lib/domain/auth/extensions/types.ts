@@ -21,7 +21,7 @@ export type AuthClientExtension = {
   modes?: AuthMode[];
   fields?: () => AuthExtensionField[];
   slots?: () => AuthExtensionSlot[];
+  /** Ключ перекладу помилки або undefined */
   validate?: () => string | void;
-  submitLabel?: (mode: AuthMode) => string | undefined;
   endpoint?: (mode: AuthMode) => string | undefined;
 };

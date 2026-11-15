@@ -43,3 +43,34 @@ export function updateRole(id: number, patch: Partial<RoleInput>) {
 export function deleteRole(id: number, reassignTo: number) {
   return api(`/admin/roles/${id}`, { method: 'DELETE', body: { reassignTo } });
 }
+
+/* ---------- Журнал і білінг ---------- */
+
+export type { ActivityEntry, BalanceTransaction, Plan } from '../cabinet/api.js';
+import type { ActivityEntry, BalanceTransaction, Plan } from '../cabinet/api.js';
+
+export function fetchActivity(userId?: number) {
+  return api<{ entries: ActivityEntry[] }>(`/admin/activity${userId ? `?userId=${userId}` : ''}`);
+}
+
+export function fetchBillingAdmin() {
+  return api<{ currency: string; plans: Plan[]; transactions: BalanceTransaction[] }>('/admin/billing');
+}
+
+export function adjustBalance(email: string, amount: string, note: string) {
+  return api('/admin/billing/adjust', { method: 'POST', body: { email, amount, note } });
+}
+
+export type PlanInput = { slug?: string; name?: string; description?: string; price?: string; isActive?: boolean; sortOrder?: number };
+
+export function createPlan(input: PlanInput) {
+  return api<{ plan: Plan }>('/admin/billing/plans', { method: 'POST', body: input });
+}
+
+export function updatePlan(id: number, input: PlanInput) {
+  return api<{ plan: Plan }>(`/admin/billing/plans/${id}`, { method: 'PATCH', body: input });
+}
+
+export function deletePlan(id: number) {
+  return api(`/admin/billing/plans/${id}`, { method: 'DELETE' });
+}

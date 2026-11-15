@@ -24,7 +24,7 @@ async function createMigrator() {
       const load = () => import(pathToFileURL(file).href) as Promise<MigrationModule>;
       return {
         // Імʼя без розширення: однакове для .ts (dev) і .js (dist)
-        name: path.basename(file).replace(/\.[jt]s$/, ''),
+        name: path.basename(file).replace(/(\.draft)?\.[jt]s$/, ''),
         up: async ({ context }) => (await load()).up(context),
         down: async ({ context }) => {
           const mod = await load();

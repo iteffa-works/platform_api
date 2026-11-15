@@ -8,6 +8,12 @@ import {
 import { sequelize } from '../../../core/db/sequelize.js';
 
 export const THEMES = ['light', 'dark'] as const;
+export const LANGUAGES = ['uk', 'en', 'ru'] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+export function isLanguage(value: unknown): value is Language {
+  return LANGUAGES.includes(value as Language);
+}
 export type Theme = (typeof THEMES)[number];
 
 export function isTheme(value: unknown): value is Theme {
@@ -25,7 +31,7 @@ export function isTimeZone(value: unknown): value is string {
   }
 }
 
-/** Налаштування акаунта (тема інтерфейсу; далі — мова, сповіщення тощо) */
+/** Налаштування акаунта: тема, пояс, мова, антифішинговий код */
 export class UserPreference extends Model<
   InferAttributes<UserPreference>,
   InferCreationAttributes<UserPreference>
@@ -33,6 +39,9 @@ export class UserPreference extends Model<
   declare userId: number;
   declare theme: CreationOptional<Theme | null>;
   declare timezone: CreationOptional<string | null>;
+  declare language: CreationOptional<Language | null>;
+  /** Фраза, яку бачитиме користувач у листах від платформи */
+  declare antiPhishingCode: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -41,6 +50,8 @@ UserPreference.init({
   userId: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true },
   theme: { type: DataTypes.STRING(8), allowNull: true },
   timezone: { type: DataTypes.STRING(64), allowNull: true },
+  language: { type: DataTypes.STRING(5), allowNull: true },
+  antiPhishingCode: { type: DataTypes.STRING(32), allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, { sequelize, tableName: 'user_preferences' });

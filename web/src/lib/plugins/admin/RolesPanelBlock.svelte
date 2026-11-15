@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Ролі: матриця «ресурс × рівень», створення й видалення — без змін у коді */
-  import { can, DEVELOPER_ROLE, LEVEL_LABELS, user } from '$lib/domain/auth';
+  import { can, DEVELOPER_ROLE, LEVEL_KEYS, user } from '$lib/domain/auth';
+  import { roleName, useI18n } from '$lib/i18n';
   import type { GrantLevel, Permissions, Role } from '$lib/shared/types';
   import { DataTable, Field, Panel } from '$lib/ui/components';
   import { Badge, Button, Text } from '$lib/ui/elements';
@@ -15,6 +16,7 @@
   } from './store.js';
 
   const canManage = $derived(can($user, 'roles', 'manage'));
+  const { t, tx } = useI18n();
 
   /** Чернетки прав: roleId → права; скидаються після кожного завантаження ролей */
   let drafts = $state<Record<number, Permissions>>({});
@@ -50,14 +52,14 @@
   }
 </script>
 
-<Panel title="Ролі · {$adminRoles.length}" flush>
+<Panel title="{$t('nav.roles')} · {$adminRoles.length}" flush>
   <DataTable>
     {#snippet head()}
       <tr>
-        <th>Роль</th>
-        <th>Корист.</th>
+        <th>{$t('overview.role')}</th>
+        <th>{$t('roles.usersShort')}</th>
         {#each $adminResources as resource (resource.key)}
-          <th>{resource.label}</th>
+          <th>{$tx(`resource.${resource.key}`, resource.label)}</th>
         {/each}
         <th></th>
       </tr>
@@ -66,27 +68,27 @@
       {#each $adminRoles as role (role.id)}
         <tr>
           <td>
-            <strong>{role.name}</strong>
-            <small class="roles__slug">{role.slug}{role.isSystem ? ' · системна' : ''}</small>
+            <strong>{roleName($tx, role)}</strong>
+            <small class="roles__slug">{role.slug}{role.isSystem ? ` · ${$t('roles.system')}` : ''}</small>
           </td>
           <td>{role.users}</td>
           {#each $adminResources as resource (resource.key)}
             <td>
               {#if role.slug === DEVELOPER_ROLE}
-                <Badge tone="green">Усі</Badge>
+                <Badge tone="green">{$t('roles.all')}</Badge>
               {:else if locked(role)}
-                {LEVEL_LABELS[role.permissions[resource.key] ?? 'none']}
+                {$t(LEVEL_KEYS[role.permissions[resource.key] ?? 'none'])}
               {:else}
                 <select
                   class="roles__select"
                   value={drafts[role.id]?.[resource.key] ?? 'none'}
                   disabled={$adminBusy}
-                  aria-label="{role.name}: {resource.label}"
+                  aria-label="{role.name}: {$tx(`resource.${resource.key}`, resource.label)}"
                   onchange={(event) => setLevel(role, resource.key, event.currentTarget.value)}
                 >
-                  <option value="none">{LEVEL_LABELS.none}</option>
+                  <option value="none">{$t(LEVEL_KEYS.none)}</option>
                   {#each resource.levels as level (level)}
-                    <option value={level}>{LEVEL_LABELS[level]}</option>
+                    <option value={level}>{$t(LEVEL_KEYS[level])}</option>
                   {/each}
                 </select>
               {/if}
@@ -99,9 +101,9 @@
                   variant="ghost"
                   disabled={$adminBusy || !isDirty(role)}
                   onclick={() => saveRolePermissions(role.id, drafts[role.id])}
-                >Зберегти</Button>
+                >{$t('common.save')}</Button>
                 {#if !role.isSystem}
-                  <Button variant="ghost" disabled={$adminBusy} onclick={() => removeRole(role)}>Видалити</Button>
+                  <Button variant="ghost" disabled={$adminBusy} onclick={() => removeRole(role, $t)}>{$t('common.delete')}</Button>
                 {/if}
               </Row>
             {/if}
@@ -113,13 +115,13 @@
 </Panel>
 
 {#if canManage}
-  <Panel title="Нова роль">
+  <Panel title={$t('roles.new')}>
     <form class="roles__new" onsubmit={submitNew}>
-      <Field label="Назва" bind:value={newName} required grow />
-      <Field label="Ключ (латиницею, напр. support)" bind:value={newSlug} required grow />
-      <Button type="submit" disabled={$adminBusy}>Створити</Button>
+      <Field label={$t('roles.name')} bind:value={newName} required grow />
+      <Field label={$t('roles.slug')} bind:value={newSlug} required grow />
+      <Button type="submit" disabled={$adminBusy}>{$t('common.create')}</Button>
     </form>
-    <Text tone="muted">Права нової ролі налаштовуються в таблиці вище.</Text>
+    <Text tone="muted">{$t('roles.newHint')}</Text>
   </Panel>
 {/if}
 

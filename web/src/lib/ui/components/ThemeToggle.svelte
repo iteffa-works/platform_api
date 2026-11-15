@@ -4,9 +4,12 @@
    * Іконку обирає CSS за <html data-theme> — правильна одразу після SSR.
    */
   import { toggleTheme } from '$lib/domain/theme';
+  import { useI18n } from '$lib/i18n';
+
+  const { t } = useI18n();
 </script>
 
-<button class="ui-theme" type="button" onclick={toggleTheme} title="Змінити тему" aria-label="Змінити тему">
+<button class="ui-theme" type="button" onclick={toggleTheme} title={$t('theme.toggle')} aria-label={$t('theme.toggle')}>
   <svg class="ui-theme__moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
     <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
   </svg>

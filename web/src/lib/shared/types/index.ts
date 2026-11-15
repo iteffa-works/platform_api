@@ -15,6 +15,9 @@ export type Preferences = {
   theme: 'light' | 'dark' | null;
   /** IANA-пояс показу дат; null — пояс браузера */
   timezone: string | null;
+  language: 'uk' | 'en' | 'ru' | null;
+  /** Фраза в листах від платформи */
+  antiPhishingCode: string | null;
 };
 
 /** Поточний користувач платформи */
@@ -22,8 +25,12 @@ export type User = {
   id: number;
   email: string;
   name: string | null;
+  avatarUrl: string | null;
   role: RoleRef;
   permissions: Permissions;
+  /** Чи увімкнено 2FA */
+  twoFactor: boolean;
+  referralCode: string;
   preferences: Preferences;
 };
 
@@ -31,6 +38,8 @@ export type User = {
 export type AdminUser = {
   id: number;
   email: string;
+  name: string | null;
+  avatarUrl: string | null;
   role: RoleRef;
   createdAt: string;
 };

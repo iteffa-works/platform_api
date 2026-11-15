@@ -14,6 +14,5 @@ export {
   collectAuthExtensionFields,
   listAuthExtensionSlots,
   resolveAuthEndpoint,
-  resolveAuthSubmitLabel,
   validateAuthExtensions,
 } from './registry.js';

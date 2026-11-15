@@ -1,16 +1,17 @@
 <script lang="ts">
   /** Пароль з показом/приховуванням */
+  import { useI18n } from '$lib/i18n';
   import { Input, Label } from '$lib/ui/elements';
 
   let {
-    label = 'Пароль',
+    label,
     value = $bindable(''),
     autocomplete = 'current-password',
     required = false,
     minlength = 8,
     disabled = false,
   }: {
-    label?: string;
+    label: string;
     value?: string;
     autocomplete?: AutoFill;
     required?: boolean;
@@ -19,6 +20,7 @@
   } = $props();
 
   let visible = $state(false);
+  const { t } = useI18n();
 </script>
 
 <Label>
@@ -28,7 +30,7 @@
     <button
       class="ui-password__toggle"
       type="button"
-      aria-label={visible ? 'Сховати пароль' : 'Показати пароль'}
+      aria-label={visible ? $t('password.hide') : $t('password.show')}
       onclick={() => (visible = !visible)}
     >
       {#if visible}

@@ -8,7 +8,10 @@
     setCaptchaEnabled,
     setCaptchaToken,
   } from '$lib/domain/auth/extensions/captcha';
+  import { useI18n } from '$lib/i18n';
   import { errorMessage } from '$lib/shared/utils';
+
+  const { t } = useI18n();
 
   let enabled = $state(true);
   let image = $state('');
@@ -27,7 +30,7 @@
       setCaptchaEnabled(data.enabled);
       setCaptchaToken(data.captchaToken);
     } catch (err) {
-      loadError = errorMessage(err, 'Не вдалося завантажити капчу');
+      loadError = errorMessage(err);
       setCaptchaToken('');
     } finally {
       loading = false;
@@ -48,7 +51,7 @@
 
 {#if enabled}
   <div class="captcha">
-    <label class="captcha__label" for="auth-captcha-answer">Код з зображення</label>
+    <label class="captcha__label" for="auth-captcha-answer">{$t('captcha.label')}</label>
 
     <div class="captcha__box">
       <div class="captcha__preview" class:is-loading={loading}>
@@ -61,8 +64,8 @@
       <button
         class="captcha__refresh"
         type="button"
-        aria-label="Оновити код"
-        title="Оновити"
+        aria-label={$t('captcha.refresh')}
+        title={$t('captcha.refresh')}
         disabled={loading}
         onclick={() => void loadChallenge()}
       >
@@ -80,7 +83,7 @@
       autocomplete="off"
       spellcheck="false"
       maxlength={8}
-      placeholder="Введіть код"
+      placeholder={$t('captcha.placeholder')}
       bind:value={answer}
       disabled={loading}
       required

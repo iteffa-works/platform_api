@@ -1,13 +1,22 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { onMount } from 'svelte';
   import '$lib/ui/styles/index.css';
   import { APP_NAME, APP_ORIGIN } from '$lib/config';
-  import { registerAllAuthExtensions } from '$lib/domain/auth';
+  import { registerAllAuthExtensions, restoreSession } from '$lib/domain/auth';
+  import { provideI18n, type Locale } from '$lib/i18n';
   import type { Snippet } from 'svelte';
 
+  let { data, children }: { data: { locale: Locale }; children: Snippet } = $props();
+
+  // svelte-ignore state_referenced_locally — мова з SSR потрібна лише на старті; далі її змінює setLocale
+  provideI18n(data.locale);
   registerAllAuthExtensions();
 
-  let { children }: { children: Snippet } = $props();
+  // Публічні сторінки: тихо підхопити сесію (кнопки «Кабінет» замість «Увійти»)
+  onMount(() => {
+    void restoreSession();
+  });
 </script>
 
 <svelte:head>

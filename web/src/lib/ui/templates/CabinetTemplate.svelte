@@ -1,39 +1,46 @@
 <script lang="ts">
   /**
-   * Кабінет: шапка-картка (логотип · розділи · інструменти · сервіси · меню користувача),
+   * Кабінет: шапка-картка (логотип · розділи · інструменти · блоки плагіна · сервіси · меню акаунта),
    * другий ряд вкладок для сторінок акаунта, футер.
    */
   import type { Snippet } from 'svelte';
   import { APP_NAME } from '$lib/config';
   import { displayName, signOut, user } from '$lib/domain/auth';
-  import { Dropdown, ThemeToggle } from '$lib/ui/components';
+  import { useI18n, type MessageKey } from '$lib/i18n';
+  import { Dropdown, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
   import { Stack } from '$lib/ui/patterns';
 
-  type Item = { href: string; label: string; icon?: IconName; group?: string };
+  type Item = { href: string; label: MessageKey; icon?: IconName; group?: MessageKey };
 
   let {
-    title = '',
+    title,
     nav = [],
     current,
     adminHref = null,
+    tools,
     children,
   }: {
-    title?: string;
+    title?: MessageKey;
     nav?: Item[];
     current: string;
     adminHref?: string | null;
+    /** Блоки плагіна в шапці (баланс, сповіщення) */
+    tools?: Snippet;
     children: Snippet;
   } = $props();
 
-  /** Пункти з group: 'account' — вкладки другого ряду */
-  const mainNav = $derived(nav.filter((item) => item.group !== 'account'));
-  const accountNav = $derived(nav.filter((item) => item.group === 'account'));
+  const { t } = useI18n();
+
+  /** Пункти групи `nav.group.account` — вкладки другого ряду й меню акаунта */
+  const ACCOUNT = 'nav.group.account';
+  const mainNav = $derived(nav.filter((item) => item.group !== ACCOUNT));
+  const accountNav = $derived(nav.filter((item) => item.group === ACCOUNT));
   const inAccount = $derived(accountNav.some((item) => item.href === current));
 
   const services = $derived([
-    { href: '/app', label: 'Кабінет', icon: 'dashboard' as const, tone: 'purple' },
-    ...(adminHref ? [{ href: adminHref, label: 'Адмінка', icon: 'shield' as const, tone: 'blue' }] : []),
+    { href: '/app', label: 'nav.cabinet' as const, icon: 'dashboard' as const, tone: 'purple' },
+    ...(adminHref ? [{ href: adminHref, label: 'nav.admin' as const, icon: 'shield' as const, tone: 'blue' }] : []),
   ]);
 
   const year = new Date().getFullYear();
@@ -44,53 +51,57 @@
     <div class="cab__row">
       <Brand href="/app" image />
       <span class="cab__divider" aria-hidden="true"></span>
-      <nav class="cab__nav" aria-label="Кабінет">
+      <nav class="cab__nav" aria-label={$t('nav.cabinet')}>
         {#each mainNav as item (item.href)}
-          <a class="cab__tab" class:is-active={item.href === current} href={item.href}>{item.label}</a>
+          <a class="cab__tab" class:is-active={item.href === current} href={item.href}>{$t(item.label)}</a>
         {/each}
       </nav>
 
       <div class="cab__right">
-        <div class="cab__tools"><ThemeToggle /></div>
+        <div class="cab__tools">
+          <ThemeToggle />
+          <LanguageSwitcher />
+          {#if tools}{@render tools()}{/if}
+        </div>
 
-        <Dropdown label="Сервіси" width={280}>
+        <Dropdown label={$t('nav.services')} width={280}>
           {#snippet trigger()}<Icon name="apps" size={18} />{/snippet}
-          <p class="menu__title">Сервіси</p>
+          <p class="menu__title">{$t('nav.services')}</p>
           <div class="services">
             {#each services as service (service.href)}
               <a class="services__item" href={service.href} style:--tone="var(--ui-tone-{service.tone})">
                 <span class="services__icon"><Icon name={service.icon} size={20} /></span>
-                {service.label}
+                {$t(service.label)}
               </a>
             {/each}
           </div>
         </Dropdown>
 
-        <Dropdown label="Меню акаунта" width={260}>
+        <Dropdown label={$t('nav.accountMenu')} width={260}>
           {#snippet trigger()}
             <span class="cab__id">ID: {$user?.id}</span>
-            <Avatar seed={$user?.email ?? ''} size={30} />
+            <Avatar seed={$user?.email ?? ''} src={$user?.avatarUrl} size={30} />
           {/snippet}
           <div class="menu__me">
-            <Avatar seed={$user?.email ?? ''} size={36} />
+            <Avatar seed={$user?.email ?? ''} src={$user?.avatarUrl} size={36} />
             <span><strong>{displayName($user)}</strong><small>{$user?.email}</small></span>
           </div>
           <nav class="menu__list">
             {#each accountNav as item (item.href)}
-              <a href={item.href}>{#if item.icon}<Icon name={item.icon} />{/if}{item.label}</a>
+              <a href={item.href}>{#if item.icon}<Icon name={item.icon} />{/if}{$t(item.label)}</a>
             {/each}
-            {#if adminHref}<a href={adminHref}><Icon name="shield" />Адмінка</a>{/if}
+            {#if adminHref}<a href={adminHref}><Icon name="shield" />{$t('nav.admin')}</a>{/if}
           </nav>
-          <button class="menu__logout" type="button" onclick={signOut}><Icon name="logout" />Вийти</button>
+          <button class="menu__logout" type="button" onclick={signOut}><Icon name="logout" />{$t('auth.signOut')}</button>
         </Dropdown>
       </div>
     </div>
 
     {#if inAccount}
-      <nav class="cab__sub" aria-label="Акаунт">
+      <nav class="cab__sub" aria-label={$t('nav.group.account')}>
         {#each accountNav as item (item.href)}
           <a class="cab__subtab" class:is-active={item.href === current} href={item.href}>
-            {#if item.icon}<Icon name={item.icon} />{/if}{item.label}
+            {#if item.icon}<Icon name={item.icon} />{/if}{$t(item.label)}
           </a>
         {/each}
       </nav>
@@ -99,7 +110,7 @@
 
   <main class="cab__main">
     <Stack gap="lg">
-      {#if title}<h1 class="cab__title">{title}</h1>{/if}
+      {#if title}<h1 class="cab__title">{$t(title)}</h1>{/if}
       {@render children()}
     </Stack>
   </main>
@@ -171,9 +182,16 @@
     border-radius: var(--ui-radius);
   }
 
-  .cab__tools :global(.ui-theme) {
+  /* Інструменти — одна група з роздільниками (як на референсі) */
+  .cab__tools :global(button.ui-theme),
+  .cab__tools :global(button.ui-dropdown__trigger) {
     border: 0;
+    border-radius: 0;
     background: transparent;
+  }
+
+  .cab__tools > :global(*) + :global(*) {
+    border-left: 1px solid var(--ui-border);
   }
 
   .cab__id {

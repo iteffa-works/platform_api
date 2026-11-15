@@ -47,9 +47,6 @@ function resolve(pick: (extension: AuthClientExtension) => string | undefined, f
   return fallback;
 }
 
-export function resolveAuthSubmitLabel(mode: AuthMode, fallback: string): string {
-  return resolve((extension) => extension.submitLabel?.(mode), fallback);
-}
 
 export function resolveAuthEndpoint(mode: AuthMode, fallback: string): string {
   return resolve((extension) => extension.endpoint?.(mode), fallback);

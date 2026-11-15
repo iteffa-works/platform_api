@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Світла картка входу і реєстрації */
   import type { Snippet } from 'svelte';
-  import { ThemeToggle } from '$lib/ui/components';
+  import { LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Brand } from '$lib/ui/elements';
 
   let { children }: { children: Snippet } = $props();
@@ -11,7 +11,7 @@
   <section class="ui-auth-panel">
     <div class="ui-auth-panel__brand">
       <Brand href="/" image />
-      <ThemeToggle />
+      <span class="ui-auth-panel__tools"><LanguageSwitcher /><ThemeToggle /></span>
     </div>
     {@render children()}
   </section>
@@ -32,6 +32,11 @@
     background: var(--ui-surface);
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius);
+  }
+
+  .ui-auth-panel__tools {
+    display: flex;
+    gap: 6px;
   }
 
   .ui-auth-panel__brand {

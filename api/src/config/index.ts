@@ -1,11 +1,17 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+/** Назва для зовнішніх систем (застосунок 2FA, листи) */
+export const APP_TITLE = process.env.APP_TITLE || 'Platform';
+
 export const config = {
   port: Number(process.env.PORT || 4000),
   secret: process.env.APP_SECRET || 'dev-only-change-me',
-  jwtExpires: '7d' as const,
+  /** Сесія користувача (cookie `sid`), днів */
+  sessionTtlDays: Number(process.env.SESSION_TTL_DAYS || 30),
   /** Ключ для /api/client/v1 (desktop / скрипти) */
   clientApiKey: process.env.CLIENT_API_KEY || 'dev-client-key',
   /** Простий rate limit клієнтського контуру (запитів / хвилину на ключ) */
@@ -18,4 +24,8 @@ export const config = {
     database: process.env.DB_NAME || 'db_sandbox',
   },
   isProduction: process.env.NODE_ENV === 'production',
+  /** Файли застосунку (аватари); api/data у .gitignore */
+  dataDir: process.env.DATA_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data'),
+  /** Валюта балансу (ISO 4217) */
+  currency: process.env.CURRENCY || 'UAH',
 };

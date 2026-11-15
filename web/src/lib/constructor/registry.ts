@@ -1,10 +1,11 @@
 /** Реєстр конструктора: сторінки, блоки й навігація з усіх web-плагінів */
 import { plugins } from '$lib/plugins';
-import type { BlockComponent, NavItem, RegisteredPage } from './types.js';
+import type { BlockComponent, BlockRef, NavItem, RegisteredPage } from './types.js';
 
 const blocks = new Map<string, BlockComponent>();
 const pages: RegisteredPage[] = [];
 const nav = new Map<string, NavItem[]>();
+const header = new Map<string, BlockRef[]>();
 
 for (const plugin of plugins) {
   for (const [id, component] of Object.entries(plugin.blocks ?? {})) {
@@ -16,6 +17,7 @@ for (const plugin of plugins) {
     pages.push({ ...page, plugin: plugin.name });
   }
   nav.set(plugin.name, plugin.nav ?? []);
+  header.set(plugin.name, plugin.header ?? []);
 }
 
 /** Компонент блоку за id */
@@ -34,4 +36,9 @@ export function findPage(path: string): RegisteredPage | undefined {
 /** Навігація плагіна (без фільтра прав) */
 export function navOf(plugin: string): NavItem[] {
   return nav.get(plugin) ?? [];
+}
+
+/** Блоки шапки плагіна */
+export function headerOf(plugin: string): BlockRef[] {
+  return header.get(plugin) ?? [];
 }

@@ -1,29 +1,37 @@
 <script lang="ts">
   /** Доступи: роль і рівні прав по розділах платформи */
+  import { roleName, useI18n } from '$lib/i18n';
   import { DataTable, EmptyState, Panel, StatCard } from '$lib/ui/components';
   import LevelCell from './LevelCell.svelte';
   import { profile } from './store.js';
 
+  const { t, tx } = useI18n();
   const isDeveloper = $derived(Boolean($profile?.user.permissions['*']));
 </script>
 
 {#if $profile}
   <div class="stats">
-    <StatCard label="Роль" value={$profile.user.role.name} note={isDeveloper ? 'усі права, зокрема в майбутніх модулях' : 'призначає адміністратор'} icon="shield" accent="purple" />
-    <StatCard label="Доступні розділи" value={$profile.access.length} note="за рівнями прав ролі" icon="layers" accent="blue" />
+    <StatCard
+      label={$t('overview.role')}
+      value={roleName($tx, $profile.user.role)}
+      note={isDeveloper ? $t('access.developerNote') : $t('access.roleNote')}
+      icon="shield"
+      accent="purple"
+    />
+    <StatCard label={$t('access.sections')} value={$profile.access.length} note={$t('access.sectionsNote')} icon="layers" accent="blue" />
   </div>
 
-  <Panel title="Рівні прав" flush>
+  <Panel title={$t('access.levels')} flush>
     {#if $profile.access.length === 0}
-      <div class="empty"><EmptyState text="Додаткових доступів немає — лише власний кабінет." /></div>
+      <div class="empty"><EmptyState text={$t('access.empty')} /></div>
     {:else}
       <DataTable>
         {#snippet head()}
-          <tr><th>Розділ</th><th>Рівень</th></tr>
+          <tr><th>{$t('access.section')}</th><th>{$t('access.level')}</th></tr>
         {/snippet}
         {#snippet body()}
           {#each $profile.access as item (item.key)}
-            <tr><td>{item.label}</td><td><LevelCell level={item.level} /></td></tr>
+            <tr><td>{$tx(`resource.${item.key}`, item.label)}</td><td><LevelCell level={item.level} /></td></tr>
           {/each}
         {/snippet}
       </DataTable>

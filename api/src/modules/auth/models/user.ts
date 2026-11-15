@@ -18,6 +18,14 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare name: CreationOptional<string | null>;
   declare passwordHash: string;
   declare roleId: ForeignKey<Role['id']>;
+  /** Секрет TOTP (AES-GCM); null — 2FA вимкнено */
+  declare twoFactorSecret: CreationOptional<string | null>;
+  /** JSON-масив SHA-256 одноразових кодів відновлення */
+  declare twoFactorRecovery: CreationOptional<string | null>;
+  /** Імʼя файлу аватара в DATA_DIR/avatars */
+  declare avatar: CreationOptional<string | null>;
+  declare referralCode: string;
+  declare referredById: CreationOptional<number | null>;
   declare role?: NonAttribute<Role>;
   declare preferences?: NonAttribute<UserPreference | null>;
   declare createdAt: CreationOptional<Date>;
@@ -29,6 +37,11 @@ User.init({
   email: { type: DataTypes.STRING, allowNull: false, unique: true },
   name: { type: DataTypes.STRING(80), allowNull: true },
   passwordHash: { type: DataTypes.STRING, allowNull: false },
+  twoFactorSecret: { type: DataTypes.STRING(255), allowNull: true },
+  twoFactorRecovery: { type: DataTypes.TEXT, allowNull: true },
+  avatar: { type: DataTypes.STRING(64), allowNull: true },
+  referralCode: { type: DataTypes.STRING(16), allowNull: false, unique: true },
+  referredById: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, { sequelize, tableName: 'users' });

@@ -14,8 +14,9 @@ export const captchaExtension: AuthClientExtension = {
     : []),
   validate: () => {
     if (!isCaptchaEnabled()) return undefined;
-    if (!getCaptchaToken()) return 'Завантажте код капчі';
-    if (!getCaptchaAnswer().trim()) return 'Введіть код з зображення';
+    // Повертають ключі перекладів — текст будує форма
+    if (!getCaptchaToken()) return 'captcha.notLoaded';
+    if (!getCaptchaAnswer().trim()) return 'captcha.enterCode';
     return undefined;
   },
   slots: () => [{

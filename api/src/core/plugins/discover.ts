@@ -20,8 +20,12 @@ export async function pluginDirectories(): Promise<string[]> {
   return dirs.sort((left, right) => path.basename(left).localeCompare(path.basename(right)));
 }
 
+/** Чернетки міграцій (`*.draft.ts`) — лише з MIGRATIONS_DRAFTS=1 (тестова БД під час розробки) */
+const includeDrafts = process.env.MIGRATIONS_DRAFTS === '1';
+
 function isSourceFile(name: string, names: ReadonlySet<string>): boolean {
   if (name.startsWith('.') || name.endsWith('.d.ts') || /\.(test|spec)\.[jt]s$/.test(name)) return false;
+  if (!includeDrafts && /\.draft\.[jt]s$/.test(name)) return false;
   if (name.endsWith('.ts')) return true;
   // dist: лише .js без .ts-двійника
   return name.endsWith('.js') && !names.has(name.replace(/\.js$/, '.ts'));

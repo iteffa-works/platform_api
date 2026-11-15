@@ -1,6 +1,6 @@
 <script lang="ts">
-  /** Аватар-ідентикон: симетрична сітка 5×5 з хешу рядка (email / id) */
-  let { seed, size = 28 }: { seed: string; size?: number } = $props();
+  /** Аватар: завантажене зображення або ідентикон — симетрична сітка 5×5 з хешу рядка (email) */
+  let { seed, src = null, size = 28 }: { seed: string; src?: string | null; size?: number } = $props();
 
   function hash(text: string): number {
     let value = 2166136261;
@@ -21,12 +21,16 @@
   );
 </script>
 
-<svg class="ui-avatar" viewBox="0 0 5 5" width={size} height={size} aria-hidden="true">
-  <rect width="5" height="5" fill="var(--ui-surface-muted)" />
-  {#each cells as cell (`${cell.x}-${cell.y}`)}
-    <rect x={cell.x} y={cell.y} width="1" height="1" fill={color} />
-  {/each}
-</svg>
+{#if src}
+  <img class="ui-avatar" {src} alt="" width={size} height={size} />
+{:else}
+  <svg class="ui-avatar" viewBox="0 0 5 5" width={size} height={size} aria-hidden="true">
+    <rect width="5" height="5" fill="var(--ui-surface-muted)" />
+    {#each cells as cell (`${cell.x}-${cell.y}`)}
+      <rect x={cell.x} y={cell.y} width="1" height="1" fill={color} />
+    {/each}
+  </svg>
+{/if}
 
 <style>
   .ui-avatar {
@@ -34,5 +38,10 @@
     border: 1px solid var(--ui-border);
     border-radius: 6px;
     shape-rendering: crispEdges;
+  }
+
+  img.ui-avatar {
+    object-fit: cover;
+    background: var(--ui-surface-muted);
   }
 </style>

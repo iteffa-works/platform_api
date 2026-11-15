@@ -2,28 +2,31 @@
   /** Адмінка: темна смуга зверху, бічне меню з групами й пошуком, контент */
   import type { Snippet } from 'svelte';
   import { signOut, user } from '$lib/domain/auth';
-  import { ErrorText, ThemeToggle } from '$lib/ui/components';
+  import type { MessageKey } from '$lib/i18n';
+  import { roleName, useI18n } from '$lib/i18n';
+  import { ErrorText, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
   import { Stack } from '$lib/ui/patterns';
 
-  type Item = { href: string; label: string; icon?: IconName; group?: string; pinned?: boolean };
+  type Item = { href: string; label: MessageKey; icon?: IconName; group?: MessageKey; pinned?: boolean };
 
   let {
-    title = '',
-    subtitle = '',
+    title,
+    subtitle,
     error = '',
     nav = [],
     current,
     children,
   }: {
-    title?: string;
-    subtitle?: string;
+    title?: MessageKey;
+    subtitle?: MessageKey;
     error?: string;
     nav?: Item[];
     current: string;
     children: Snippet;
   } = $props();
 
+  const { t, tx } = useI18n();
   let query = $state('');
 
   const pinned = $derived(nav.filter((item) => item.pinned));
@@ -31,10 +34,10 @@
   /** Групи бічного меню в порядку першої появи; пошук фільтрує за назвою */
   const groups = $derived.by(() => {
     const needle = query.trim().toLowerCase();
-    const result = new Map<string, Item[]>();
+    const result = new Map<MessageKey, Item[]>();
     for (const item of nav) {
-      if (needle && !item.label.toLowerCase().includes(needle)) continue;
-      const group = item.group ?? 'Розділи';
+      if (needle && !$t(item.label).toLowerCase().includes(needle)) continue;
+      const group = item.group ?? 'nav.group.sections';
       result.set(group, [...(result.get(group) ?? []), item]);
     }
     return [...result];
@@ -44,21 +47,22 @@
 <div class="adm">
   <header class="adm__bar">
     <Brand href="/admin" image onDark />
-    <nav class="adm__top" aria-label="Швидкі розділи">
+    <nav class="adm__top" aria-label={$t('admin.quickNav')}>
       {#each pinned as item (item.href)}
         <a class="adm__top-link" class:is-active={item.href === current} href={item.href}>
-          {#if item.icon}<Icon name={item.icon} />{/if}{item.label}
+          {#if item.icon}<Icon name={item.icon} />{/if}{$t(item.label)}
         </a>
       {/each}
     </nav>
     <div class="adm__me">
+      <LanguageSwitcher />
       <ThemeToggle />
-      <a class="adm__top-link" href="/app"><Icon name="home" />Кабінет</a>
+      <a class="adm__top-link" href="/app"><Icon name="home" />{$t('nav.cabinet')}</a>
       <span class="adm__who">
-        <Avatar seed={$user?.email ?? ''} size={28} />
-        <span>{$user?.role.name}<small>{$user?.email}</small></span>
+        <Avatar seed={$user?.email ?? ''} src={$user?.avatarUrl} size={28} />
+        <span>{roleName($tx, $user?.role)}<small>{$user?.email}</small></span>
       </span>
-      <button class="adm__icon" type="button" title="Вийти" aria-label="Вийти" onclick={signOut}>
+      <button class="adm__icon" type="button" title={$t('auth.signOut')} aria-label={$t('auth.signOut')} onclick={signOut}>
         <Icon name="logout" />
       </button>
     </div>
@@ -68,17 +72,17 @@
     <aside class="adm__side">
       <label class="adm__search">
         <Icon name="search" />
-        <input type="search" placeholder="Пошук…" bind:value={query} aria-label="Пошук розділу" />
+        <input type="search" placeholder={$t('admin.search')} bind:value={query} aria-label={$t('admin.search')} />
       </label>
       {#each groups as [group, items] (group)}
-        <p class="adm__group">{group}</p>
+        <p class="adm__group">{$t(group)}</p>
         {#each items as item (item.href)}
           <a class="adm__link" class:is-active={item.href === current} href={item.href}>
-            {#if item.icon}<Icon name={item.icon} />{/if}{item.label}
+            {#if item.icon}<Icon name={item.icon} />{/if}{$t(item.label)}
           </a>
         {/each}
       {:else}
-        <p class="adm__empty">Нічого не знайдено</p>
+        <p class="adm__empty">{$t('admin.searchEmpty')}</p>
       {/each}
     </aside>
 
@@ -86,8 +90,8 @@
       <Stack gap="lg">
         {#if title}
           <header class="adm__title">
-            <h1>{title}</h1>
-            {#if subtitle}<p>{subtitle}</p>{/if}
+            <h1>{$t(title)}</h1>
+            {#if subtitle}<p>{$t(subtitle)}</p>{/if}
           </header>
         {/if}
         <ErrorText message={error} />
@@ -145,6 +149,14 @@
 
   .adm__top-link.is-active {
     box-shadow: inset 0 -2px 0 var(--ui-tone-blue);
+  }
+
+  .adm__me :global(.ui-dropdown__trigger) {
+    color: var(--ui-bar-text);
+  }
+
+  .adm__me :global(.ui-dropdown__trigger:hover) {
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .adm__me :global(.ui-theme) {

@@ -3,6 +3,20 @@ import { can, type GrantLevel, type Permissions } from '../../core/access/index.
 import { HttpError } from '../../shared/http/index.js';
 import { userIdOf } from '../../shared/middleware/index.js';
 import { findUserWithRole } from './models/user.js';
+import { findSession } from './sessions.js';
+
+/** Middleware: активна серверна сесія з cookie → req.userId, req.sessionId */
+export async function requireUser(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  try {
+    const session = await findSession(req);
+    if (!session) throw new HttpError(401, 'Потрібен вхід');
+    req.userId = session.userId;
+    req.sessionId = session.id;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * Права поточного користувача (після requireUser).

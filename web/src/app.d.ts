@@ -1,7 +1,11 @@
 /// <reference types="@sveltejs/kit" />
 
 declare global {
-  namespace App {}
+  namespace App {
+    interface Locals {
+      locale: import('$lib/i18n').Locale;
+    }
+  }
 }
 
 declare module '*.svelte' {

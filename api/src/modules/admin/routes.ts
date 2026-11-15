@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import { asyncRoute, readIdParam } from '../../shared/http/index.js';
-import { requireUser, userIdOf } from '../../shared/middleware/index.js';
-import { permissionsOf, requirePermission } from '../auth/access.js';
+import { userIdOf } from '../../shared/middleware/index.js';
+import { permissionsOf, requirePermission, requireUser } from '../auth/access.js';
 import { overview } from './overview.js';
 import * as roles from './roles.js';
 import * as users from './service.js';
@@ -22,7 +22,7 @@ export function adminRoutes(router: Router): void {
   router.patch('/admin/users/:id', requirePermission('users', 'manage'), asyncRoute(async (req, res) => {
     const actor = await permissionsOf(req);
     const userId = readIdParam(req.params.id, 'Користувача не знайдено');
-    res.json(await users.assignRole(userId, readRoleId(req.body), userIdOf(req), actor));
+    res.json(await users.assignRole(req, userId, readRoleId(req.body), userIdOf(req), actor));
   }));
 
   router.get('/admin/permissions', requirePermission('roles', 'view'), asyncRoute(async (_req, res) => {

@@ -3,7 +3,8 @@
 Мета: довести функціонал екрана входу / кабінету / сервісів до робочого стану  
 **спочатку локально** (Open Server + `sandbox.local`), потім — на власному сервері.
 
-Стек уже в репо: `api` (Express + MariaDB + JWT), `web` (SvelteKit), `desktop` / `clients` (Client API).
+Стек уже в репо: `api` (Express + MariaDB, cookie-сесії), `web` (SvelteKit), `desktop` / `clients` (Client API).
+Як влаштовано — [docs/SYSTEM.md](docs/SYSTEM.md), що зроблено — [DEVLOG.md](DEVLOG.md).
 
 ---
 
@@ -27,7 +28,7 @@
 
 - [x] Monorepo `api` + `web`, `npm run dev`
 - [x] Auth UI (login/register), captcha, extensions
-- [x] JWT login/register/me, admin users
+- [x] Серверні сесії (cookie), login/register/logout/me, ролі й рівні прав, адмінка
 - [x] Open Server → Vite `:5173`, API `:4000`
 - [ ] Стабільний `api/.env` з MariaDB
 - [x] Міграції (umzug) замість `sync({ alter: true })`
@@ -46,7 +47,8 @@
 | 1.2 | Passwordless (magic link) — local only | `AUTH_PASSWORDLESS` |
 | 1.3 | OAuth stubs → реальні провайдери (Google, Microsoft, Facebook) з `.env` | `api/modules/auth/extensions` |
 | 1.4 | Passkey / WebAuthn (локально через HTTPS `sandbox.local`) | окреме extension |
-| 1.5 | Rate limit + lockout на login/register | `api` middleware |
+| 1.5 | ~~Rate limit на login~~ ✅ (IP + email, код 2FA); lockout акаунта — далі | `api` |
+| 1.7 | ~~2FA (TOTP + коди відновлення)~~ ✅ | `auth` |
 | 1.6 | Terms / verification / account-type — збереження в БД | models + hooks |
 
 **Критерій:** усі кнопки SSO або працюють, або явно `відключено` без фейкового UX.
@@ -61,7 +63,7 @@
 
 | Сервіс | Local MVP |
 |--------|-----------|
-| Identity | Ролі ([план ролей і рівнів прав](docs/roles-plan.md)), сесії, audit log (таблиця + admin UI) |
+| Identity | ✅ ролі й рівні прав, сесії, журнал дій, сповіщення, 2FA — [SYSTEM.md](docs/SYSTEM.md) |
 | Secrets | CRUD секретів у БД (шифрування `APP_SECRET`), без HashiCorp спочатку |
 | Observability | Health `/api/v1/health`, прості логи в файл/БД |
 | Helpdesk | Тикети CRUD у кабінеті (stub) |
@@ -151,7 +153,7 @@ npm run start -w web   # SvelteKit adapter-node
 
 ## Локальний контур (щоденна робота)
 
-Запуск і адреси — [README.md](README.md), команди — [command.md](command.md), API outline — [docs/openapi-outline.md](docs/openapi-outline.md).
+Запуск і адреси — [README.md](README.md), команди — [command.md](command.md), система й API — [docs/SYSTEM.md](docs/SYSTEM.md).
 
 Опційно для хвилі B:
 
@@ -167,7 +169,7 @@ docker compose up -d
 
 1. **Закрити Фазу 0** — smoke auth + build/start
 2. **Фаза 1.5–1.6** — rate limit, збереження terms/accountType у БД
-3. **Хвиля A** — Identity audit + Secrets CRUD + Helpdesk stub
+3. **Хвиля A** — ~~Identity audit~~ ✅ · Secrets CRUD · Helpdesk stub
 4. **Mailhog + forgot password**
 5. **OAuth Google** (один провайдер end-to-end)
 6. **docker-compose**: MinIO → Object Storage UI
@@ -210,12 +212,12 @@ web/src/lib/
 
 ## Definition of Done (локально)
 
-- [ ] Register / login / logout / me
+- [x] Register / login / logout / me
 - [ ] Captcha + terms на register
 - [ ] Кабінет `/app` з реальними даними хоча б 1 модуля хвилі A
-- [ ] Admin `/admin` змінює ролі
+- [x] Admin `/admin` змінює ролі
 - [ ] `npm run build && npm run start` (+ web start) без помилок
-- [ ] Короткий запис у `docs/` для кожного увімкненого API
+- [x] Опис API — [docs/SYSTEM.md](docs/SYSTEM.md)
 
 ## Definition of Done (власний сервер)
 

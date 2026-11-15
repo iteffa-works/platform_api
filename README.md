@@ -4,19 +4,25 @@ Monorepo: web-кабінет, REST API, SDK клієнтів і Windows desktop.
 
 | Пакет | Стек |
 |-------|------|
-| `api` | Node.js, Express, Sequelize, MariaDB, JWT |
+| `api` | Node.js, Express, Sequelize, MariaDB, cookie-сесії |
 | `web` | SvelteKit, TypeScript → `/api/v1` |
 | `desktop` | Python 3.12, httpx → `/api/client/v1` |
 | `clients/` | Тонкі JS/Python SDK для Client API |
 
-**Домен (Open Server):** https://sandbox.local/  
-Команди: [command.md](command.md)
+**Домен (Open Server):** https://sandbox.local/
+
+| Документ | Про що |
+|----------|--------|
+| [docs/SYSTEM.md](docs/SYSTEM.md) | як влаштована система: модулі, дані, безпека, API, web |
+| [DEVLOG.md](DEVLOG.md) | що зроблено, обмеження, наступні кроки |
+| [PLAN.md](PLAN.md) | план local → власний сервер |
+| [command.md](command.md) | команди Open Server, npm, desktop |
 
 ## Контури API
 
 | Контур | Префікс | Хто | Обмеження |
 |--------|---------|-----|-----------|
-| Platform | `/api/v1` | `web` | без client-лімітів |
+| Platform | `/api/v1` | `web` | сесія в httpOnly-cookie, права ролі |
 | Client | `/api/client/v1` | `desktop`, скрипти | API key + rate limit |
 
 ## Вимоги
@@ -47,15 +53,14 @@ Desktop (`desktop/`, SDK `clients/python` ставиться через `require
 ```
 platform/
   api/src/       config · core · modules · shared · plugins
-  web/src/lib/   config · core · ui · constructor · plugins · domain · shared  (див. web/src/lib/README.md)
+  web/src/lib/   config · core · i18n · ui · constructor · plugins · domain · shared
   web/src/routes/[...slug]/   єдиний роут-конструктор
   desktop/app/   api (SDK clients/python) · ui
   clients/       js · python
-  docs/          outline API
+  docs/          SYSTEM.md
 ```
 
-Auth на API/web зібрано як **ядро + extensions** (`api/.../auth/extensions`, `web/.../auth/extensions`).
-Ролі — рівні прав без змін у коді: [docs/roles-plan.md](docs/roles-plan.md).
+Модулі API й web — плагіни; ролі — рівні прав без змін у коді. Деталі — [docs/SYSTEM.md](docs/SYSTEM.md).
 
 ## Скрипти
 

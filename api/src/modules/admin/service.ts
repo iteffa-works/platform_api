@@ -1,6 +1,8 @@
+import type { Request } from 'express';
+import { track } from '../../core/activity/index.js';
 import { isWithin, type Permissions } from '../../core/access/index.js';
 import { HttpError } from '../../shared/http/index.js';
-import { publicRole } from '../auth/core/index.js';
+import { avatarUrl, publicRole } from '../auth/core/index.js';
 import { DEVELOPER_ROLE, Role } from '../auth/models/role.js';
 import { findUserWithRole, User } from '../auth/models/user.js';
 
@@ -14,6 +16,8 @@ export async function listUsers() {
     users: rows.map((user) => ({
       id: user.id,
       email: user.email,
+      name: user.name,
+      avatarUrl: avatarUrl(user.avatar),
       role: publicRole(user.role!),
       createdAt: user.createdAt,
     })),
@@ -24,7 +28,7 @@ export async function listUsers() {
  * Призначити роль користувачу.
  * Не можна: змінити власну роль, торкатися розробника, видати чи зняти права вищі за власні.
  */
-export async function assignRole(userId: number, roleId: number, actorId: number, actor: Permissions) {
+export async function assignRole(req: Request, userId: number, roleId: number, actorId: number, actor: Permissions) {
   if (userId === actorId) throw new HttpError(400, 'Не можна змінити власну роль');
 
   const user = await findUserWithRole(userId);
@@ -43,5 +47,7 @@ export async function assignRole(userId: number, roleId: number, actorId: number
 
   user.roleId = role.id;
   await user.save();
+  await track(null, user.id, 'role.changed', { role: role.name });
+  await track(req, actorId, 'admin.role_assigned', { userId: user.id, role: role.name });
   return { user: { id: user.id, email: user.email, role: publicRole(role) } };
 }

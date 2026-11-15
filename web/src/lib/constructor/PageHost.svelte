@@ -6,7 +6,7 @@
   import { AdminTemplate, AuthTemplate, CabinetTemplate, LandingTemplate } from '$lib/ui/templates';
   import BlockSlot from './BlockSlot.svelte';
   import { allowedNav, entryOf } from './nav.js';
-  import { navOf } from './registry.js';
+  import { headerOf, navOf } from './registry.js';
   import type { RegisteredPage } from './types.js';
 
   let { page }: { page: RegisteredPage } = $props();
@@ -30,6 +30,9 @@
   </AuthTemplate>
 {:else if page.template === 'cabinet'}
   <CabinetTemplate title={page.title} {nav} {current} {adminHref}>
+    {#snippet tools()}
+      <BlockSlot items={headerOf(page.plugin)} />
+    {/snippet}
     <BlockSlot items={slots.default} />
   </CabinetTemplate>
 {:else if page.template === 'admin'}
