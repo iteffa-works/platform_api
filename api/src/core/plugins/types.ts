@@ -1,6 +1,7 @@
 import type { Router } from 'express';
 import type { PermissionCatalog } from '../access/index.js';
 import type { EventHandler } from '../events/index.js';
+import type { PluginUi } from '../ui/index.js';
 
 export type ApiContour = 'platform' | 'client';
 
@@ -19,6 +20,11 @@ export interface Plugin {
   contour?: ApiContour;
   /** Ресурси для ролей: зʼявляються в матриці прав адмінки */
   permissions?: PermissionCatalog;
+  /**
+   * Інтерфейс плагіна (server-driven UI): сторінки, меню, сервіси, переклади.
+   * Web рендерить схему універсальним конструктором — коду плагіна в web немає.
+   */
+  ui?: PluginUi;
   /** Маршрути addon діють лише поки плагін увімкнено (інакше — 404) */
   routes?: (router: Router) => void;
   /** Обробники addon викликаються лише поки плагін увімкнено */

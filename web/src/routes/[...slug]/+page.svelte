@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { PageHost, type RegisteredPage } from '$lib/constructor';
 
-  let { data }: { data: { page: RegisteredPage; ready: boolean } } = $props();
+  let { data }: { data: { page: RegisteredPage | null; ready: boolean } } = $props();
 
   // Захищена сторінка після SSR: повторити load у браузері (див. +page.ts)
   onMount(() => {
@@ -12,6 +12,6 @@
   });
 </script>
 
-{#if data.ready}
+{#if data.ready && data.page}
   <PageHost page={data.page} />
 {/if}

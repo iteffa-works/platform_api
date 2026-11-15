@@ -206,6 +206,7 @@ export const ru: Record<MessageKey, string> = {
   'billing.kind.topup': 'Пополнение',
   'billing.kind.charge': 'Списание',
   'billing.kind.adjustment': 'Корректировка',
+  'billing.kind.refund': 'Возврат',
   'billing.adminSubtitle': 'Тарифы, пополнение баланса и журнал операций',
   'billing.adjustTitle': 'Пополнение / корректировка баланса',
   'billing.amountSigned': 'Сумма (минус — списание)',
@@ -270,7 +271,7 @@ export const ru: Record<MessageKey, string> = {
   'plugins.alwaysOn': 'всегда включён',
   'plugins.addons': 'Дополнительные плагины',
   'plugins.coreModules': 'Модули ядра',
-  'plugins.empty': 'Дополнительных плагинов нет — добавьте папку в api/src/plugins и web/src/plugins.',
+  'plugins.empty': 'Дополнительных плагинов нет — добавьте папку в api/src/plugins.',
   'plugins.disableConfirm': 'Выключить «{plugin}»? Его страницы и API станут недоступны, данные сохранятся.',
 
   'notifications.title': 'Уведомления',

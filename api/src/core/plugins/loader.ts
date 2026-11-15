@@ -3,7 +3,8 @@ import { pathToFileURL } from 'node:url';
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import { findEntrypoint } from '../../shared/fs/index.js';
 import { registerResources } from '../access/index.js';
-import { emit, on, type EventHandler } from '../events/index.js';
+import { emit, on } from '../events/index.js';
+import { registerUi } from '../ui/index.js';
 import { isAddonDirectory, pluginDirectories } from './discover.js';
 import { isEnabled, loadStates, registerPlugin } from './registry.js';
 import type { Plugin, PluginModule } from './types.js';
@@ -30,12 +31,10 @@ function mountRoutes(plugin: Plugin, addon: boolean, target: Router): void {
   });
 }
 
+/** Підписки `plugin.events` — дії хуків; addon діють лише поки увімкнено */
 function subscribe(plugin: Plugin, addon: boolean): void {
   for (const [name, handler] of Object.entries(plugin.events ?? {})) {
-    const gated: EventHandler = addon
-      ? (payload) => (isEnabled(plugin.name) ? handler(payload) : undefined)
-      : handler;
-    on(name, gated);
+    on(name, handler, { owner: plugin.name, when: addon ? () => isEnabled(plugin.name) : undefined });
   }
 }
 
@@ -57,6 +56,7 @@ export async function loadPlugins(routers: PluginRouters): Promise<void> {
     registerResources(mod.plugin.permissions ?? {});
     mountRoutes(mod.plugin, addon, mod.plugin.contour === 'client' ? routers.client : routers.platform);
     subscribe(mod.plugin, addon);
+    if (mod.plugin.ui) registerUi(mod.plugin.name, mod.plugin.ui);
     loaded.push(mod.plugin);
   }
 

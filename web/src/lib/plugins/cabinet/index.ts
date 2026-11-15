@@ -45,6 +45,7 @@ export const cabinet: WebPlugin = {
     'cabinet.bell': NotificationBell,
   },
   header: [{ block: 'cabinet.balance' }, { block: 'cabinet.bell' }],
+  sectionLoad: loadCabinet,
   nav: [
     { href: '/app', label: 'nav.overview', icon: 'dashboard' },
     // Група акаунта — другий ряд вкладок і меню акаунта

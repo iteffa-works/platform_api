@@ -1,6 +1,6 @@
 /** Типи конструктора сторінок і web-плагінів */
 import type { Component } from 'svelte';
-import type { PluginMessages, TextKey } from '$lib/i18n';
+import type { TextKey } from '$lib/i18n';
 import type { GrantLevel } from '$lib/shared/types';
 import type { IconName } from '$lib/ui/elements';
 
@@ -25,6 +25,7 @@ export type PageSlots = {
 
 export type PageDefinition = {
   id: string;
+  /** Шлях; у сторінок плагінів з API — можливі параметри `[id]` */
   path: string;
   access: AccessLevel;
   permission?: PagePermission;
@@ -63,9 +64,8 @@ export type NavItem = {
 export type RegisteredNavItem = NavItem & { plugin: string };
 
 /**
- * Web-плагін: свої сторінки, блоки й навігація.
- * Ядро — `$lib/plugins` (рядок у index.ts); addon — тека `src/plugins/<name>` з `export const plugin`,
- * підхоплюється автоматично й діє, лише поки однойменний API-плагін увімкнено в адмінці.
+ * Модуль ядра web: свої сторінки, блоки й навігація (`$lib/plugins`, рядок у index.ts).
+ * Плагіни (addon) коду в web не мають — їхній інтерфейс описує API (`plugin.ui`), рендерить remote.page.
  */
 export type WebPlugin = {
   name: string;
@@ -75,6 +75,6 @@ export type WebPlugin = {
   nav?: NavItem[];
   /** Блоки в шапці шаблону сторінок плагіна (баланс, сповіщення) */
   header?: BlockRef[];
-  /** Переклади addon: у коді — `$t('<плагін>:<ключ>')` */
-  messages?: PluginMessages;
+  /** Дані розділу для сторінок плагінів (API) у ньому: кабінет — профіль, баланс, сповіщення */
+  sectionLoad?: () => Promise<unknown>;
 };

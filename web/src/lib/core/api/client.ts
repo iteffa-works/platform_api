@@ -16,6 +16,10 @@ export function setApiLanguage(value: string): void {
   language = value;
 }
 
+export function apiLanguage(): string {
+  return language;
+}
+
 /**
  * HTTP-клієнт кабінету / адмінки.
  * Сесія — httpOnly-cookie `sid` (same-origin), X-Requested-With — захист від CSRF.

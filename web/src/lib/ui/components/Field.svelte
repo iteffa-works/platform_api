@@ -12,6 +12,9 @@
     required = false,
     minlength,
     disabled = false,
+    placeholder = '',
+    oninput,
+    onchange,
   }: {
     label: string;
     type?: string;
@@ -22,10 +25,13 @@
     required?: boolean;
     minlength?: number;
     disabled?: boolean;
+    placeholder?: string;
+    oninput?: (value: string) => void;
+    onchange?: (value: string) => void;
   } = $props();
 </script>
 
 <Label {grow}>
   {label}
-  <Input {type} bind:value {autocomplete} {inputmode} {required} {minlength} {disabled} />
+  <Input {type} bind:value {placeholder} {autocomplete} {inputmode} {required} {minlength} {disabled} {oninput} {onchange} />
 </Label>

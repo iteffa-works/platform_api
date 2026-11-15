@@ -1,7 +1,8 @@
 <script lang="ts">
   /** Плагіни: addon вмикаються / вимикаються без перезапуску, модулі ядра — лише список */
   import { onMount } from 'svelte';
-  import { loadAddons } from '$lib/constructor/addons';
+  import { get } from 'svelte/store';
+  import { loadManifest } from '$lib/constructor/remote/manifest';
   import { can, user } from '$lib/domain/auth';
   import { useI18n } from '$lib/i18n';
   import { errorMessage } from '$lib/shared/utils';
@@ -10,7 +11,7 @@
   import * as adminApi from './api.js';
   import type { PluginInfo } from './api.js';
 
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   let plugins = $state<PluginInfo[]>([]);
   let error = $state('');
@@ -32,7 +33,7 @@
       const { plugin: updated } = await adminApi.setPluginEnabled(plugin.name, !plugin.enabled);
       plugins = plugins.map((item) => (item.name === updated.name ? updated : item));
       // Меню й сторінки addon оновлюються одразу
-      await loadAddons(true);
+      await loadManifest(get(locale), $user?.id ?? null, true);
     } catch (err) {
       error = errorMessage(err);
     } finally {

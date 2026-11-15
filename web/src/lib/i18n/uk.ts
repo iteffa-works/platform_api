@@ -214,6 +214,7 @@ export const uk = {
   'billing.kind.topup': 'Поповнення',
   'billing.kind.charge': 'Списання',
   'billing.kind.adjustment': 'Коригування',
+  'billing.kind.refund': 'Повернення',
   'billing.adminSubtitle': 'Тарифи, поповнення балансу й журнал операцій',
   'billing.adjustTitle': 'Поповнення / коригування балансу',
   'billing.amountSigned': 'Сума (мінус — списання)',
@@ -280,7 +281,7 @@ export const uk = {
   'plugins.alwaysOn': 'завжди увімкнено',
   'plugins.addons': 'Додаткові плагіни',
   'plugins.coreModules': 'Модулі ядра',
-  'plugins.empty': 'Додаткових плагінів немає — додайте теку в api/src/plugins і web/src/plugins.',
+  'plugins.empty': 'Додаткових плагінів немає — додайте теку в api/src/plugins.',
   'plugins.disableConfirm': 'Вимкнути «{plugin}»? Його сторінки й API стануть недоступні, дані збережуться.',
 
   // Сповіщення

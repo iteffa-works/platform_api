@@ -206,6 +206,7 @@ export const en: Record<MessageKey, string> = {
   'billing.kind.topup': 'Top-up',
   'billing.kind.charge': 'Charge',
   'billing.kind.adjustment': 'Adjustment',
+  'billing.kind.refund': 'Refund',
   'billing.adminSubtitle': 'Plans, balance top-ups and transaction log',
   'billing.adjustTitle': 'Top up / adjust balance',
   'billing.amountSigned': 'Amount (minus — charge)',
@@ -270,7 +271,7 @@ export const en: Record<MessageKey, string> = {
   'plugins.alwaysOn': 'always on',
   'plugins.addons': 'Add-on plugins',
   'plugins.coreModules': 'Core modules',
-  'plugins.empty': 'No add-on plugins — add a folder to api/src/plugins and web/src/plugins.',
+  'plugins.empty': 'No add-on plugins — add a folder to api/src/plugins.',
   'plugins.disableConfirm': 'Disable “{plugin}”? Its pages and API will become unavailable, data is kept.',
 
   'notifications.title': 'Notifications',

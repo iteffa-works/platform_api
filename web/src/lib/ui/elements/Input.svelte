@@ -9,6 +9,8 @@
     required = false,
     minlength,
     disabled = false,
+    oninput,
+    onchange,
   }: {
     type?: string;
     value?: string;
@@ -18,6 +20,9 @@
     required?: boolean;
     minlength?: number;
     disabled?: boolean;
+    /** Значення під час вводу / після завершення (для форм без bind) */
+    oninput?: (value: string) => void;
+    onchange?: (value: string) => void;
   } = $props();
 </script>
 
@@ -31,6 +36,8 @@
   {required}
   {minlength}
   {disabled}
+  oninput={(event) => oninput?.(event.currentTarget.value)}
+  onchange={(event) => onchange?.(event.currentTarget.value)}
 />
 
 <style>

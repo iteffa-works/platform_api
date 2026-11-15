@@ -1,18 +1,43 @@
 import { browser } from '$app/environment';
 import { error, redirect } from '@sveltejs/kit';
-import { findPage, guardAccess, loadAddons } from '$lib/constructor';
+import { get } from 'svelte/store';
+import { findPage, guardAccess, loadManifest, matchRemote, remotePage, type RegisteredPage } from '$lib/constructor';
+import { apiLanguage } from '$lib/core/api';
+import { ensureAuth, user } from '$lib/domain/auth';
+import { isLocale, DEFAULT_LOCALE } from '$lib/i18n';
 import type { PageLoad } from './$types';
 
+const locale = () => {
+  const value = apiLanguage();
+  return isLocale(value) ? value : DEFAULT_LOCALE;
+};
+
+/**
+ * Сторінка ядра (реєстр web) або плагіна (маніфест API → схема).
+ * Захищені й сторінки плагінів перевіряються лише в браузері (стан користувача — модульні store).
+ */
 export const load: PageLoad = async ({ params }) => {
-  const page = findPage(`/${params.slug}`);
-  if (!page) throw error(404, 'Сторінку не знайдено');
+  const path = `/${params.slug}`;
+  let page: RegisteredPage | undefined = findPage(path);
 
-  // Захищені сторінки й сторінки addon перевіряються лише в браузері (стан — модульні store)
-  if (!browser && (page.access !== 'public' || page.addon)) return { page, ready: false };
+  if (!browser) {
+    if (page?.access === 'public') {
+      await page.load?.();
+      return { page, ready: true };
+    }
+    return { page: page ?? null, ready: false };
+  }
 
-  // Стан addon потрібен і для меню core-сторінок; недоступний API — addon вважаються вимкненими
-  const enabled = browser ? await loadAddons().catch(() => new Set<string>()) : new Set<string>();
-  if (page.addon && !enabled.has(page.plugin)) throw error(404, 'Сторінку не знайдено');
+  if (!page) {
+    // Сторінки плагінів — лише в кабінеті / адмінці; гостю — вхід, інше — 404
+    if (!(await ensureAuth())) {
+      if (/^\/(app|admin)(\/|$)/.test(path)) throw redirect(302, '/login');
+      throw error(404, 'Сторінку не знайдено');
+    }
+    const ref = matchRemote(await loadManifest(locale(), get(user)?.id ?? null), path);
+    if (!ref) throw error(404, 'Сторінку не знайдено');
+    page = remotePage(ref);
+  }
 
   const access = await guardAccess(page);
   if (!access.ok) throw redirect(302, access.redirect);

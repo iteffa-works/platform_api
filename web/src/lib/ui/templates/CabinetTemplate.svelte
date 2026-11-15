@@ -18,6 +18,7 @@
     nav = [],
     current,
     adminHref = null,
+    extraServices = [],
     tools,
     children,
   }: {
@@ -25,6 +26,8 @@
     nav?: Item[];
     current: string;
     adminHref?: string | null;
+    /** Сервіси плагінів (хостинг, …) */
+    extraServices?: Array<{ href: string; label: TextKey; icon: IconName; tone: string }>;
     /** Блоки плагіна в шапці (баланс, сповіщення) */
     tools?: Snippet;
     children: Snippet;
@@ -41,7 +44,15 @@
   const services = $derived([
     { href: '/app', label: 'nav.cabinet' as const, icon: 'dashboard' as const, tone: 'purple' },
     ...(adminHref ? [{ href: adminHref, label: 'nav.admin' as const, icon: 'shield' as const, tone: 'blue' }] : []),
+    ...extraServices,
   ]);
+
+  /** Активна вкладка — найдовший збіг: /app/hosting підсвічується і на /app/hosting/12 */
+  const activeHref = $derived(
+    nav.map((item) => item.href)
+      .filter((href) => href === current || (href !== '/app' && current.startsWith(`${href}/`)))
+      .sort((left, right) => right.length - left.length)[0] ?? null,
+  );
 
   const year = new Date().getFullYear();
 </script>
@@ -53,7 +64,7 @@
       <span class="cab__divider" aria-hidden="true"></span>
       <nav class="cab__nav" aria-label={$t('nav.cabinet')}>
         {#each mainNav as item (item.href)}
-          <a class="cab__tab" class:is-active={item.href === current} href={item.href}>{$t(item.label)}</a>
+          <a class="cab__tab" class:is-active={item.href === activeHref} href={item.href}>{$t(item.label)}</a>
         {/each}
       </nav>
 
