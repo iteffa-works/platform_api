@@ -2,13 +2,13 @@
   /** Адмінка: темна смуга зверху, бічне меню з групами й пошуком, контент */
   import type { Snippet } from 'svelte';
   import { signOut, user } from '$lib/domain/auth';
-  import type { MessageKey } from '$lib/i18n';
+  import type { TextKey } from '$lib/i18n';
   import { roleName, useI18n } from '$lib/i18n';
   import { ErrorText, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
   import { Stack } from '$lib/ui/patterns';
 
-  type Item = { href: string; label: MessageKey; icon?: IconName; group?: MessageKey; pinned?: boolean };
+  type Item = { href: string; label: TextKey; icon?: IconName; group?: TextKey; pinned?: boolean };
 
   let {
     title,
@@ -18,8 +18,8 @@
     current,
     children,
   }: {
-    title?: MessageKey;
-    subtitle?: MessageKey;
+    title?: TextKey;
+    subtitle?: TextKey;
     error?: string;
     nav?: Item[];
     current: string;
@@ -34,7 +34,7 @@
   /** Групи бічного меню в порядку першої появи; пошук фільтрує за назвою */
   const groups = $derived.by(() => {
     const needle = query.trim().toLowerCase();
-    const result = new Map<MessageKey, Item[]>();
+    const result = new Map<TextKey, Item[]>();
     for (const item of nav) {
       if (needle && !$t(item.label).toLowerCase().includes(needle)) continue;
       const group = item.group ?? 'nav.group.sections';

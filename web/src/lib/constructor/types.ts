@@ -1,6 +1,6 @@
 /** Типи конструктора сторінок і web-плагінів */
 import type { Component } from 'svelte';
-import type { MessageKey } from '$lib/i18n';
+import type { PluginMessages, TextKey } from '$lib/i18n';
 import type { GrantLevel } from '$lib/shared/types';
 import type { IconName } from '$lib/ui/elements';
 
@@ -30,15 +30,17 @@ export type PageDefinition = {
   permission?: PagePermission;
   template: TemplateId;
   /** Ключі перекладів заголовка й підзаголовка */
-  title?: MessageKey;
-  subtitle?: MessageKey;
+  title?: TextKey;
+  subtitle?: TextKey;
+  /** Розділ, чию навігацію й шапку показує сторінка (`admin`, `cabinet`); за замовчуванням — свій плагін */
+  section?: string;
   slots?: PageSlots;
   /** Дані сторінки (виконується в load після перевірки доступу) */
   load?: () => Promise<unknown>;
 };
 
-/** Сторінка в реєстрі: знає свій плагін (для навігації) */
-export type RegisteredPage = PageDefinition & { plugin: string };
+/** Сторінка в реєстрі: знає свій плагін, розділ навігації й чи це addon */
+export type RegisteredPage = PageDefinition & { plugin: string; section: string; addon: boolean };
 
 export type BlockComponent = Component<any>;
 
@@ -46,18 +48,24 @@ export type BlockComponent = Component<any>;
 export type NavItem = {
   href: string;
   /** Ключ перекладу */
-  label: MessageKey;
+  label: TextKey;
   permission?: PagePermission;
   icon?: IconName;
   /** Група (ключ перекладу): бічне меню адмінки; `nav.group.account` — вкладки акаунта в кабінеті */
-  group?: MessageKey;
+  group?: TextKey;
   /** Показувати також у верхній смузі */
   pinned?: boolean;
+  /** Навігація якого розділу (`admin`, `cabinet`); за замовчуванням — свій плагін */
+  section?: string;
 };
+
+/** Пункт навігації в реєстрі: знає плагін-власника (ховається, якщо addon вимкнено) */
+export type RegisteredNavItem = NavItem & { plugin: string };
 
 /**
  * Web-плагін: свої сторінки, блоки й навігація.
- * Підключається одним рядком у `$lib/plugins`.
+ * Ядро — `$lib/plugins` (рядок у index.ts); addon — тека `src/plugins/<name>` з `export const plugin`,
+ * підхоплюється автоматично й діє, лише поки однойменний API-плагін увімкнено в адмінці.
  */
 export type WebPlugin = {
   name: string;
@@ -67,4 +75,6 @@ export type WebPlugin = {
   nav?: NavItem[];
   /** Блоки в шапці шаблону сторінок плагіна (баланс, сповіщення) */
   header?: BlockRef[];
+  /** Переклади addon: у коді — `$t('<плагін>:<ключ>')` */
+  messages?: PluginMessages;
 };

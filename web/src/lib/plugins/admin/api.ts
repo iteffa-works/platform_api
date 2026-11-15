@@ -74,3 +74,22 @@ export function updatePlan(id: number, input: PlanInput) {
 export function deletePlan(id: number) {
   return api(`/admin/billing/plans/${id}`, { method: 'DELETE' });
 }
+
+/* ---------- Плагіни ---------- */
+
+export type PluginInfo = {
+  name: string;
+  title: string;
+  description: string | null;
+  version: string | null;
+  kind: 'core' | 'addon';
+  enabled: boolean;
+};
+
+export function fetchPlugins() {
+  return api<{ plugins: PluginInfo[] }>('/admin/plugins');
+}
+
+export function setPluginEnabled(name: string, enabled: boolean) {
+  return api<{ plugin: PluginInfo }>(`/admin/plugins/${encodeURIComponent(name)}`, { method: 'PATCH', body: { enabled } });
+}

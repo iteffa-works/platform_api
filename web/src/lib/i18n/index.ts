@@ -15,6 +15,11 @@ import { uk, type MessageKey } from './uk.js';
 
 export type { MessageKey };
 
+/** Ключ перекладу web-плагіна з `src/plugins`: `<плагін>:<ключ>` (реєструє $lib/constructor) */
+export type PluginMessageKey = `${string}:${string}`;
+/** Будь-який ключ інтерфейсу: ядра (типізований) або плагіна */
+export type TextKey = MessageKey | PluginMessageKey;
+
 export const LOCALES = ['uk', 'en', 'ru'] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'uk';
@@ -25,6 +30,34 @@ const BCP47: Record<Locale, string> = { uk: 'uk-UA', en: 'en-GB', ru: 'ru-RU' };
 
 const DICTIONARIES: Record<Locale, Record<MessageKey, string>> = { uk, en, ru };
 
+/** Переклади web-плагінів; uk обовʼязковий (запасна мова) */
+export type PluginMessages = { uk: Record<string, string> } & Partial<Record<Locale, Record<string, string>>>;
+
+const extra: Record<Locale, Record<string, string>> = { uk: {}, en: {}, ru: {} };
+
+/** Спільні каталоги, які ядро читає динамічно (`activity.<дія>`, `resource.<ресурс>`) — без префікса плагіна */
+const SHARED_PREFIXES = ['activity.', 'notification.', 'resource.'];
+
+/** Зареєструвати переклади плагіна: ключі стають `<плагін>:<ключ>` (крім спільних каталогів) */
+export function registerMessages(plugin: string, messages: PluginMessages): void {
+  for (const locale of LOCALES) {
+    for (const [key, value] of Object.entries(messages[locale] ?? {})) {
+      const full = SHARED_PREFIXES.some((prefix) => key.startsWith(prefix)) ? key : `${plugin}:${key}`;
+      extra[locale][full] = value;
+    }
+  }
+}
+
+function lookup(locale: Locale, key: string): string | undefined {
+  return (DICTIONARIES[locale] as Record<string, string>)[key]
+    ?? extra[locale][key]
+    ?? (uk as Record<string, string>)[key]
+    ?? extra.uk[key];
+}
+
+export function isLocale(value: unknown): value is Locale {
+  return LOCALES.includes(value as Locale);
+}
 
 type Params = Record<string, string | number>;
 
@@ -32,7 +65,7 @@ function format(template: string, params?: Params): string {
   return params ? template.replace(/\{(\w+)\}/g, (_m, name: string) => String(params[name] ?? `{${name}}`)) : template;
 }
 
-export type Translate = (key: MessageKey, params?: Params) => string;
+export type Translate = (key: TextKey, params?: Params) => string;
 /** Динамічний ключ (`activity.${action}`) з запасним текстом */
 export type TranslateDynamic = (key: string, fallback?: string, params?: Params) => string;
 
@@ -49,9 +82,9 @@ export function roleName(tx: TranslateDynamic, role: { slug: string; name: strin
 
 export function createI18n(initial: Locale): I18n {
   const locale = writable(initial);
-  const t = derived(locale, ($locale): Translate => (key, params) => format(DICTIONARIES[$locale][key] ?? uk[key] ?? key, params));
+  const t = derived(locale, ($locale): Translate => (key, params) => format(lookup($locale, key) ?? key, params));
   const tx = derived(locale, ($locale): TranslateDynamic => (key, fallback, params) => {
-    const template = (DICTIONARIES[$locale] as Record<string, string>)[key] ?? (uk as Record<string, string>)[key];
+    const template = lookup($locale, key);
     return template ? format(template, params) : (fallback ?? key);
   });
   return { locale, t, tx };

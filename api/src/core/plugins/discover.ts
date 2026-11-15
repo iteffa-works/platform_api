@@ -4,7 +4,14 @@ import { readDirSafe, subdirectories } from '../../shared/fs/index.js';
 import { disabledPlugins } from './disabled.js';
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const roots = [path.join(srcRoot, 'modules'), path.join(srcRoot, 'plugins')];
+const coreRoot = path.join(srcRoot, 'modules');
+const addonsRoot = path.join(srcRoot, 'plugins');
+const roots = [coreRoot, addonsRoot];
+
+/** Тека з plugins/ — addon (вмикається в адмінці), з modules/ — ядро */
+export function isAddonDirectory(dir: string): boolean {
+  return path.dirname(dir) === addonsRoot;
+}
 
 /** Теки плагінів з modules/ і plugins/ (крім вимкнених) */
 export async function pluginDirectories(): Promise<string[]> {

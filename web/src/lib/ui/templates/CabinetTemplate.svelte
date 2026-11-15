@@ -6,12 +6,12 @@
   import type { Snippet } from 'svelte';
   import { APP_NAME } from '$lib/config';
   import { displayName, signOut, user } from '$lib/domain/auth';
-  import { useI18n, type MessageKey } from '$lib/i18n';
+  import { useI18n, type TextKey } from '$lib/i18n';
   import { Dropdown, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
   import { Stack } from '$lib/ui/patterns';
 
-  type Item = { href: string; label: MessageKey; icon?: IconName; group?: MessageKey };
+  type Item = { href: string; label: TextKey; icon?: IconName; group?: TextKey };
 
   let {
     title,
@@ -21,7 +21,7 @@
     tools,
     children,
   }: {
-    title?: MessageKey;
+    title?: TextKey;
     nav?: Item[];
     current: string;
     adminHref?: string | null;

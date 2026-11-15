@@ -31,6 +31,7 @@ export const uk = {
   'nav.roles': 'Ролі',
   'nav.billingAdmin': 'Білінг',
   'nav.activityAdmin': 'Журнал дій',
+  'nav.plugins': 'Плагіни',
   'nav.group.account': 'Акаунт',
   'nav.group.overview': 'Огляд',
   'nav.group.access': 'Користувачі й доступ',
@@ -133,6 +134,7 @@ export const uk = {
   'resource.roles': 'Ролі',
   'resource.logs': 'Журнал дій',
   'resource.billing': 'Білінг',
+  'resource.plugins': 'Плагіни',
 
   // Акаунт
   'account.profile': 'Профіль',
@@ -264,6 +266,22 @@ export const uk = {
   'activity.plan.changed': 'Тариф змінено на «{plan}»',
   'activity.balance.changed': 'Баланс змінено на {amount} {currency}',
   'activity.admin.balance_adjusted': 'Баланс користувача #{userId} змінено на {amount}',
+  'activity.admin.plugin_toggled': 'Плагін «{plugin}»: {state}',
+  'plugins.subtitle': 'Модулі ядра й додаткові плагіни: увімкнення без перезапуску',
+  'plugins.plugin': 'Плагін',
+  'plugins.kind': 'Тип',
+  'plugins.status': 'Стан',
+  'plugins.core': 'Ядро',
+  'plugins.addon': 'Плагін',
+  'plugins.enabled': 'Увімкнено',
+  'plugins.disabled': 'Вимкнено',
+  'plugins.enable': 'Увімкнути',
+  'plugins.disable': 'Вимкнути',
+  'plugins.alwaysOn': 'завжди увімкнено',
+  'plugins.addons': 'Додаткові плагіни',
+  'plugins.coreModules': 'Модулі ядра',
+  'plugins.empty': 'Додаткових плагінів немає — додайте теку в api/src/plugins і web/src/plugins.',
+  'plugins.disableConfirm': 'Вимкнути «{plugin}»? Його сторінки й API стануть недоступні, дані збережуться.',
 
   // Сповіщення
   'notifications.title': 'Сповіщення',

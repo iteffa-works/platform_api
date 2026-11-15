@@ -4,6 +4,7 @@
   import { can, user } from '$lib/domain/auth';
   import { adminError } from '$lib/plugins/admin/store';
   import { AdminTemplate, AuthTemplate, CabinetTemplate, LandingTemplate } from '$lib/ui/templates';
+  import { enabledAddons } from './addons.js';
   import BlockSlot from './BlockSlot.svelte';
   import { allowedNav, entryOf } from './nav.js';
   import { headerOf, navOf } from './registry.js';
@@ -13,8 +14,8 @@
 
   const slots = $derived(page.slots ?? {});
   const current = $derived($route.url.pathname);
-  const nav = $derived(allowedNav(navOf(page.plugin), $user));
-  const adminHref = $derived(can($user, 'admin.panel', 'view') ? entryOf(navOf('admin'), $user) : null);
+  const nav = $derived(allowedNav(navOf(page.section, $enabledAddons), $user));
+  const adminHref = $derived(can($user, 'admin.panel', 'view') ? entryOf(navOf('admin', $enabledAddons), $user) : null);
 </script>
 
 {#if page.template === 'landing'}
@@ -31,7 +32,7 @@
 {:else if page.template === 'cabinet'}
   <CabinetTemplate title={page.title} {nav} {current} {adminHref}>
     {#snippet tools()}
-      <BlockSlot items={headerOf(page.plugin)} />
+      <BlockSlot items={headerOf(page.section)} />
     {/snippet}
     <BlockSlot items={slots.default} />
   </CabinetTemplate>
