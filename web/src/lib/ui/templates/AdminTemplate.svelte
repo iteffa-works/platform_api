@@ -1,12 +1,17 @@
 <script lang="ts">
-  /** Адмінка: темна смуга зверху, бічне меню з групами й пошуком, контент */
+  /**
+   * Адмінка — робочий простір: світле бічне меню з групами (згортається в «рейку»),
+   * липка верхня панель (хлібні крихти, мова, тема, профіль), шапка сторінки, контент.
+   * Контракт пропсів використовує PageHost — не змінювати без нього.
+   */
   import type { Snippet } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
   import { signOut, user } from '$lib/domain/auth';
   import type { TextKey } from '$lib/i18n';
   import { roleName, useI18n } from '$lib/i18n';
-  import { ErrorText, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
+  import { Breadcrumbs, Glyph, PageHeader, type Crumb } from '$lib/ui/admin';
+  import { Dropdown, ErrorText, LanguageSwitcher, ThemeToggle } from '$lib/ui/components';
   import { Avatar, Brand, Icon, type IconName } from '$lib/ui/elements';
-  import { Stack } from '$lib/ui/patterns';
 
   type Item = { href: string; label: TextKey; icon?: IconName; group?: TextKey; pinned?: boolean };
 
@@ -27,11 +32,57 @@
   } = $props();
 
   const { t, tx } = useI18n();
+
+  /* ---------- Стан оболонки (на пристрій; без сховища — значення за замовчуванням) ---------- */
+
+  const STORE_KEY = 'adm.shell';
+  let rail = $state(false);
+  let folded = $state<string[]>([]);
+  let drawer = $state(false);
   let query = $state('');
 
-  const pinned = $derived(nav.filter((item) => item.pinned));
+  try {
+    const saved = JSON.parse(globalThis.localStorage?.getItem(STORE_KEY) ?? 'null');
+    if (saved) {
+      rail = Boolean(saved.rail);
+      folded = Array.isArray(saved.folded) ? saved.folded : [];
+    }
+  } catch {
+    /* приватний режим / SSR */
+  }
 
-  /** Групи бічного меню в порядку першої появи; пошук фільтрує за назвою */
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ rail, folded }));
+    } catch {
+      /* немає сховища */
+    }
+  }
+
+  function toggleRail() {
+    rail = !rail;
+    persist();
+  }
+
+  function toggleGroup(group: string) {
+    folded = folded.includes(group) ? folded.filter((item) => item !== group) : [...folded, group];
+    persist();
+  }
+
+  afterNavigate(() => {
+    drawer = false;
+  });
+
+  /* ---------- Навігація ---------- */
+
+  /** Активний пункт — найдовший префікс шляху (вкладені сторінки підсвічують свій розділ) */
+  const active = $derived(
+    nav
+      .filter((item) => current === item.href || current.startsWith(`${item.href}/`))
+      .sort((left, right) => right.href.length - left.href.length)[0],
+  );
+
+  /** Групи в порядку першої появи; пошук фільтрує за назвою й розгортає всі групи */
   const groups = $derived.by(() => {
     const needle = query.trim().toLowerCase();
     const result = new Map<TextKey, Item[]>();
@@ -42,273 +93,541 @@
     }
     return [...result];
   });
+
+  const crumbs = $derived.by(() => {
+    const list: Crumb[] = [];
+    if (active?.group) list.push({ label: $t(active.group) });
+    if (active) list.push({ label: $t(active.label), href: active.href });
+    if (title && title !== active?.label) list.push({ label: $t(title) });
+    return list;
+  });
+
+  const displayName = $derived($user?.name?.trim() || $user?.email || '');
 </script>
 
-<div class="adm">
-  <header class="adm__bar">
-    <Brand href="/admin" image onDark />
-    <nav class="adm__top" aria-label={$t('admin.quickNav')}>
-      {#each pinned as item (item.href)}
-        <a class="adm__top-link" class:is-active={item.href === current} href={item.href}>
-          {#if item.icon}<Icon name={item.icon} />{/if}{$t(item.label)}
-        </a>
-      {/each}
-    </nav>
-    <div class="adm__me">
-      <LanguageSwitcher />
-      <ThemeToggle />
-      <a class="adm__top-link" href="/app"><Icon name="home" />{$t('nav.cabinet')}</a>
-      <span class="adm__who">
-        <Avatar seed={$user?.email ?? ''} src={$user?.avatarUrl} size={28} />
-        <span>{roleName($tx, $user?.role)}<small>{$user?.email}</small></span>
-      </span>
-      <button class="adm__icon" type="button" title={$t('auth.signOut')} aria-label={$t('auth.signOut')} onclick={signOut}>
-        <Icon name="logout" />
+<div class="adm" class:is-rail={rail} class:is-drawer={drawer}>
+  <aside class="side" aria-label={$t('admin.quickNav')}>
+    <div class="side__brand">
+      <Brand href={nav[0]?.href ?? '/admin'} image />
+      <button class="side__rail" type="button" onclick={toggleRail} aria-pressed={rail} aria-label="Sidebar" title="Sidebar">
+        <Glyph name={rail ? 'chevrons-right' : 'chevrons-left'} />
       </button>
     </div>
-  </header>
 
-  <div class="adm__body">
-    <aside class="adm__side">
-      <label class="adm__search">
-        <Icon name="search" />
-        <input type="search" placeholder={$t('admin.search')} bind:value={query} aria-label={$t('admin.search')} />
-      </label>
+    <label class="side__search">
+      <Icon name="search" />
+      <input type="search" placeholder={$t('admin.search')} bind:value={query} aria-label={$t('admin.search')} />
+    </label>
+
+    <nav class="side__nav">
       {#each groups as [group, items] (group)}
-        <p class="adm__group">{$t(group)}</p>
-        {#each items as item (item.href)}
-          <a class="adm__link" class:is-active={item.href === current} href={item.href}>
-            {#if item.icon}<Icon name={item.icon} />{/if}{$t(item.label)}
-          </a>
-        {/each}
+        {@const open = Boolean(query.trim()) || !folded.includes(group)}
+        <div class="side__group">
+          <button class="side__group-head" type="button" aria-expanded={open} onclick={() => toggleGroup(group)}>
+            <span>{$t(group)}</span>
+            <Glyph name="chevron-down" size={14} />
+          </button>
+          {#if open || rail}
+            <ul>
+              {#each items as item (item.href)}
+                <li>
+                  <a
+                    class="side__link"
+                    class:is-active={item === active}
+                    href={item.href}
+                    title={rail ? $t(item.label) : undefined}
+                    aria-current={item === active ? 'page' : undefined}
+                  >
+                    <span class="side__icon">{#if item.icon}<Icon name={item.icon} size={18} />{/if}</span>
+                    <span class="side__label">{$t(item.label)}</span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
       {:else}
-        <p class="adm__empty">{$t('admin.searchEmpty')}</p>
+        <p class="side__empty">{$t('admin.searchEmpty')}</p>
       {/each}
-    </aside>
+    </nav>
 
-    <main class="adm__main">
-      <Stack gap="lg">
-        {#if title}
-          <header class="adm__title">
-            <h1>{$t(title)}</h1>
-            {#if subtitle}<p>{$t(subtitle)}</p>{/if}
-          </header>
-        {/if}
-        <ErrorText message={error} />
-        {@render children()}
-      </Stack>
+    <a class="side__link side__foot" href="/app" title={rail ? $t('nav.cabinet') : undefined}>
+      <span class="side__icon"><Icon name="home" size={18} /></span>
+      <span class="side__label">{$t('nav.cabinet')}</span>
+    </a>
+  </aside>
+
+  <button class="scrim" type="button" tabindex="-1" aria-hidden="true" onclick={() => (drawer = false)}></button>
+
+  <div class="main">
+    <header class="top">
+      <button class="top__burger" type="button" onclick={() => (drawer = true)} aria-label={$t('admin.quickNav')}>
+        <Glyph name="menu" size={18} />
+      </button>
+      <Breadcrumbs items={crumbs} />
+
+      <div class="top__tools">
+        <LanguageSwitcher />
+        <ThemeToggle />
+        <span class="top__sep" aria-hidden="true"></span>
+        <Dropdown label={displayName} width={220}>
+          {#snippet trigger()}
+            <span class="me">
+              <span class="me__text">
+                <b>{displayName}</b>
+                <small>{roleName($tx, $user?.role)}</small>
+              </span>
+              <Avatar seed={$user?.email ?? ''} src={$user?.avatarUrl} size={32} />
+            </span>
+          {/snippet}
+          <div class="menu">
+            <p class="menu__who">{$user?.email}</p>
+            <a class="menu__item" href="/app"><Icon name="home" />{$t('nav.cabinet')}</a>
+            <button class="menu__item" type="button" onclick={signOut}><Icon name="logout" />{$t('auth.signOut')}</button>
+          </div>
+        </Dropdown>
+      </div>
+    </header>
+
+    <main class="content">
+      {#if title}<PageHeader title={$t(title)} subtitle={subtitle ? $t(subtitle) : undefined} />{/if}
+      <ErrorText message={error} />
+      {@render children()}
     </main>
   </div>
 </div>
 
-<style>
+<style lang="scss">
   .adm {
+    // Компактні контроли й мʼякші радіуси для всіх компонентів UI-kit усередині адмінки
+    --ui-control-h: 36px;
+    --ui-radius: var(--ui-radius-md);
+    --side-w: var(--ui-sidebar-w);
+
+    display: grid;
+    grid-template-columns: var(--side-w) minmax(0, 1fr);
     min-height: 100vh;
-    display: grid;
-    grid-template-rows: auto 1fr;
+    background: var(--ui-app-bg);
+    font-size: var(--ui-fs-md);
+    transition: grid-template-columns 0.2s ease;
+
+    &.is-rail {
+      --side-w: var(--ui-sidebar-rail);
+    }
   }
 
-  .adm__bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 28px;
-    min-height: 52px;
-    padding: 0 20px;
-    background: var(--ui-bar-bg);
-    color: var(--ui-bar-text);
-  }
+  /* ---------- Бічне меню ---------- */
 
-  .adm__top,
-  .adm__me {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 18px;
-  }
-
-  .adm__me {
-    margin-left: auto;
-  }
-
-  .adm__top-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 0;
-    color: var(--ui-bar-text);
-    font-size: 14px;
-    text-decoration: none;
-    opacity: 0.85;
-  }
-
-  .adm__top-link:hover,
-  .adm__top-link.is-active {
-    opacity: 1;
-  }
-
-  .adm__top-link.is-active {
-    box-shadow: inset 0 -2px 0 var(--ui-tone-blue);
-  }
-
-  .adm__me :global(.ui-dropdown__trigger) {
-    color: var(--ui-bar-text);
-  }
-
-  .adm__me :global(.ui-dropdown__trigger:hover) {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .adm__me :global(.ui-theme) {
-    border-color: transparent;
-    background: transparent;
-    color: var(--ui-bar-muted);
-  }
-
-  .adm__who {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-  }
-
-  .adm__who > span {
-    display: grid;
-    line-height: 1.2;
-  }
-
-  .adm__who small {
-    color: var(--ui-bar-muted);
-    font-size: 12px;
-  }
-
-  .adm__icon {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--ui-bar-muted);
-    cursor: pointer;
-  }
-
-  .adm__icon:hover {
-    color: var(--ui-bar-text);
-  }
-
-  .adm__body {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-  }
-
-  .adm__side {
+  .side {
+    position: sticky;
+    top: 0;
+    z-index: 30;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 12px 10px 24px;
-    border-right: 1px solid var(--ui-border);
+    height: 100vh;
+    overflow: hidden;
+    border-right: 1px solid var(--ui-border-soft);
     background: var(--ui-surface);
   }
 
-  .adm__search {
+  .side__brand {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 0 10px;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
-    color: var(--ui-muted);
+    justify-content: space-between;
+    gap: space(2);
+    height: var(--ui-topbar-h);
+    padding: 0 space(3) 0 space(4);
+    border-bottom: 1px solid var(--ui-border-soft);
+
+    :global(.ui-brand) {
+      min-width: 0;
+      overflow: hidden;
+    }
   }
 
-  .adm__search input {
+  .side__rail {
+    @include icon-button(28px);
+  }
+
+  .side__search {
+    @include control;
+    margin: space(3) space(3) space(1);
+    color: var(--ui-muted);
+
+    input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: var(--ui-fs-sm);
+    }
+  }
+
+  .side__nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: space(1) space(3) space(4);
+    @include thin-scrollbar;
+  }
+
+  .side__group {
+    margin-top: space(3);
+
+    ul {
+      display: grid;
+      gap: 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  .side__group-head {
+    @include reset-button;
+    @include eyebrow;
+    @include focus-ring(0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     width: 100%;
-    height: 34px;
-    border: 0;
-    outline: none;
-    background: transparent;
+    padding: space(1) space(2) + 2px;
+    border-radius: var(--ui-radius-sm);
+
+    :global(.glyph) {
+      transition: transform 0.15s;
+    }
+
+    &[aria-expanded='false'] :global(.glyph) {
+      transform: rotate(-90deg);
+    }
+
+    &:hover {
+      color: var(--ui-text);
+    }
   }
 
-  .adm__group {
-    margin: 12px 0 4px;
-    padding: 0 12px;
-    color: var(--ui-muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .adm__link {
+  .side__link {
+    @include focus-ring(-2px);
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 12px;
-    border-left: 2px solid transparent;
-    border-radius: 0 var(--ui-radius) var(--ui-radius) 0;
-    color: var(--ui-text);
-    font-size: 14px;
+    gap: space(3);
+    height: 36px;
+    padding: 0 space(2) + 2px;
+    border-radius: var(--ui-radius-md);
+    color: var(--ui-text-2);
+    font-size: var(--ui-fs-md);
     text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+
+    &:hover {
+      background: var(--ui-surface-muted);
+      color: var(--ui-text);
+    }
+
+    &.is-active {
+      background: var(--ui-nav-active);
+      color: var(--ui-accent);
+      font-weight: 600;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: calc(-1 * #{space(3)});
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--ui-accent);
+      }
+    }
   }
 
-  .adm__link:hover {
-    background: var(--ui-surface-muted);
+  .side__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 20px;
+    color: inherit;
+    opacity: 0.85;
   }
 
-  .adm__link.is-active {
-    border-left-color: var(--ui-accent);
-    background: var(--ui-accent-soft);
-    color: var(--ui-link);
-    font-weight: 600;
+  .side__label {
+    @include truncate;
   }
 
-  .adm__empty {
-    margin: 8px 12px;
+  .side__foot {
+    margin: 0 space(3) space(3);
+    border-top: 1px solid var(--ui-border-soft);
+    border-radius: 0;
+    padding-top: space(1);
+    height: 48px;
+  }
+
+  .side__empty {
+    margin: space(3) space(2);
     color: var(--ui-muted);
-    font-size: 13px;
+    font-size: var(--ui-fs-sm);
   }
 
-  .adm__main {
-    width: min(1160px, 100%);
-    margin: 0 auto;
-    padding: 28px 32px 64px;
-  }
+  // Рейка: лише іконки, підписи — у title
+  .is-rail {
+    .side__brand {
+      justify-content: center;
+      padding: 0;
 
-  .adm__title h1 {
-    font-size: 1.6rem;
-  }
+      :global(.ui-brand) {
+        display: none;
+      }
+    }
 
-  .adm__title p {
-    margin: 6px 0 0;
-    color: var(--ui-muted);
-  }
-
-  /* Вузький екран: швидкі розділи дублюють бічне меню, email — підпис ролі */
-  @media (max-width: 760px) {
-    .adm__top,
-    .adm__who small {
+    .side__search,
+    .side__group-head,
+    .side__label {
       display: none;
     }
 
-    .adm__me {
-      gap: 4px 12px;
+    .side__nav {
+      padding-inline: space(2) + 2px;
+    }
+
+    .side__group {
+      margin-top: space(2);
+      padding-top: space(2);
+      border-top: 1px solid var(--ui-border-soft);
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+
+    .side__link {
+      justify-content: center;
+      padding: 0;
+
+      &.is-active::before {
+        left: calc(-1 * #{space(2) + 2px});
+      }
+    }
+
+    .side__foot {
+      margin-inline: space(2) + 2px;
     }
   }
 
-  @media (max-width: 900px) {
-    .adm__body {
-      grid-template-columns: 1fr;
+  .scrim {
+    display: none;
+  }
+
+  /* ---------- Верхня панель ---------- */
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .top {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: space(3);
+    height: var(--ui-topbar-h);
+    padding: 0 space(6);
+    border-bottom: 1px solid var(--ui-border-soft);
+    background: color-mix(in srgb, var(--ui-surface) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+  }
+
+  .top__burger {
+    @include icon-button;
+    display: none;
+  }
+
+  .top__tools {
+    display: flex;
+    align-items: center;
+    gap: space(1);
+    margin-left: auto;
+
+    :global(.ui-theme) {
+      border-color: transparent;
+      background: transparent;
+      color: var(--ui-muted);
+    }
+  }
+
+  .top__sep {
+    width: 1px;
+    height: 24px;
+    margin: 0 space(2);
+    background: var(--ui-border-soft);
+  }
+
+  .me {
+    display: flex;
+    align-items: center;
+    gap: space(2) + 2px;
+    text-align: right;
+
+    :global(.ui-avatar) {
+      border-radius: 50%;
+    }
+  }
+
+  .me__text {
+    display: grid;
+    line-height: 1.2;
+
+    b {
+      max-width: 180px;
+      font-size: var(--ui-fs-sm);
+      font-weight: 600;
+      @include truncate;
     }
 
-    .adm__side {
-      border-right: 0;
-      border-bottom: 1px solid var(--ui-border);
+    small {
+      color: var(--ui-muted);
+      font-size: var(--ui-fs-xs);
+    }
+  }
+
+  .menu {
+    display: grid;
+    gap: 2px;
+    padding: space(1);
+  }
+
+  .menu__who {
+    margin: 0 0 space(1);
+    padding: space(2);
+    border-bottom: 1px solid var(--ui-border-soft);
+    color: var(--ui-muted);
+    font-size: var(--ui-fs-xs);
+    overflow-wrap: anywhere;
+  }
+
+  .menu__item {
+    @include reset-button;
+    @include focus-ring(-2px);
+    display: flex;
+    align-items: center;
+    gap: space(2) + 2px;
+    padding: space(2);
+    border-radius: var(--ui-radius-sm);
+    font-size: var(--ui-fs-sm);
+    text-decoration: none;
+
+    &:hover {
+      background: var(--ui-surface-muted);
+    }
+  }
+
+  /* ---------- Контент ---------- */
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: space(5);
+    width: 100%;
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: space(6) space(6) space(16);
+  }
+
+  /* ---------- Вузький екран: меню — висувна панель ---------- */
+
+  @include down(lg) {
+    .adm,
+    .adm.is-rail {
+      --side-w: var(--ui-sidebar-w);
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .adm__main {
-      padding: 20px 16px 48px;
+    .side {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(var(--ui-sidebar-w), 86vw);
+      box-shadow: var(--ui-shadow-pop);
+      transform: translateX(-105%);
+      transition: transform 0.2s ease;
+    }
+
+    .is-drawer .side {
+      transform: none;
+    }
+
+    .side__rail {
+      display: none;
+    }
+
+    // У висувній панелі рейка не діє
+    .is-rail {
+      .side__brand {
+        justify-content: space-between;
+        padding: 0 space(3) 0 space(4);
+
+        :global(.ui-brand) {
+          display: inline-flex;
+        }
+      }
+
+      .side__search {
+        display: inline-flex;
+      }
+
+      .side__group-head {
+        display: flex;
+      }
+
+      .side__label {
+        display: inline;
+      }
+
+      .side__link {
+        justify-content: flex-start;
+        padding: 0 space(2) + 2px;
+      }
+    }
+
+    .is-drawer .scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 25;
+      display: block;
+      border: 0;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .main {
+      grid-column: 1;
+    }
+
+    .top {
+      padding: 0 space(4);
+    }
+
+    .top__burger {
+      display: inline-grid;
+    }
+
+    .content {
+      padding: space(5) space(4) space(12);
+    }
+  }
+
+  @include down(md) {
+    .me__text,
+    .top__sep {
+      display: none;
+    }
+
+    .top :global(.crumbs) {
+      display: none;
     }
   }
 </style>
