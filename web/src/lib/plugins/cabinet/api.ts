@@ -1,22 +1,45 @@
 import { api } from '$lib/core/api';
 import type { GrantLevel, Preferences, User } from '$lib/shared/types';
 
-export type AccessItem = { key: string; label: string; level: GrantLevel };
-
 export type CabinetProfile = {
   user: User & { createdAt: string };
-  access: AccessItem[];
   twoFactor: { enabled: boolean; recoveryLeft: number };
 };
 
 export type SessionItem = {
   id: number;
+  /** IP входу */
   ip: string | null;
+  /** IP останнього запиту */
+  lastIp: string | null;
   userAgent: string | null;
+  /** Вхід підтверджено кодом 2FA */
+  twoFactor: boolean;
   createdAt: string;
   lastSeenAt: string;
+  expiresAt: string;
+  endedAt: string | null;
   current: boolean;
 };
+
+export type PersonalDetails = Record<
+  'phone' | 'company' | 'taxId' | 'country' | 'region' | 'city' | 'address' | 'postalCode',
+  string
+>;
+
+export type SshKeyItem = { id: number; title: string; type: string; fingerprint: string; createdAt: string };
+
+export type LoyaltyTier = 'base' | 'bronze' | 'silver' | 'gold' | 'platinum';
+export type Loyalty = {
+  tier: LoyaltyTier;
+  spent: string;
+  currency: string;
+  next: { tier: LoyaltyTier; remaining: string } | null;
+  progress: number;
+  tiers: { tier: LoyaltyTier; from: string }[];
+};
+
+export type NotificationGroupSetting = { group: 'account' | 'billing' | 'hosting' | 'referrals'; locked: boolean; enabled: boolean };
 
 export type ActivityEntry = {
   id: number;
@@ -36,17 +59,6 @@ export type NotificationItem = {
   createdAt: string;
 };
 
-export type Plan = {
-  id: number;
-  slug: string;
-  name: string;
-  description: string | null;
-  price: string;
-  isDefault: boolean;
-  isActive: boolean;
-  sortOrder: number;
-};
-
 export type BalanceTransaction = {
   id: number;
   amount: string;
@@ -57,8 +69,29 @@ export type BalanceTransaction = {
   user?: { id: number; email: string };
 };
 
-export type BillingSummary = { balance: string; currency: string; plan: Plan | null };
-export type BillingDetails = BillingSummary & { plans: Plan[]; transactions: BalanceTransaction[] };
+export type TopupMethod = 'card' | 'bank';
+
+/** Заявка на поповнення; реквізити — поки чекає оплати */
+export type Topup = {
+  id: number;
+  method: TopupMethod;
+  amount: string;
+  reference: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  note: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  requisites?: Record<string, string>;
+};
+
+export type BillingSummary = { balance: string; currency: string; pendingTopups: number };
+export type BillingDetails = BillingSummary & {
+  minTopup: string;
+  note: string | null;
+  methods: Array<{ method: TopupMethod; requisites: Record<string, string> }>;
+  topups: Topup[];
+  transactions: BalanceTransaction[];
+};
 
 export const fetchProfile = () => api<CabinetProfile>('/cabinet/profile');
 
@@ -79,7 +112,7 @@ export const uploadAvatar = (file: Blob) =>
 
 export const removeAvatar = () => api('/cabinet/avatar', { method: 'DELETE' });
 
-export const fetchSessions = () => api<{ sessions: SessionItem[] }>('/cabinet/sessions');
+export const fetchSessions = () => api<{ sessions: SessionItem[]; history: SessionItem[] }>('/cabinet/sessions');
 export const endSession = (id: number) => api(`/cabinet/sessions/${id}`, { method: 'DELETE' });
 export const endOtherSessions = () => api<{ revoked: number }>('/cabinet/sessions', { method: 'DELETE' });
 
@@ -102,5 +135,22 @@ export const markNotificationsRead = (ids?: number[]) =>
 
 export const fetchBillingSummary = () => api<BillingSummary>('/cabinet/billing/summary');
 export const fetchBilling = () => api<BillingDetails>('/cabinet/billing');
-export const choosePlan = (planId: number) =>
-  api<BillingSummary>('/cabinet/billing/plan', { method: 'POST', body: { planId } });
+export const createTopup = (method: TopupMethod, amount: string) =>
+  api<{ topup: Topup }>('/cabinet/billing/topups', { method: 'POST', body: { method, amount } });
+export const cancelTopup = (id: number) => api(`/cabinet/billing/topups/${id}`, { method: 'DELETE' });
+
+export const fetchDetails = () => api<{ details: PersonalDetails }>('/cabinet/details');
+export const updateDetails = (patch: Partial<PersonalDetails>) =>
+  api<{ details: PersonalDetails }>('/cabinet/details', { method: 'PUT', body: patch });
+
+export const fetchSshKeys = () => api<{ keys: SshKeyItem[] }>('/cabinet/ssh-keys');
+export const addSshKey = (title: string, publicKey: string) =>
+  api<{ key: SshKeyItem }>('/cabinet/ssh-keys', { method: 'POST', body: { title, publicKey } });
+export const removeSshKey = (id: number) => api(`/cabinet/ssh-keys/${id}`, { method: 'DELETE' });
+
+export const fetchLoyalty = () => api<Loyalty>('/cabinet/billing/loyalty');
+
+export const fetchNotificationSettings = () =>
+  api<{ groups: NotificationGroupSetting[] }>('/cabinet/notifications/settings');
+export const updateNotificationSettings = (groups: Partial<Record<NotificationGroupSetting['group'], boolean>>) =>
+  api<{ groups: NotificationGroupSetting[] }>('/cabinet/notifications/settings', { method: 'PUT', body: { groups } });

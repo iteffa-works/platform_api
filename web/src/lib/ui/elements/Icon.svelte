@@ -48,6 +48,8 @@
     send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z',
     file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5',
     edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+    award: 'M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM8.2 13.9 7 23l5-3 5 3-1.2-9.1',
+    terminal: 'M4 17l6-6-6-6M12 19h8',
   } as const;
 
   export type IconName = keyof typeof ICONS;
