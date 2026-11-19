@@ -1,12 +1,13 @@
 <script lang="ts">
-  /** Налаштування: тема, мова, часовий пояс, антифішинговий код (зберігаються в акаунті) */
+  /** Налаштування: тема, мова, часовий пояс (зберігаються в акаунті), групи сповіщень */
+  import { onMount } from 'svelte';
   import { loadMe, user } from '$lib/domain/auth';
   import { setTheme, theme, type Theme } from '$lib/domain/theme';
   import { LOCALE_NAMES, LOCALES, setLocale, useI18n, type Locale } from '$lib/i18n';
   import { errorMessage, formatDateTime } from '$lib/shared/utils';
-  import { ErrorText, Field, Panel } from '$lib/ui/components';
+  import { DataTable, ErrorText, Panel } from '$lib/ui/components';
   import { Button, Text } from '$lib/ui/elements';
-  import { updatePreferences } from './api.js';
+  import { fetchNotificationSettings, updateNotificationSettings, updatePreferences, type NotificationGroupSetting } from './api.js';
 
   const { locale, t } = useI18n();
 
@@ -20,8 +21,23 @@
 
   let busy = $state(false);
   let error = $state('');
-  let antiPhishing = $state($user?.preferences.antiPhishingCode ?? '');
-  let antiNotice = $state('');
+
+  /* Групи сповіщень */
+  let groups = $state<NotificationGroupSetting[]>([]);
+  let groupsError = $state('');
+
+  onMount(() => {
+    fetchNotificationSettings().then((data) => (groups = data.groups)).catch((err) => (groupsError = errorMessage(err)));
+  });
+
+  async function toggleGroup(item: NotificationGroupSetting) {
+    groupsError = '';
+    try {
+      groups = (await updateNotificationSettings({ [item.group]: !item.enabled })).groups;
+    } catch (err) {
+      groupsError = errorMessage(err);
+    }
+  }
 
   const selectedZone = $derived($user?.preferences.timezone ?? '');
   /** Список браузера може містити застарілу назву (Europe/Kiev) — збережений пояс додаємо явно */
@@ -42,13 +58,6 @@
 
   function changeZone(event: Event) {
     void save({ timezone: (event.currentTarget as HTMLSelectElement).value || null });
-  }
-
-  async function saveAntiPhishing(event: Event) {
-    event.preventDefault();
-    antiNotice = '';
-    await save({ antiPhishingCode: antiPhishing.trim() || null });
-    if (!error) antiNotice = $t('account.saved');
   }
 </script>
 
@@ -96,14 +105,36 @@
   </Panel>
 </div>
 
-<Panel title={$t('prefs.antiPhishing')}>
-  <form class="anti" onsubmit={saveAntiPhishing}>
-    <Field label={$t('prefs.antiPhishingCode')} bind:value={antiPhishing} />
-    <Button type="submit" disabled={busy}>{$t('common.save')}</Button>
-  </form>
-  <Text tone="muted">{$t('prefs.antiPhishingHint')}</Text>
-  {#if antiNotice}<p class="notice">{antiNotice}</p>{/if}
-  <ErrorText message={error} />
+<ErrorText message={error} />
+
+<Panel title={$t('notifyPrefs.title')} flush>
+  <p class="lead">{$t('notifyPrefs.hint')}</p>
+  <DataTable>
+    {#snippet head()}
+      <tr><th>{$t('notifyPrefs.group')}</th><th class="center">{$t('notifyPrefs.channel')}</th></tr>
+    {/snippet}
+    {#snippet body()}
+      {#each groups as item (item.group)}
+        <tr>
+          <td>
+            <strong class="group">{$t(`notifyPrefs.${item.group}`)}</strong>
+            <span class="group__hint">{$t(`notifyPrefs.${item.group}Hint`)}</span>
+          </td>
+          <td class="center">
+            <input
+              type="checkbox"
+              checked={item.enabled}
+              disabled={item.locked}
+              title={item.locked ? $t('notifyPrefs.always') : undefined}
+              aria-label={$t(`notifyPrefs.${item.group}`)}
+              onchange={() => toggleGroup(item)}
+            />
+          </td>
+        </tr>
+      {/each}
+    {/snippet}
+  </DataTable>
+  {#if groupsError}<div class="pad"><ErrorText message={groupsError} /></div>{/if}
 </Panel>
 
 <style>
@@ -161,22 +192,42 @@
     font-weight: 400;
   }
 
-  .anti {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 12px;
-  }
-
-  .anti :global(.ui-label) {
-    flex: 1;
-    min-width: 14rem;
-  }
-
-  .notice {
+  .lead {
     margin: 0;
-    color: var(--ui-success);
-    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ui-border);
+    color: var(--ui-muted);
+    font-size: 13px;
+  }
+
+  .group {
+    display: block;
+    font-size: 13px;
+  }
+
+  .group__hint {
+    color: var(--ui-muted);
+    font-size: 12px;
+  }
+
+  .center {
+    width: 140px;
+    text-align: center;
+  }
+
+  .center input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--ui-accent);
+    cursor: pointer;
+  }
+
+  .center input:disabled {
+    cursor: not-allowed;
+  }
+
+  .pad {
+    padding: 12px 16px;
   }
 
   @media (max-width: 860px) {
