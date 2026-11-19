@@ -1,9 +1,15 @@
 <script lang="ts">
-  /** Фінальний заклик до дії */
+  /** Фінальний заклик: почати з безкоштовного тарифу або обрати платний */
+  import { onMount } from 'svelte';
   import { useI18n } from '$lib/i18n';
-  import HomeActionsBlock from './HomeActionsBlock.svelte';
+  import { Button } from '$lib/ui/elements';
+  import { isFree, loadShowcase, orderHref, showcase } from './catalog.js';
 
   const { t } = useI18n();
+
+  onMount(loadShowcase);
+
+  const free = $derived($showcase?.plans.find(isFree) ?? null);
 </script>
 
 <section class="cta">
@@ -12,13 +18,16 @@
       <h2>{$t('landing.cta.title')}</h2>
       <p>{$t('landing.cta.text')}</p>
     </div>
-    <div class="cta__actions"><HomeActionsBlock size="lg" /></div>
+    <div class="cta__actions">
+      {#if free}<Button size="lg" href={orderHref(free)}>{$t('landing.plans.startFree')}</Button>{/if}
+      <Button size="lg" variant={free ? 'ghost' : 'primary'} href="#plans">{$t('landing.hero.choose')}</Button>
+    </div>
   </div>
 </section>
 
 <style>
   .cta {
-    padding: 88px 0;
+    padding: 56px 0;
   }
 
   .cta__box {
@@ -26,59 +35,29 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    padding: 40px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--ui-accent), var(--cab-accent));
-    color: #fff;
+    gap: 20px;
+    padding: 28px;
+    border: 1px solid var(--ui-border);
+    border-left: 3px solid var(--ui-accent);
+    border-radius: var(--ui-radius-lg);
+    background: var(--ui-surface);
   }
 
-  .cta h2 {
-    margin: 0 0 8px;
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    letter-spacing: -0.02em;
-  }
-
-  .cta p {
+  h2 {
     margin: 0;
-    opacity: 0.85;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: var(--ui-muted);
+    font-size: 14px;
   }
 
   .cta__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .cta__actions :global(.ui-btn) {
-    background: #fff;
-    border-color: #fff;
-    color: var(--ui-accent);
-  }
-
-  .cta__actions :global(.ui-btn:hover:not(:disabled)) {
-    background: var(--ui-accent-soft);
-    border-color: var(--ui-accent-soft);
-  }
-
-  .cta__actions :global(.ui-btn.is-ghost) {
-    background: transparent;
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #fff;
-  }
-
-  .cta__actions :global(.ui-btn.is-ghost:hover:not(:disabled)) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: #fff;
-  }
-
-  @media (max-width: 600px) {
-    .cta {
-      padding: 56px 0;
-    }
-
-    .cta__box {
-      padding: 28px 22px;
-    }
+    gap: 10px;
   }
 </style>

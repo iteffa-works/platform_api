@@ -1,289 +1,279 @@
 <script lang="ts">
-  /** Hero лендингу: оффер, CTA і превʼю кабінету */
+  /** Hero головної: оффер хостингу, CTA і панель «Стан сервісу» з живими даними вітрини */
+  import { onMount } from 'svelte';
   import { useI18n } from '$lib/i18n';
-  import HomeActionsBlock from './HomeActionsBlock.svelte';
+  import { formatMoney } from '$lib/shared/utils';
+  import { Button, Flag, Icon } from '$lib/ui/elements';
+  import { isFree, loadShowcase, lowestPaid, orderHref, showcase } from './catalog.js';
 
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+
+  onMount(loadShowcase);
+
+  const free = $derived($showcase?.plans.find(isFree) ?? null);
+  const cheapest = $derived($showcase ? lowestPaid($showcase) : null);
+  const regionName = (code: string) => {
+    try {
+      return new Intl.DisplayNames([$locale], { type: 'region' }).of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
 
   const points = ['landing.hero.point1', 'landing.hero.point2', 'landing.hero.point3'] as const;
-
-  const services = [
-    { name: 'Identity', state: 'ok' },
-    { name: 'Secrets', state: 'ok' },
-    { name: 'Storage', state: 'ok' },
-    { name: 'Pipelines', state: 'busy' },
-    { name: 'Observability', state: 'ok' },
-  ] as const;
-
-  const bars = [38, 52, 44, 66, 58, 74, 63, 82, 70, 88, 79, 92] as const;
 </script>
 
 <section class="hero">
   <div class="ui-container hero__grid">
     <div class="hero__copy">
       <p class="hero__badge"><span></span>{$t('landing.hero.badge')}</p>
-      <h1 class="hero__title">{$t('landing.hero.title')} <em>{$t('landing.hero.titleAccent')}</em></h1>
+      <h1 class="hero__title">
+        {$t('landing.hero.title')}
+        <em>{cheapest ? $t('landing.hero.titleFrom', { price: $formatMoney(cheapest.price, $showcase!.currency) }) : $t('landing.hero.titleAccent')}</em>
+      </h1>
       <p class="hero__lead">{$t('landing.hero.lead')}</p>
-      <div class="hero__actions"><HomeActionsBlock size="lg" /></div>
+      <div class="hero__actions">
+        <Button size="lg" href="#plans">{$t('landing.hero.choose')}</Button>
+        {#if free}<Button size="lg" variant="ghost" href={orderHref(free)}>{$t('landing.hero.tryFree')}</Button>{/if}
+      </div>
       <ul class="hero__points">
         {#each points as point (point)}
-          <li>{$t(point)}</li>
+          <li><Icon name="check" size={14} />{$t(point)}</li>
         {/each}
       </ul>
     </div>
 
-    <div class="hero__preview" aria-hidden="true">
-      <div class="preview">
-        <div class="preview__bar"><i></i><i></i><i></i></div>
-        <div class="preview__body">
-          <aside class="preview__side">
-            {#each services as service (service.name)}
-              <span class="preview__service" data-state={service.state}>{service.name}</span>
-            {/each}
-          </aside>
-          <div class="preview__main">
-            <div class="preview__stats">
-              <div><small>{$t('landing.preview.services')}</small><b>5</b></div>
-              <div><small>{$t('landing.preview.requests')}</small><b>1.2k</b></div>
-              <div><small>Uptime</small><b>99.9%</b></div>
-            </div>
-            <div class="preview__chart">
-              {#each bars as height, index (index)}
-                <span style:height="{height}%"></span>
-              {/each}
-            </div>
-          </div>
+    <aside class="status" aria-label={$t('landing.status.title')}>
+      <header class="status__head">
+        <span>{$t('landing.status.title')}</span>
+        <span class="status__live">{$t('landing.status.online')}</span>
+      </header>
+      <dl class="status__rows">
+        <div><dt>{$t('landing.status.plans')}</dt><dd>{$showcase ? $showcase.plans.length : '—'}</dd></div>
+        <div>
+          <dt>{$t('landing.status.from')}</dt>
+          <dd>{cheapest ? `${$formatMoney(cheapest.price, $showcase!.currency)} ${$t('landing.plans.perMonth')}` : '—'}</dd>
         </div>
-      </div>
-    </div>
+        {#if free}<div><dt>{free.name}</dt><dd class="is-ok">{$t('landing.status.free')}</dd></div>{/if}
+        <div>
+          <dt>{$t('landing.status.locations')}</dt>
+          <dd class="status__flags">
+            {#each $showcase?.locations ?? [] as code (code)}
+              <span><Flag {code} size={16} />{regionName(code)}</span>
+            {:else}—{/each}
+          </dd>
+        </div>
+      </dl>
+      <footer class="status__foot">
+        {#each ['NVMe', 'SSL', 'ISPmanager 6', 'PHP 8.x'] as tag (tag)}<span>{tag}</span>{/each}
+      </footer>
+    </aside>
   </div>
 </section>
 
 <style>
   .hero {
-    padding: 72px 0 88px;
-    background:
-      radial-gradient(60% 80% at 85% 10%, color-mix(in srgb, var(--ui-accent) 14%, transparent), transparent 70%),
-      linear-gradient(180deg, var(--ui-accent-soft), var(--ui-surface));
+    position: relative;
     overflow: hidden;
+    padding: 72px 0 64px;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  /* Тонка «інженерна» сітка тла, що згасає до країв */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--ui-border-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ui-border-soft) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 70% 40%, #000 20%, transparent 75%);
+    mask-image: radial-gradient(ellipse 70% 80% at 70% 40%, #000 20%, transparent 75%);
+    pointer-events: none;
+  }
+
+  .hero__grid {
+    position: relative;
   }
 
   .hero__grid {
     display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    gap: 56px;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
     align-items: center;
-  }
-
-  .hero__copy {
-    display: grid;
-    gap: 22px;
-    justify-items: start;
+    gap: 48px;
   }
 
   .hero__badge {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin: 0;
-    padding: 6px 12px;
-    border: 1px solid color-mix(in srgb, var(--ui-accent) 25%, transparent);
-    border-radius: 999px;
+    margin: 0 0 18px;
+    padding: 4px 10px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface);
-    color: var(--ui-accent);
-    font-size: 13px;
+    color: var(--ui-text-2);
+    font-size: 12px;
     font-weight: 600;
   }
 
   .hero__badge span {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--ui-success);
+    background: var(--ui-accent);
   }
 
   .hero__title {
     margin: 0;
-    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-size: clamp(30px, 4.4vw, 48px);
+    font-weight: 800;
     line-height: 1.08;
-    letter-spacing: -0.035em;
   }
 
   .hero__title em {
-    font-style: normal;
+    display: block;
     color: var(--ui-accent);
+    font-style: normal;
   }
 
   .hero__lead {
-    margin: 0;
-    max-width: 34rem;
+    max-width: 600px;
+    margin: 18px 0 0;
     color: var(--ui-muted);
-    font-size: 18px;
-    line-height: 1.55;
+    font-size: 16px;
+    line-height: 1.6;
   }
 
   .hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
+    margin-top: 28px;
   }
 
   .hero__points {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 20px;
-    margin: 0;
+    margin: 24px 0 0;
     padding: 0;
     list-style: none;
-    color: var(--ui-muted);
-    font-size: 14px;
+    color: var(--ui-text-2);
+    font-size: 13px;
   }
 
-  .hero__points li::before {
-    content: '✓';
-    margin-right: 6px;
+  .hero__points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hero__points :global(.ui-icon) {
     color: var(--ui-success);
+  }
+
+  /* Панель стану — як робочі інструменти: рамка, щільні рядки, зелений «онлайн» */
+  .status {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    background: var(--ui-surface);
+    font-size: 13px;
+  }
+
+  .status__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--ui-accent);
     font-weight: 700;
   }
 
-  /* Превʼю кабінету */
-  .preview {
-    border: 1px solid var(--cab-border);
-    border-radius: 12px;
-    background: var(--cab-bg);
-    box-shadow: 0 30px 60px -20px rgba(15, 23, 42, 0.45);
-    overflow: hidden;
-    transform: perspective(1200px) rotateY(-6deg) rotateX(2deg);
-  }
-
-  .preview__bar {
-    display: flex;
-    gap: 6px;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--cab-border);
-  }
-
-  .preview__bar i {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--cab-border);
-  }
-
-  .preview__body {
-    display: grid;
-    grid-template-columns: 130px 1fr;
-    min-height: 260px;
-  }
-
-  .preview__side {
-    display: grid;
-    align-content: start;
-    gap: 4px;
-    padding: 14px 10px;
-    border-right: 1px solid var(--cab-border);
-  }
-
-  .preview__service {
-    display: flex;
+  .status__live {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 8px;
-    border-radius: 6px;
-    color: var(--cab-muted);
+    gap: 6px;
+    color: var(--ui-success);
     font-size: 12px;
     font-weight: 600;
   }
 
-  .preview__service::before {
+  .status__live::before {
     content: '';
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--cab-success);
+    background: currentColor;
   }
 
-  .preview__service[data-state='busy']::before {
-    background: var(--cab-warn);
+  .status__rows {
+    margin: 0;
   }
 
-  .preview__service:first-child {
-    background: var(--cab-surface-2);
-    color: var(--cab-text);
-  }
-
-  .preview__main {
-    display: grid;
-    gap: 14px;
-    padding: 14px;
-  }
-
-  .preview__stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-
-  .preview__stats div {
-    display: grid;
-    gap: 4px;
-    padding: 10px;
-    border: 1px solid var(--cab-border);
-    border-radius: 8px;
-    background: var(--cab-surface);
-  }
-
-  .preview__stats small {
-    color: var(--cab-muted);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .preview__stats b {
-    color: var(--cab-text);
-    font-size: 18px;
-  }
-
-  .preview__chart {
+  .status__rows > div {
     display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    height: 120px;
-    padding: 12px;
-    border: 1px solid var(--cab-border);
-    border-radius: 8px;
-    background: var(--cab-surface);
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--ui-border-soft);
   }
 
-  .preview__chart span {
-    flex: 1;
-    border-radius: 3px 3px 0 0;
-    background: linear-gradient(180deg, var(--cab-accent), var(--cab-accent-2));
+  .status__rows dt {
+    color: var(--ui-muted);
+  }
+
+  .status__rows dd {
+    margin: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .status__rows dd.is-ok {
+    color: var(--ui-success);
+  }
+
+  .status__flags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px 12px;
+  }
+
+  .status__flags span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 16px;
+  }
+
+  .status__foot span {
+    padding: 2px 8px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-sm);
+    color: var(--ui-text-2);
+    font-size: 11px;
+    font-weight: 600;
   }
 
   @media (max-width: 900px) {
     .hero {
-      padding: 48px 0 64px;
+      padding: 48px 0;
     }
 
     .hero__grid {
-      grid-template-columns: 1fr;
-      gap: 40px;
-    }
-
-    .preview {
-      transform: none;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .preview__body {
-      grid-template-columns: 1fr;
-    }
-
-    .preview__side {
-      display: none;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 32px;
     }
   }
 </style>

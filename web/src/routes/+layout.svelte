@@ -24,6 +24,9 @@
 <svelte:head>
   <title>{APP_NAME}</title>
   <link rel="canonical" href="{APP_ORIGIN}{$page.url.pathname}" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#eceef2" media="(prefers-color-scheme: light)" />
 </svelte:head>
 
 {@render children()}

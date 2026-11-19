@@ -14,9 +14,16 @@ export const handle: Handle = async ({ event, resolve }) => {
   event.locals.hasSession = Boolean(event.cookies.get('sid'));
   const safeTheme = isTheme(theme) ? theme : DEFAULT_THEME;
 
-  return resolve(event, {
+  const response = await resolve(event, {
     transformPageChunk: ({ html }) => html
       .replace('%app.theme%', safeTheme)
       .replace('%app.lang%', event.locals.locale),
   });
+
+  // Заголовки безпеки сторінок (HTTPS-заголовок HSTS ставить reverse proxy)
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  return response;
 };
