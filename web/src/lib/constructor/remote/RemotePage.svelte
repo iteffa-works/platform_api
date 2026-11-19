@@ -1,3 +1,22 @@
+<script lang="ts" module>
+  import type { UiButton as CachedButton, UiNode as CachedNode } from './schema.js';
+
+  /**
+   * Кеш відрендерених сторінок (stale-while-revalidate): повернення на вкладку / сторінку показує
+   * останній вміст одразу, а свіжий приходить слідом. Будь-яка дія очищає кеш — після змін
+   * старі дані не показуються. Ключ — користувач, мова, шлях і query.
+   */
+  type Entry = { nodes: CachedNode[]; actions: CachedButton[]; json: string };
+  const CACHE_LIMIT = 40;
+  const cache = new Map<string, Entry>();
+
+  function remember(key: string, entry: Entry) {
+    cache.delete(key);
+    cache.set(key, entry);
+    if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+  }
+</script>
+
 <script lang="ts">
   /**
    * Сторінка плагіна за схемою з API: POST /ui/page { path, state } → дерево вузлів.
@@ -41,25 +60,52 @@
   let copied = $state(false);
   let live: Values = {};
   let request = 0;
+  /** Запит у дорозі (індикатор зʼявляється з затримкою — швидкі відповіді без мерехтіння) */
+  let loading = $state(false);
+  /** Показано вміст іншої сторінки, ніж запитана (перехід без кешу) — приглушити */
+  let stale = $state(false);
+  let shownJson = '';
+  let shownKey = '';
 
   function queryState(): Values {
     return Object.fromEntries(get(route).url.searchParams.entries());
   }
 
+  /** Показати відповідь; та сама, що на екрані, — без перемонтування (фокус, прокрутка, стан форм лишаються) */
+  function apply(entry: Entry, key: string) {
+    shownKey = key;
+    if (entry.json === shownJson) return;
+    shownJson = entry.json;
+    nodes = entry.nodes;
+    actions = entry.actions;
+    version += 1;
+  }
+
   async function render() {
     const id = ++request;
+    const path = get(route).url.pathname;
+    const query = queryState();
+    const key = `${get(user)?.id ?? ''}|${get(locale)}|${path}|${get(route).url.search}`;
+    // Жива форма (підсумок замовлення) — не кешується: значення ще не збережені
+    const cacheable = !Object.keys(live).length;
+    const cached = cacheable ? cache.get(key) : undefined;
+    if (cached) apply(cached, key);
+    stale = !cached && cacheable && key !== shownKey;
+    loading = true;
     try {
-      const data = await api<UiRendered>('/ui/page', {
-        method: 'POST',
-        body: { path: get(route).url.pathname, state: { ...queryState(), ...live } },
-      });
+      const data = await api<UiRendered>('/ui/page', { method: 'POST', body: { path, state: { ...query, ...live } } });
       if (id !== request) return;
-      nodes = data.nodes;
-      actions = data.actions ?? [];
-      version += 1;
+      const entry: Entry = { nodes: data.nodes, actions: data.actions ?? [], json: JSON.stringify(data) };
+      if (cacheable) remember(key, entry);
+      apply(entry, key);
       error = '';
     } catch (err) {
       if (id === request) error = errorMessage(err);
+    } finally {
+      if (id === request) {
+        loading = false;
+        stale = false;
+      }
     }
   }
 
@@ -70,6 +116,8 @@
     try {
       const outcome = await callAction(action, values);
       if (!outcome) return;
+      // Дані змінилися — кешовані сторінки застаріли
+      cache.clear();
       const response = outcome.response;
       const success = action.success ?? {};
 
@@ -165,7 +213,8 @@
   });
 </script>
 
-<div class="remote">
+<div class="remote" aria-busy={loading} class:is-stale={stale}>
+  {#if loading}<div class="loadbar" aria-hidden="true"></div>{/if}
   <ErrorText message={error} />
   {#if notice}<p class="notice">{notice}</p>{/if}
 
@@ -191,9 +240,17 @@
   {/if}
 
   {#if nodes}
-    {#key version}
-      {#each nodes as node, index (index)}<UiNode {node} />{/each}
-    {/key}
+    <div class="remote__body">
+      {#key version}
+        {#each nodes as node, index (index)}<UiNode {node} />{/each}
+      {/key}
+    </div>
+  {:else if !error}
+    <div class="skeleton" aria-hidden="true">
+      <span style:height="56px"></span>
+      <span style:height="92px"></span>
+      <span style:height="260px"></span>
+    </div>
   {/if}
 </div>
 
@@ -210,6 +267,75 @@
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+  }
+
+  .remote__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    transition: opacity 0.15s;
+  }
+
+  /* Перехід на сторінку без кешу: старий вміст приглушено, якщо відповідь затримується */
+  .remote.is-stale .remote__body {
+    opacity: 0.55;
+    pointer-events: none;
+    transition-delay: 0.15s;
+  }
+
+  .loadbar {
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    overflow: hidden;
+    opacity: 0;
+    animation: loadbar-in 0s 0.15s forwards;
+  }
+
+  .loadbar::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: var(--ui-accent);
+    animation: loadbar-run 1s ease-in-out infinite;
+  }
+
+  @keyframes loadbar-in {
+    to { opacity: 1; }
+  }
+
+  @keyframes loadbar-run {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
+  }
+
+  .skeleton {
+    display: grid;
+    gap: 16px;
+  }
+
+  .skeleton span {
+    border-radius: var(--ui-radius-lg, 12px);
+    background: linear-gradient(90deg, var(--ui-surface-muted) 25%, var(--ui-surface) 50%, var(--ui-surface-muted) 75%);
+    background-size: 200% 100%;
+    animation: skeleton 1.2s linear infinite;
+  }
+
+  @keyframes skeleton {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loadbar::before,
+    .skeleton span {
+      animation: none;
+    }
   }
 
   .notice {
@@ -229,7 +355,7 @@
 
   .secret code {
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface-muted);
     font-size: 16px;
     overflow-wrap: anywhere;
@@ -239,7 +365,7 @@
     max-height: 420px;
     overflow: auto;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface-muted);
     font-size: 12px;
   }

@@ -85,6 +85,6 @@
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius);
     background: var(--ui-surface);
-    box-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.35);
+    box-shadow: var(--ui-shadow-pop, 0 12px 32px -12px rgba(15, 23, 42, 0.35));
   }
 </style>

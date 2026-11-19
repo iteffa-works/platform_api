@@ -59,7 +59,7 @@
     height: 32px;
     padding: 0 8px;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
     background: none;
     color: var(--ui-muted);
     font: inherit;
@@ -107,7 +107,7 @@
     width: 100%;
     padding: 8px 10px;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--ui-radius-sm);
     background: none;
     color: var(--ui-text);
     font: inherit;

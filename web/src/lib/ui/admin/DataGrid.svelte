@@ -92,7 +92,7 @@
   .grid {
     @include surface;
     overflow: hidden;
-    --cell-y: 12px;
+    --cell-y: var(--ui-cell-y, 12px);
 
     &.is-dense {
       --cell-y: 8px;
@@ -122,15 +122,19 @@
     &[data-align='center'] { text-align: center; }
   }
 
+  // Шапка: токени теми (адмінка — окрема смуга, капс, щільна межа)
   th {
     position: sticky;
     top: 0;
     z-index: 1;
-    padding-block: space(3);
-    background: var(--ui-surface);
+    padding-block: var(--ui-grid-head-y, #{space(3)});
+    border-bottom-color: var(--ui-grid-head-border, var(--ui-border-soft));
+    background: var(--ui-grid-head-bg, var(--ui-surface));
     color: var(--ui-muted);
-    font-size: var(--ui-fs-xs);
+    font-size: var(--ui-grid-head-fs, var(--ui-fs-xs));
     font-weight: 600;
+    letter-spacing: var(--ui-grid-head-spacing, normal);
+    text-transform: var(--ui-grid-head-case, none);
     white-space: nowrap;
   }
 

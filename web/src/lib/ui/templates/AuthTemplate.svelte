@@ -7,6 +7,11 @@
   let { children }: { children: Snippet } = $props();
 </script>
 
+<!-- Закриті розділи й вхід — не індексувати -->
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <main class="ui-auth">
   <section class="ui-auth-panel">
     <div class="ui-auth-panel__brand">

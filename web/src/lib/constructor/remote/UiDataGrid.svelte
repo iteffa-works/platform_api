@@ -49,7 +49,24 @@
     </Toolbar>
   {/if}
 
+  <!-- Підвал лише з пагінацією: без сторінок (короткі довідники) — без порожньої смуги під таблицею -->
+  {#snippet pager()}
+    {#if node.page}
+      {@const page = node.page}
+      <Pagination
+        page={page.page}
+        total={page.total}
+        perPage={page.perPage}
+        perPageOptions={page.perPageOptions}
+        summary={page.summary}
+        onpage={(value) => navigate({ page: value > 1 ? value : null }, false)}
+        onperpage={(value) => navigate({ perPage: value })}
+      />
+    {/if}
+  {/snippet}
+
   <DataGrid
+    footer={node.page && node.page.total > 0 ? pager : undefined}
     columns={node.columns as GridColumn[]}
     rows={node.rows}
     rowKey={(row: Row) => row.key}
@@ -63,24 +80,16 @@
         {#each row.cells[column.key] ?? [] as child, index (index)}<UiNode node={child} />{/each}
       </div>
     {/snippet}
-    {#snippet footer()}
-      {#if node.page && node.page.total > 0}
-        {@const page = node.page}
-        <Pagination
-          page={page.page}
-          total={page.total}
-          perPage={page.perPage}
-          perPageOptions={page.perPageOptions}
-          summary={page.summary}
-          onpage={(value) => navigate({ page: value > 1 ? value : null }, false)}
-          onperpage={(value) => navigate({ perPage: value })}
-        />
-      {/if}
-    {/snippet}
   </DataGrid>
 </div>
 
 <style lang="scss">
+  /* У клітинці рядок (прапор + країна, бейджі) не переноситься: інакше колонка стискається до мінімуму */
+  .dg :global(.dg__cell > .row) {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
   .dg {
     display: flex;
     flex-direction: column;

@@ -103,9 +103,22 @@
   });
 
   const displayName = $derived($user?.name?.trim() || $user?.email || '');
+
+  /** Годинник рядка стану (як у робочих інструментах); оновлюється раз на секунду */
+  const timeOf = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  let clock = $state(timeOf());
+  $effect(() => {
+    const timer = setInterval(() => (clock = timeOf()), 1000);
+    return () => clearInterval(timer);
+  });
 </script>
 
-<div class="adm" class:is-rail={rail} class:is-drawer={drawer}>
+<!-- Закриті розділи й вхід — не індексувати -->
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+<div class="adm ui-flat" class:is-rail={rail} class:is-drawer={drawer}>
   <aside class="side" aria-label={$t('admin.quickNav')}>
     <div class="side__brand">
       <Brand href={nav[0]?.href ?? '/admin'} image />
@@ -198,14 +211,17 @@
       <ErrorText message={error} />
       {@render children()}
     </main>
+
+    <footer class="status" aria-live="off">
+      <span class="status__path">{crumbs.map((crumb) => crumb.label).join(' · ')}</span>
+      <span class="status__live">{$t('admin.online')} · {roleName($tx, $user?.role)} · {clock}</span>
+    </footer>
   </div>
 </div>
 
 <style lang="scss">
+  /* Токени стилю — клас `ui-flat` (styles/flat.css), спільний з кабінетом */
   .adm {
-    // Компактні контроли й мʼякші радіуси для всіх компонентів UI-kit усередині адмінки
-    --ui-control-h: 36px;
-    --ui-radius: var(--ui-radius-md);
     --side-w: var(--ui-sidebar-w);
 
     display: grid;
@@ -230,8 +246,8 @@
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
-    border-right: 1px solid var(--ui-border-soft);
-    background: var(--ui-surface);
+    border-right: 1px solid var(--ui-border);
+    background: var(--ui-app-bg);
   }
 
   .side__brand {
@@ -241,7 +257,7 @@
     gap: space(2);
     height: var(--ui-topbar-h);
     padding: 0 space(3) 0 space(4);
-    border-bottom: 1px solid var(--ui-border-soft);
+    border-bottom: 1px solid var(--ui-border);
 
     :global(.ui-brand) {
       min-width: 0;
@@ -276,11 +292,11 @@
   }
 
   .side__group {
-    margin-top: space(3);
+    margin-top: space(4);
 
     ul {
       display: grid;
-      gap: 2px;
+      gap: 6px;
       margin: 0;
       padding: 0;
       list-style: none;
@@ -295,8 +311,14 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: space(1) space(2) + 2px;
+    margin-bottom: space(2);
+    padding: space(1) 2px;
     border-radius: var(--ui-radius-sm);
+    color: var(--ui-text-2);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 
     :global(.ui-icon) {
       transition: transform 0.15s;
@@ -317,34 +339,43 @@
     display: flex;
     align-items: center;
     gap: space(3);
-    height: 36px;
-    padding: 0 space(2) + 2px;
+    height: 34px;
+    padding: 0 space(3);
+    border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius-md);
+    background: var(--ui-surface);
     color: var(--ui-text-2);
     font-size: var(--ui-fs-md);
     text-decoration: none;
     white-space: nowrap;
-    transition: background 0.12s, color 0.12s;
+    transition: border-color 0.12s, background 0.12s, color 0.12s;
 
     &:hover {
+      border-color: var(--ui-border-strong);
       background: var(--ui-surface-muted);
       color: var(--ui-text);
     }
 
+    // Активний пункт: червона смуга зліва всередині плитки
     &.is-active {
+      border-color: color-mix(in srgb, var(--ui-accent) 45%, var(--ui-border));
       background: var(--ui-nav-active);
-      color: var(--ui-accent);
+      color: var(--ui-text);
       font-weight: 600;
 
       &::before {
         content: '';
         position: absolute;
-        top: 8px;
-        bottom: 8px;
-        left: calc(-1 * #{space(3)});
-        width: 3px;
-        border-radius: 0 3px 3px 0;
+        top: 7px;
+        bottom: 7px;
+        left: 7px;
+        width: 2px;
         background: var(--ui-accent);
+      }
+
+      .side__icon {
+        color: var(--ui-accent);
+        opacity: 1;
       }
     }
   }
@@ -364,10 +395,6 @@
 
   .side__foot {
     margin: 0 space(3) space(3);
-    border-top: 1px solid var(--ui-border-soft);
-    border-radius: 0;
-    padding-top: space(1);
-    height: 48px;
   }
 
   .side__empty {
@@ -412,7 +439,7 @@
       padding: 0;
 
       &.is-active::before {
-        left: calc(-1 * #{space(2) + 2px});
+        left: 4px;
       }
     }
 
@@ -442,9 +469,8 @@
     gap: space(3);
     height: var(--ui-topbar-h);
     padding: 0 space(6);
-    border-bottom: 1px solid var(--ui-border-soft);
-    background: color-mix(in srgb, var(--ui-surface) 88%, transparent);
-    backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-app-bg);
   }
 
   .top__burger {
@@ -540,11 +566,57 @@
   .content {
     display: flex;
     flex-direction: column;
-    gap: space(5);
+    flex: 1;
+    gap: space(4);
     width: 100%;
-    max-width: 1480px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: space(6) space(6) space(16);
+    padding: space(5) space(6) space(8);
+  }
+
+  /* Шапка сторінки: назва й дії, під нею — червона лінія розділу (як у робочих інструментах) */
+  .content > :global(.head) {
+    padding-bottom: space(3);
+    border-bottom: 2px solid var(--ui-accent);
+  }
+
+  /* ---------- Рядок стану (як у робочих інструментах) ---------- */
+
+  .status {
+    position: sticky;
+    bottom: 0;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: space(3);
+    height: 26px;
+    padding: 0 space(6);
+    border-top: 1px solid var(--ui-border);
+    background: var(--ui-app-bg);
+    color: var(--ui-muted);
+    font-size: var(--ui-fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .status__path {
+    @include truncate;
+  }
+
+  .status__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    color: var(--ui-success);
+    white-space: nowrap;
+
+    &::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
   }
 
   /* ---------- Вузький екран: меню — висувна панель ---------- */
@@ -624,7 +696,11 @@
     }
 
     .content {
-      padding: space(5) space(4) space(12);
+      padding: space(4) space(4) space(8);
+    }
+
+    .status {
+      padding: 0 space(4);
     }
   }
 

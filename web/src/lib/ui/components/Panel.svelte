@@ -25,8 +25,9 @@
 
 <style>
   .ui-panel {
+    overflow: hidden;
     border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-lg, var(--ui-radius));
     background: var(--ui-surface);
   }
 
@@ -35,25 +36,33 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--ui-border);
+    min-height: 56px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--ui-border-soft, var(--ui-border));
   }
 
+  /* Заголовок і дія — як у панелях адмінки (жирний заголовок, дія — пласка кнопка) */
   .ui-panel__title {
     font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-weight: 700;
   }
 
   .ui-panel__action {
-    color: var(--ui-link);
-    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md, var(--ui-radius));
+    color: var(--ui-text);
+    font-size: var(--ui-fs-sm, 13px);
+    font-weight: 600;
     text-decoration: none;
   }
 
   .ui-panel__action:hover {
-    text-decoration: underline;
+    border-color: var(--ui-border-strong, var(--ui-border));
+    background: var(--ui-surface-muted);
   }
 
   .ui-panel__body {

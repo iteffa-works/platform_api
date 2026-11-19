@@ -32,7 +32,8 @@
 <style lang="scss">
   .act {
     @include icon-button(28px);
-    color: var(--c);
+    // Спокійний стан — токен теми (адмінка: сірі іконки), колір дії — при наведенні
+    color: var(--ui-act-rest, var(--c));
 
     &[data-tone='accent'] { --c: var(--ui-accent); }
     &[data-tone='muted'] { --c: var(--ui-muted); }

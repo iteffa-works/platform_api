@@ -81,7 +81,7 @@
     width: 32px;
     height: 32px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
     background: none;
     color: var(--ui-muted);
     cursor: pointer;

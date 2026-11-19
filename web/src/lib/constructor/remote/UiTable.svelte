@@ -78,7 +78,7 @@
     height: 34px;
     padding: 0 12px;
     border: 1px solid var(--ui-border);
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface);
     color: inherit;
     font: inherit;

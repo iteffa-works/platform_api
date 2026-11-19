@@ -6,7 +6,7 @@
    */
   import { Alert, PersonCell } from '$lib/ui/admin';
   import { EmptyState } from '$lib/ui/components';
-  import { Badge, Flag, Icon, Ring, type IconName } from '$lib/ui/elements';
+  import { Avatar, Badge, Flag, Icon, Ring, type IconName } from '$lib/ui/elements';
   import type { UiNode } from './schema.js';
   import Self from './UiNode.svelte';
   import UiActions from './UiActions.svelte';
@@ -32,7 +32,7 @@
 {:else if node.type === 'row'}
   <div class="row" data-justify={node.justify ?? 'start'} data-align={node.align ?? 'center'}>{@render children(node.children)}</div>
 {:else if node.type === 'grid'}
-  <div class="grid" style:--min="{node.min ?? 240}px">{@render children(node.children)}</div>
+  <div class="grid" class:is-main-aside={node.layout === 'main-aside'} style:--min="{node.min ?? 240}px">{@render children(node.children)}</div>
 {:else if node.type === 'panel'}
   <section class="panel">
     {#if node.title || node.actions?.length}
@@ -54,9 +54,27 @@
         <span class="stat__body">
           <span class="stat__label">{item.label}</span>
           <span class="stat__value"><UiInline value={item.value} /></span>
+          {#if item.progress !== undefined && item.progress !== null}
+            <span class="stat__bar" role="progressbar" aria-valuenow={item.progress} aria-valuemin={0} aria-valuemax={100}>
+              <span style:width="{item.progress}%" data-level={item.progress >= 90 ? 'high' : item.progress >= 70 ? 'mid' : 'low'}></span>
+            </span>
+          {/if}
           {#if item.hint}<span class="stat__hint"><UiInline value={item.hint} /></span>{/if}
         </span>
       </svelte:element>
+    {/each}
+  </div>
+{:else if node.type === 'shortcuts'}
+  <div class="shortcuts">
+    {#each node.items as item (item.href)}
+      <a class="shortcut" href={item.href} data-tone={item.tone ?? 'blue'}>
+        {#if item.icon}<span class="shortcut__icon"><Icon name={icon(item.icon)} size={18} /></span>{/if}
+        <span class="shortcut__body">
+          <span class="shortcut__label">{item.label}</span>
+          {#if item.text}<span class="shortcut__text">{item.text}</span>{/if}
+        </span>
+        <span class="shortcut__arrow" aria-hidden="true">→</span>
+      </a>
     {/each}
   </div>
 {:else if node.type === 'menu'}
@@ -74,8 +92,12 @@
     {#if node.label}<span class="progress__label"><UiInline value={node.label} />{#if node.value !== null} · {node.value}%{/if}</span>{/if}
   </div>
 {:else if node.type === 'tabs'}
-  <nav class="tabs">
-    {#each node.items as item (item.href)}<a class:is-active={item.active} href={item.href} aria-current={item.active ? 'page' : undefined}>{item.label}</a>{/each}
+  <nav class="tabs" data-variant={node.variant ?? 'line'}>
+    {#each node.items as item (item.href)}
+      <a class:is-active={item.active} href={item.href} aria-current={item.active ? 'page' : undefined}>
+        {item.label}{#if item.count !== undefined}<span class="tabs__count">{item.count}</span>{/if}
+      </a>
+    {/each}
   </nav>
 {:else if node.type === 'banner'}
   <p class="banner" data-tone={node.tone ?? 'slate'}><UiInline value={node.text} /></p>
@@ -121,6 +143,22 @@
     </div>
     {#if node.footer}<UiButtonNode node={node.footer} className="tile__foot" />{/if}
   </section>
+{:else if node.type === 'welcome'}
+  <section class="welcome">
+    <div class="welcome__who">
+      {#if node.avatar}<Avatar seed={node.avatar.seed} src={node.avatar.src} size={40} />{/if}
+      <div class="welcome__text">
+        <h1 class="welcome__title">{node.title}</h1>
+        {#if node.subtitle}<p class="welcome__subtitle"><UiInline value={node.subtitle} /></p>{/if}
+      </div>
+    </div>
+    {#if node.aside || node.status}
+      <div class="welcome__aside">
+        {#if node.aside}<span class="welcome__date"><UiInline value={node.aside} /></span>{/if}
+        {#if node.status}<span class="welcome__status" data-tone={node.status.tone}>{node.status.text}</span>{/if}
+      </div>
+    {/if}
+  </section>
 {:else if node.type === 'empty'}
   <EmptyState text={node.text} />
 {:else if node.type === 'code'}
@@ -132,6 +170,81 @@
 {/if}
 
 <style>
+  /* Привітання: спокійний заголовок сторінки — без рамки й фону, не перетягує увагу з послуг */
+  .welcome {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 2px 0 4px;
+  }
+
+  .welcome__who {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .welcome__who :global(.ui-avatar) {
+    flex: none;
+    border-radius: var(--ui-radius-md, 6px);
+  }
+
+  .welcome__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .welcome__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .welcome__subtitle {
+    margin: 0;
+    color: var(--ui-muted);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  .welcome__aside {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
+    color: var(--ui-muted);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  .welcome__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--tone);
+    font-weight: 600;
+  }
+
+  .welcome__status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  @media (max-width: 640px) {
+    .welcome__aside {
+      justify-items: start;
+      text-align: left;
+    }
+  }
+
   .stack {
     display: flex;
     flex-direction: column;
@@ -151,15 +264,30 @@
   .row[data-align='center'] { align-items: center; }
   .row[data-align='end'] { align-items: flex-end; }
 
+  /* Колонки сітки однакової висоти: панелі поруч вирівняні (тіло заповнює залишок) */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(var(--min), 100%), 1fr));
     gap: 16px;
-    align-items: start;
+    align-items: stretch;
   }
 
   /* Панель: плоска картка з тонкою рамкою */
+  /* Основна колонка + вузька праворуч (головна кабінету); на вузькому екрані — одна колонка */
+  .grid.is-main-aside {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    align-items: start;
+  }
+
+  @media (max-width: 1000px) {
+    .grid.is-main-aside {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   .panel {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius-lg, 12px);
@@ -173,7 +301,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
+    min-height: 60px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--ui-border-soft, var(--ui-border));
   }
 
@@ -198,6 +327,7 @@
 
   .panel__body {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 12px;
     padding: 16px;
@@ -219,7 +349,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 16px;
+    padding: var(--ui-stat-pad, 16px);
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius-lg, 12px);
     background: var(--ui-surface);
@@ -237,9 +367,9 @@
     display: grid;
     flex: none;
     place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: var(--ui-stat-icon, 42px);
+    height: var(--ui-stat-icon, 42px);
+    border-radius: var(--ui-radius-md);
     background: color-mix(in srgb, var(--tone) 14%, transparent);
     color: var(--tone);
   }
@@ -258,7 +388,7 @@
   }
 
   .stat__value {
-    font-size: 22px;
+    font-size: var(--ui-stat-value, 22px);
     font-weight: 800;
     line-height: 1.2;
   }
@@ -266,6 +396,90 @@
   .stat__hint {
     color: var(--ui-muted);
     font-size: 12px;
+  }
+
+  .stat__bar {
+    display: block;
+    height: 4px;
+    margin: 6px 0 2px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--ui-surface-muted);
+  }
+
+  .stat__bar > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--ui-tone-green);
+    transition: width 0.3s;
+  }
+
+  .stat__bar > span[data-level='mid'] { background: var(--ui-tone-orange); }
+  .stat__bar > span[data-level='high'] { background: var(--ui-danger); }
+
+  /* Картки-переходи */
+  .shortcuts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+    gap: 10px;
+  }
+
+  .shortcut {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg, 12px);
+    background: var(--ui-surface);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+
+  .shortcut:hover {
+    border-color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 4%, var(--ui-surface));
+  }
+
+  .shortcut__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--ui-radius-md);
+    background: color-mix(in srgb, var(--tone) 12%, transparent);
+    color: var(--tone);
+  }
+
+  .shortcut__body {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .shortcut__label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .shortcut__text {
+    color: var(--ui-muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .shortcut__arrow {
+    color: var(--ui-muted);
+    transition: transform 0.15s, color 0.15s;
+  }
+
+  .shortcut:hover .shortcut__arrow {
+    color: var(--tone);
+    transform: translateX(2px);
   }
 
   /* Хлібні крихти */
@@ -359,11 +573,56 @@
     color: var(--ui-accent);
   }
 
+  .tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tabs__count {
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--ui-surface-muted);
+    color: var(--ui-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .tabs a.is-active .tabs__count {
+    background: color-mix(in srgb, var(--ui-accent) 14%, transparent);
+    color: var(--ui-accent);
+  }
+
+  /* Другорядні перемикачі: «таблетки» в рамці, без підкреслення */
+  .tabs[data-variant='pills'] {
+    align-self: flex-start;
+    gap: 4px;
+    max-width: 100%;
+    padding: 4px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-surface);
+    box-shadow: none;
+  }
+
+  .tabs[data-variant='pills'] a {
+    padding: 6px 12px;
+    border-radius: var(--ui-radius-sm);
+    font-size: 13px;
+  }
+
+  .tabs[data-variant='pills'] a.is-active {
+    background: var(--ui-accent-soft, color-mix(in srgb, var(--ui-accent) 12%, transparent));
+    box-shadow: none;
+  }
+
   .banner {
     margin: 0;
     padding: 12px 16px;
     border: 1px solid var(--ui-border);
-    border-radius: 10px;
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface-muted);
     font-size: 14px;
     font-weight: 600;
@@ -445,7 +704,7 @@
     place-items: center;
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--ui-radius-md);
     background: color-mix(in srgb, var(--tone) 14%, transparent);
     color: var(--tone);
   }
@@ -532,7 +791,7 @@
 
   .code {
     padding: 2px 6px;
-    border-radius: 5px;
+    border-radius: var(--ui-radius-sm);
     background: var(--ui-surface-muted);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 12px;
@@ -544,7 +803,7 @@
     margin: 0;
     overflow: auto;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface-muted);
     font-size: 12px;
   }

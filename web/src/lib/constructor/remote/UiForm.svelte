@@ -43,7 +43,7 @@
   const listId = (field: UiField) => `ui-list-${field.name}`;
 </script>
 
-<form class="form" class:is-stack={node.layout === 'stack'} onsubmit={submit}>
+{#snippet fieldList()}
   {#each node.fields as field (field.name)}
     {#if field.kind === 'hidden'}
       <!-- значення передається з values -->
@@ -65,10 +65,12 @@
                 {#if option.media}<UiNode node={option.media} />{/if}
                 <strong>{option.label}</strong>
               </span>
+              {#if option.accent}<span class="choice__accent"><UiInline value={option.accent} /></span>{/if}
               {#each option.lines ?? [] as line, index (index)}<small><UiInline value={line} /></small>{/each}
             </label>
           {/each}
         </div>
+        {#if field.hint}<small class="hint">{field.hint}</small>{/if}
       </fieldset>
     {:else if field.kind === 'select'}
       <label class="select" class:is-grow={field.grow}>
@@ -119,7 +121,9 @@
   {/each}
 
   {#each node.footer ?? [] as child, index (index)}<div class="footer"><UiNode node={child} /></div>{/each}
+{/snippet}
 
+{#snippet submitButton()}
   {#if node.submit}
     <div class="submit">
       <Button type="submit" variant={node.submit.variant ?? 'primary'} size={node.submit.size ?? 'md'} disabled={$busy || node.submit.disabled}>
@@ -127,7 +131,23 @@
       </Button>
     </div>
   {/if}
-</form>
+{/snippet}
+
+{#if node.aside?.length}
+  <!-- Оформлення: кроки ліворуч, липкий підсумок з кнопкою праворуч -->
+  <form class="checkout" onsubmit={submit}>
+    <div class="checkout__main">{@render fieldList()}</div>
+    <aside class="checkout__aside">
+      {#each node.aside as child, index (index)}<UiNode node={child} />{/each}
+      {@render submitButton()}
+    </aside>
+  </form>
+{:else}
+  <form class="form" class:is-stack={node.layout === 'stack'} onsubmit={submit}>
+    {@render fieldList()}
+    {@render submitButton()}
+  </form>
+{/if}
 
 <style>
   .form {
@@ -195,7 +215,7 @@
     gap: 4px;
     padding: 8px 14px;
     border: 2px solid var(--ui-border);
-    border-radius: 12px;
+    border-radius: var(--ui-radius-lg);
     cursor: pointer;
   }
 
@@ -206,6 +226,96 @@
   .choice__item.is-active {
     border-color: var(--ui-accent);
     background: var(--ui-accent-soft);
+  }
+
+  /* Позначка вибраної картки */
+  .is-cards .choice__item.is-active::after {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--ui-accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .choice__item:hover:not(.is-active):not(.is-disabled) {
+    border-color: color-mix(in srgb, var(--ui-accent) 45%, var(--ui-border));
+  }
+
+  .choice__accent {
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .choice .hint {
+    display: block;
+    margin-top: 8px;
+  }
+
+  /* Оформлення замовлення */
+  .checkout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 20px;
+  }
+
+  .checkout__main,
+  .checkout__aside {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg, 12px);
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.04));
+  }
+
+  .checkout__main > :global(*) {
+    padding: 20px;
+  }
+
+  .checkout__main > :global(* + *) {
+    border-top: 1px solid var(--ui-border-soft, var(--ui-border));
+  }
+
+  .checkout__main .choice legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  .checkout__main .choice__items {
+    clear: both;
+  }
+
+  .checkout__aside {
+    position: sticky;
+    top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+  }
+
+  .checkout__aside .submit :global(button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  @media (max-width: 860px) {
+    .checkout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .checkout__aside {
+      position: static;
+    }
   }
 
   .choice__item.is-disabled {
@@ -246,7 +356,7 @@
     min-height: 40px;
     padding: 0 10px;
     border: 1px solid var(--ui-border);
-    border-radius: 10px;
+    border-radius: var(--ui-radius-md);
     background: var(--ui-surface);
     color: inherit;
     font: inherit;

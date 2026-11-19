@@ -49,6 +49,8 @@ export type UiOption = {
   label: string;
   /** Додаткові рядки картки вибору (ціна, ліміти) */
   lines?: Inline[];
+  /** Виділений рядок картки під назвою (ціна) */
+  accent?: Inline;
   /** Вузол перед підписом (прапор) */
   media?: UiNode;
   disabled?: boolean;
@@ -95,6 +97,8 @@ export type UiForm = {
   fields: UiField[];
   /** Вузли між полями й кнопкою (підсумок замовлення, попередження) */
   footer?: UiNode[];
+  /** Колонка праворуч (підсумок замовлення): липка, з кнопкою відправки; на вузькому екрані — під полями */
+  aside?: UiNode[];
   submit?: { label: string; variant?: 'primary' | 'ghost' | 'danger'; size?: 'md' | 'lg'; action: UiAction; disabled?: boolean };
   /** row — поля в рядок з переносом (за замовчуванням), stack — стовпцем */
   layout?: 'row' | 'stack';
@@ -103,17 +107,21 @@ export type UiForm = {
 export type UiNode =
   | { type: 'stack'; gap?: number; children: UiNode[] }
   | { type: 'row'; justify?: 'start' | 'between' | 'end'; align?: 'start' | 'center' | 'end'; children: UiNode[] }
-  | { type: 'grid'; min?: number; children: UiNode[] }
+  /** Сітка: колонки однакові (min — мінімальна ширина) або `main-aside` — основна колонка й вузька праворуч (2 дочірні) */
+  | { type: 'grid'; min?: number; layout?: 'main-aside'; children: UiNode[] }
   /** Панель: заголовок, підзаголовок, дії праворуч у шапці (кнопки, меню) */
   | { type: 'panel'; title?: string; subtitle?: string; actions?: UiNode[]; flush?: boolean; children: UiNode[] }
-  /** Плитки показників (KPI) */
-  | { type: 'stats'; items: Array<{ label: string; value: Inline; hint?: Inline; tone?: Tone; icon?: string; href?: string }> }
+  /** Плитки показників (KPI); `progress` 0–100 — смуга під значенням */
+  | { type: 'stats'; items: Array<{ label: string; value: Inline; hint?: Inline; tone?: Tone; icon?: string; href?: string; progress?: number | null }> }
+  /** Картки-переходи: іконка, назва, опис (швидкий старт, розділи) */
+  | { type: 'shortcuts'; items: Array<{ label: string; text?: string; icon?: string; href: string; tone?: Tone }> }
   /** Меню дій (⋯) — рядок таблиці */
   | { type: 'menu'; label?: string; items: UiButton[] }
   | { type: 'breadcrumbs'; items: Array<{ label: string; href?: string }> }
   /** Смуга заповнення: value 0–100 або null (без ліміту) */
   | { type: 'progress'; value: number | null; label?: Inline; tone?: Tone }
-  | { type: 'tabs'; items: Array<{ label: string; href: string; active?: boolean }> }
+  /** Вкладки розділу (line) або другорядні перемикачі всередині сторінки (pills); count — лічильник біля підпису */
+  | { type: 'tabs'; variant?: 'line' | 'pills'; items: Array<{ label: string; href: string; active?: boolean; count?: number }> }
   | { type: 'banner'; tone?: Tone; text: Inline }
   | { type: 'text'; text: Inline; tone?: 'body' | 'muted' | 'error' | 'success' | 'warn'; size?: 'sm' | 'md' | 'lg' | 'xl'; bold?: boolean }
   | { type: 'heading'; text: Inline; level?: 2 | 3 }
@@ -130,6 +138,8 @@ export type UiNode =
   /** Кольорова плитка: медіа ліворуч, вміст, кнопка-футер */
   | { type: 'tile'; tone: Tone; media?: UiNode; children: UiNode[]; footer?: UiButton }
   | { type: 'empty'; text: string }
+  /** Картка-привітання: аватар, заголовок, рядок відомостей; праворуч — дата / стан */
+  | { type: 'welcome'; title: string; subtitle?: Inline; avatar?: { seed: string; src?: string | null }; aside?: Inline; status?: { tone: Tone; text: string } }
   | { type: 'code'; text: string; block?: boolean }
   /**
    * Таблиця робочого простору: тон рядка, панель фільтрів, сортування й пагінація на сервері.

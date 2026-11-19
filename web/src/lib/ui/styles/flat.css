@@ -1,0 +1,86 @@
+/*
+ * Плаский корпоративний стиль робочих інтерфейсів Flowaxy (адмінка, кабінет): щільно, рамки замість тіней,
+ * малі радіуси, червоний акцент. Клас `ui-flat` на корені шаблону — токени діють на все всередині
+ * (сторінки плагінів, діалоги, меню). Сайт і сторінки входу лишаються у своєму стилі.
+ */
+.ui-flat {
+  --ui-accent: #d92d33;
+  --ui-accent-hover: #bf2328;
+  --ui-accent-soft: rgba(217, 45, 51, 0.08);
+  --ui-focus: #d92d33;
+  --ui-link: #1f2937;
+  --ui-nav-active: rgba(217, 45, 51, 0.07);
+  --ui-app-bg: #eceef2;
+  --ui-page-bg: #eceef2;
+  --ui-surface: #ffffff;
+  --ui-surface-muted: #f4f5f7;
+  --ui-row-hover: #f6f7f9;
+  --ui-border: #d3d8df;
+  --ui-border-soft: #e2e5ea;
+  --ui-border-strong: #b9c0ca;
+  --ui-text: #14171c;
+  --ui-text-2: #3a414d;
+  --ui-muted: #6b7280;
+  --ui-success: #15803d;
+  --ui-tone-green: #16a34a;
+  --ui-radius: 3px;
+  --ui-radius-sm: 2px;
+  --ui-radius-md: 3px;
+  --ui-radius-lg: 4px;
+  --ui-shadow-sm: none;
+  --ui-shadow-md: none;
+  --ui-shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.18);
+  --ui-fs-md: 13px;
+  --ui-fs-sm: 12px;
+  --ui-fs-xs: 11px;
+  --ui-control-h: 32px;
+  --ui-control-sm: 30px;
+  --ui-topbar-h: 48px;
+  --ui-page-title: 19px;
+  --ui-stat-pad: 12px 14px;
+  --ui-stat-icon: 34px;
+  --ui-stat-value: 19px;
+  --ui-cell-y: 8px;
+  --ui-grid-head-bg: var(--ui-surface-muted);
+  --ui-grid-head-border: var(--ui-border);
+  --ui-grid-head-y: 9px;
+  --ui-grid-head-fs: 10.5px;
+  --ui-grid-head-spacing: 0.06em;
+  --ui-grid-head-case: uppercase;
+  --ui-badge-h: 20px;
+  --ui-badge-radius: 2px;
+  --ui-badge-edge: 40%;
+  --ui-badge-fill: 8%;
+  --ui-badge-fs: 11px;
+  --ui-badge-spacing: 0.02em;
+  --ui-act-rest: var(--ui-muted);
+}
+
+/* Темна тема — як у локальних інструментах: майже чорне тло, сірі рамки, червоний акцент */
+:root[data-theme='dark'] .ui-flat {
+  --ui-accent: #e5484d;
+  --ui-accent-hover: #f2555a;
+  --ui-accent-soft: rgba(229, 72, 77, 0.14);
+  --ui-focus: #e5484d;
+  --ui-link: #e7e9ee;
+  --ui-nav-active: rgba(229, 72, 77, 0.12);
+  --ui-app-bg: #0b0d12;
+  --ui-page-bg: #0b0d12;
+  --ui-surface: #11141b;
+  --ui-surface-muted: #171b23;
+  --ui-row-hover: #1a1f29;
+  --ui-border: #262b36;
+  --ui-border-soft: #1d222c;
+  --ui-border-strong: #353c4a;
+  --ui-text: #e7e9ee;
+  --ui-text-2: #c4c9d3;
+  --ui-muted: #8a909c;
+  --ui-success: #3ecf6e;
+  --ui-danger: #ff5c5c;
+  --ui-warn: #f5b041;
+  --ui-tone-green: #3ecf6e;
+  --ui-tone-blue: #5b9cff;
+  --ui-tone-orange: #f59e0b;
+  --ui-tone-slate: #8a909c;
+  --ui-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.55);
+}

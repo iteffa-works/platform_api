@@ -50,7 +50,7 @@
 
   h1 {
     color: var(--ui-text);
-    font-size: 24px;
+    font-size: var(--ui-page-title, 24px);
     font-weight: 700;
     letter-spacing: -0.01em;
   }
