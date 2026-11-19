@@ -119,6 +119,7 @@
   }
 </script>
 
+<div class="columns">
 <Panel title={$t('security.twoFactor')}>
   {#if recoveryCodes.length}
     <div class="recovery">
@@ -179,6 +180,8 @@
   <ErrorText message={antiError} />
 </Panel>
 
+</div>
+
 <p class="info"><Icon name="help" size={18} />{$t('security.sessionsInfo')}</p>
 
 {#snippet sessionRows(list: SessionItem[], active: boolean)}
@@ -235,6 +238,23 @@
 </Panel>
 
 <style>
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .columns > :global(.ui-panel) {
+    height: 100%;
+  }
+
+  @media (max-width: 860px) {
+    .columns {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .status,
   .row {
     display: flex;
