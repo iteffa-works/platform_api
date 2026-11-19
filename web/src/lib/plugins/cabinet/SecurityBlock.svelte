@@ -1,5 +1,6 @@
 <script lang="ts">
   /** Безпека: 2FA (TOTP), антифішинговий код, активні сесії та історія входів */
+  import { askConfirm } from '$lib/ui/dialog/ask';
   import { onMount } from 'svelte';
   import { loadMe, user } from '$lib/domain/auth';
   import { useI18n } from '$lib/i18n';
@@ -89,7 +90,7 @@
   }
 
   async function endOthers() {
-    if (!confirm($t('security.endOthersConfirm'))) return;
+    if (!(await askConfirm($t('security.endOthersConfirm'), { tone: 'danger' }))) return;
     await cabinetApi.endOtherSessions().catch((err) => (sessionsError = errorMessage(err)));
     await loadSessions();
   }

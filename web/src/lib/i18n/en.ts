@@ -7,6 +7,7 @@ export const en: Record<MessageKey, string> = {
   'common.create': 'Create',
   'common.delete': 'Delete',
   'common.cancel': 'Cancel',
+  'common.confirm': 'Confirm',
   'common.apply': 'Apply',
   'common.copy': 'Copy',
   'common.copied': 'Copied',

@@ -1,5 +1,6 @@
 <script lang="ts">
   /** Основна інформація: картка профілю (аватар, ID, рівень), особисті дані, пароль, видалення акаунта */
+  import { askConfirm } from '$lib/ui/dialog/ask';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { displayName, loadMe, logout, user } from '$lib/domain/auth';
@@ -97,9 +98,9 @@
     });
   }
 
-  function removeAccount(event: Event) {
+  async function removeAccount(event: Event) {
     event.preventDefault();
-    if (!confirm($t('account.deleteConfirm'))) return;
+    if (!(await askConfirm($t('account.deleteConfirm'), { tone: 'danger', confirmLabel: $t('common.delete') }))) return;
     void submit(deleteForm, async () => {
       await cabinetApi.deleteAccount(deletePassword);
       await logout();

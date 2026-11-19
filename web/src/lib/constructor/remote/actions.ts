@@ -1,6 +1,7 @@
 /** Виконання дій схеми: REST-виклик `/api/v1<url>` з підтвердженням / запитом значення / відкриттям вкладки */
 import { writable } from 'svelte/store';
 import { api } from '$lib/core/api';
+import { askConfirm, askPrompt } from '$lib/ui/dialog/ask';
 import type { UiAction } from './schema.js';
 
 export type Values = Record<string, string | boolean>;
@@ -19,11 +20,12 @@ export const pendingResult = writable<ShownResult | null>(null);
 
 /** null — користувач скасував (confirm / prompt) */
 export async function callAction(action: UiAction, values: Values = {}): Promise<{ response: unknown } | null> {
-  if (action.confirm && !confirm(action.confirm)) return null;
+  // Видалення — червона кнопка підтвердження
+  if (action.confirm && !(await askConfirm(action.confirm, { tone: action.method === 'DELETE' ? 'danger' : 'primary' }))) return null;
 
   const body: Record<string, unknown> = { ...(action.body ?? {}), ...values };
   if (action.prompt) {
-    const answer = prompt(action.prompt.message, action.prompt.value ?? '');
+    const answer = await askPrompt(action.prompt.message, action.prompt.value ?? '');
     if (answer === null) return null;
     body[action.prompt.field] = answer;
   }

@@ -7,6 +7,7 @@ export const ru: Record<MessageKey, string> = {
   'common.create': 'Создать',
   'common.delete': 'Удалить',
   'common.cancel': 'Отмена',
+  'common.confirm': 'Подтвердить',
   'common.apply': 'Применить',
   'common.copy': 'Копировать',
   'common.copied': 'Скопировано',

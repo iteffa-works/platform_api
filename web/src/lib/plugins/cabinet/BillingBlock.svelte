@@ -3,6 +3,7 @@
    * Баланс: поповнення заявкою (на картку / банківський переказ) з реквізитами й призначенням платежу,
    * мої заявки, історія операцій. Кошти зараховує адміністратор, побачивши переказ.
    */
+  import { askConfirm } from '$lib/ui/dialog/ask';
   import { onMount } from 'svelte';
   import { useI18n } from '$lib/i18n';
   import { errorMessage, formatDateTime, formatMoney } from '$lib/shared/utils';
@@ -49,7 +50,7 @@
   }
 
   async function cancel(topup: Topup) {
-    if (!confirm($t('billing.topup.cancelConfirm', { reference: topup.reference }))) return;
+    if (!(await askConfirm($t('billing.topup.cancelConfirm', { reference: topup.reference }), { tone: 'danger' }))) return;
     busy = true;
     try {
       await cabinetApi.cancelTopup(topup.id);

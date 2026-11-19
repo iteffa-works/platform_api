@@ -5,6 +5,7 @@
   import { APP_NAME, APP_ORIGIN } from '$lib/config';
   import { registerAllAuthExtensions, restoreSession, watchSession } from '$lib/domain/auth';
   import { provideI18n, type Locale } from '$lib/i18n';
+  import AskHost from '$lib/ui/dialog/AskHost.svelte';
   import type { Snippet } from 'svelte';
 
   let { data, children }: { data: { locale: Locale }; children: Snippet } = $props();
@@ -30,3 +31,6 @@
 </svelte:head>
 
 {@render children()}
+
+<!-- Вікна підтвердження / введення (askConfirm, askPrompt) -->
+<AskHost />

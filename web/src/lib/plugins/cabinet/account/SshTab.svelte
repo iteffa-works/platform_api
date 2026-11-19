@@ -1,5 +1,6 @@
 <script lang="ts">
   /** SSH-ключі: список (тип, відбиток), додавання з перевіркою формату, видалення */
+  import { askConfirm } from '$lib/ui/dialog/ask';
   import { onMount } from 'svelte';
   import { useI18n } from '$lib/i18n';
   import { errorMessage, formatDateTime } from '$lib/shared/utils';
@@ -47,7 +48,7 @@
   }
 
   async function remove(key: SshKeyItem) {
-    if (!confirm($t('ssh.removeConfirm', { title: key.title }))) return;
+    if (!(await askConfirm($t('ssh.removeConfirm', { title: key.title }), { tone: 'danger', confirmLabel: $t('common.delete') }))) return;
     error = '';
     try {
       await cabinetApi.removeSshKey(key.id);

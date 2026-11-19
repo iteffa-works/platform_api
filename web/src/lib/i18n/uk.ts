@@ -6,6 +6,7 @@ export const uk = {
   'common.create': 'Створити',
   'common.delete': 'Видалити',
   'common.cancel': 'Скасувати',
+  'common.confirm': 'Підтвердити',
   'common.apply': 'Застосувати',
   'common.copy': 'Копіювати',
   'common.copied': 'Скопійовано',
