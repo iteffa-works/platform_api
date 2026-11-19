@@ -2,6 +2,12 @@
 
 declare global {
   namespace App {
+    interface Error {
+      message: string;
+      /** Деталі для сторінки налагодження (лише в режимі DEBUG) */
+      debug?: import('$lib/core/debug').DebugInfo;
+    }
+
     interface Locals {
       locale: import('$lib/i18n').Locale;
       /** У запиті є cookie сесії (дійсність перевіряє API) */

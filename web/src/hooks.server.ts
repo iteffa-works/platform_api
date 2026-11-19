@@ -1,4 +1,7 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
+import { DEBUG } from '$lib/config';
+import { ApiError } from '$lib/core/api/client';
+import { serverDebugInfo } from '$lib/server/debug';
 import { DEFAULT_THEME, isTheme, THEME_COOKIE } from '$lib/domain/theme';
 import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE } from '$lib/i18n';
 
@@ -26,4 +29,16 @@ export const handle: Handle = async ({ event, resolve }) => {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   return response;
+};
+
+/**
+ * Непередбачені помилки SSR: завжди в лог; у режимі DEBUG — клас, стек і код для сторінки помилки.
+ * Повідомлення в DEBUG містить і стек: його показує запасна сторінка src/error.html (коли впав кореневий layout).
+ */
+export const handleError: HandleServerError = async ({ error, event, status, message }) => {
+  console.error(`[web] ${event.request.method} ${event.url.pathname} → ${status}`, error);
+  if (!DEBUG) return { message };
+  if (error instanceof ApiError && error.debug) return { message: error.message, debug: error.debug };
+  const debug = await serverDebugInfo(error, event);
+  return { message: error instanceof Error ? (error.stack ?? error.message) : debug.message, debug };
 };

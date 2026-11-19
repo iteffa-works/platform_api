@@ -1,3 +1,5 @@
+import type { DebugInfo } from '$lib/core/debug';
+
 type ApiOptions = {
   method?: string;
   /** JSON-тіло */
@@ -37,13 +39,14 @@ export async function api<T = unknown>(path: string, { method = 'GET', body, raw
   });
 
   if (res.status === 204) return null as T;
-  const data = (await res.json().catch(() => ({}))) as { error?: string };
-  if (!res.ok) throw new ApiError(data.error || res.statusText, res.status);
+  const data = (await res.json().catch(() => ({}))) as { error?: string; debug?: DebugInfo };
+  if (!res.ok) throw new ApiError(data.error || res.statusText, res.status, data.debug);
   return data as T;
 }
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  /** `debug` — деталі помилки 500 від API в режимі APP_DEBUG */
+  constructor(message: string, readonly status: number, readonly debug?: DebugInfo) {
     super(message);
   }
 }
