@@ -458,11 +458,11 @@ function closeButton(ctx: UiContext, base: string): UiNode {
   return { type: 'button', variant: 'link', label: ctx.t('close'), href: base };
 }
 
-/** Продовження: строк (з сумою на картці) і підсумок */
+/** Продовження (модальне вікно): строк (з сумою на картці) і підсумок */
 function renewPanel(ctx: UiContext, account: AccountView, links: AccountLinks): UiNode {
   const price = Number(account.plan!.price);
   const months = periods().includes(Number(ctx.state.months)) ? Number(ctx.state.months) : 1;
-  return panel(ctx.t('renewTitle'), [{
+  return { type: 'modal', title: ctx.t('renewTitle'), close: links.base, children: [{
     type: 'form',
     fields: [{
       name: 'months',
@@ -480,17 +480,17 @@ function renewPanel(ctx: UiContext, account: AccountView, links: AccountLinks): 
       label: ctx.t('payRenew'),
       action: { method: 'POST', url: `${links.url}/renew`, success: { notice: ctx.t('renewed'), redirect: links.base } },
     },
-  }], { actions: [closeButton(ctx, links.base)] });
+  }] };
 }
 
-/** Зміна тарифу: картки тарифів, поточний позначено */
+/** Зміна тарифу (модальне вікно): картки тарифів, поточний позначено */
 async function planPanel(ctx: UiContext, account: AccountView, links: AccountLinks): Promise<UiNode> {
   const { plans } = await hosting.orders.catalog(ctx.userId);
   const currency = config.currency;
-  return panel(ctx.t('changePlan'), [
+  return { type: 'modal', title: ctx.t('changePlan'), close: links.base, size: 'lg', children: [
     {
       type: 'grid',
-      min: 200,
+      min: 160,
       children: plans.map((plan): UiNode => ui.panel(plan.name, [
         ui.text([ui.money(plan.price, currency), ` ${ctx.t('perMonth')}`], { bold: true }),
         ...(plan.diskMb ? [ui.muted(`${ctx.t('disk')}: ${formatSize(plan.diskMb)}`)] : []),
@@ -512,7 +512,7 @@ async function planPanel(ctx: UiContext, account: AccountView, links: AccountLin
       ])),
     },
     ui.muted(ctx.t('changePlanHint')),
-  ], { actions: [closeButton(ctx, links.base)] });
+  ] };
 }
 
 const CABINET_TABS = ['overview', 'sites', 'dns', 'mail', 'databases', 'ftp', 'ssl', 'cron', 'settings'] as const;
