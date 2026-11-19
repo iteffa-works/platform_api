@@ -473,6 +473,10 @@ export const uk = {
   'error.notFound': 'Сторінку не знайдено',
   'error.internal': 'Внутрішня помилка',
   'error.home': 'На головну',
+  'error.notFoundText': 'Сторінки, яку ви шукаєте, немає або її перенесено.',
+  'error.internalText': 'Сталася помилка на нашому боці. Ми вже бачимо її в журналі — спробуйте ще раз за хвилину.',
+  'error.back': 'Назад',
+  'error.reload': 'Оновити',
 } as const;
 
 export type MessageKey = keyof typeof uk;

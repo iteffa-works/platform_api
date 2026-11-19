@@ -460,4 +460,8 @@ export const ru: Record<MessageKey, string> = {
   'error.notFound': 'Страница не найдена',
   'error.internal': 'Внутренняя ошибка',
   'error.home': 'На главную',
+  'error.notFoundText': 'Страницы, которую вы ищете, нет или её перенесли.',
+  'error.internalText': 'Произошла ошибка на нашей стороне. Мы уже видим её в журнале — попробуйте ещё раз через минуту.',
+  'error.back': 'Назад',
+  'error.reload': 'Обновить',
 };

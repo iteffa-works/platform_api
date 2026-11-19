@@ -1,0 +1,95 @@
+<!doctype html>
+<!--
+  Запасна сторінка помилки: коли впав сам кореневий layout (напр. модуль не завантажився)
+  і +error.svelte показати неможливо. У режимі DEBUG повідомлення містить стек.
+-->
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>%sveltekit.status% · Flowaxy</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --surface: #fff;
+        --border: #e3e6eb;
+        --text: #1c2026;
+        --muted: #6b7380;
+        --accent: #e11d48;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b0d12;
+          --surface: #12151c;
+          --border: #232833;
+          --text: #e6e9ef;
+          --muted: #8a93a3;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      .card {
+        width: min(100%, 980px);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--accent);
+        border-radius: 8px;
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .head { display: flex; align-items: baseline; gap: 14px; padding: 24px 28px 12px; }
+      .code { color: var(--accent); font-size: 40px; font-weight: 800; line-height: 1; }
+      .title { margin: 0; font-size: 18px; }
+      .hint { margin: 0; padding: 0 28px 16px; color: var(--muted); }
+      pre {
+        margin: 0;
+        padding: 16px 28px;
+        max-height: 60vh;
+        overflow: auto;
+        border-top: 1px solid var(--border);
+        background: #0f1218;
+        color: #d5dae3;
+        font: 12.5px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      pre::first-line { color: #fb7185; font-weight: 700; }
+      .actions { display: flex; gap: 8px; padding: 16px 28px 24px; }
+      a, button {
+        padding: 7px 16px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      a { border-color: var(--accent); background: var(--accent); color: #fff; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="head">
+        <span class="code">%sveltekit.status%</span>
+        <h1 class="title">Сторінка не відкрилась</h1>
+      </div>
+      <p class="hint">Сталася помилка під час завантаження застосунку. Спробуйте оновити сторінку.</p>
+      <pre>%sveltekit.error.message%</pre>
+      <div class="actions">
+        <a href="/">На головну</a>
+        <button type="button" onclick="location.reload()">Оновити</button>
+      </div>
+    </main>
+  </body>
+</html>

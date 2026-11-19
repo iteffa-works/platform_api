@@ -460,4 +460,8 @@ export const en: Record<MessageKey, string> = {
   'error.notFound': 'Page not found',
   'error.internal': 'Internal error',
   'error.home': 'Go home',
+  'error.notFoundText': 'The page you are looking for does not exist or has moved.',
+  'error.internalText': 'Something went wrong on our side. It is already in our logs — please try again in a minute.',
+  'error.back': 'Back',
+  'error.reload': 'Reload',
 };
