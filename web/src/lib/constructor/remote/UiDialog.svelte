@@ -7,7 +7,7 @@
   import type { UiNode as Node } from './schema.js';
   import UiNode from './UiNode.svelte';
 
-  let { title, nodes, onclose }: { title: string; nodes: Node[]; onclose: () => void } = $props();
+  let { title, nodes, onclose, size = 'md' }: { title: string; nodes: Node[]; onclose: () => void; size?: 'md' | 'lg' } = $props();
 
   const remote = useRemote();
   const error = remote.error;
@@ -22,6 +22,7 @@
 <dialog
   bind:this={element}
   class="dialog"
+  class:is-lg={size === 'lg'}
   aria-label={title}
   oncancel={(event) => { event.preventDefault(); onclose(); }}
   onclick={(event) => { if (event.target === element) onclose(); }}
@@ -48,6 +49,15 @@
     background: var(--ui-surface);
     color: var(--ui-text);
     box-shadow: var(--ui-shadow-pop, 0 24px 64px rgba(15, 23, 42, 0.28));
+  }
+
+  .dialog.is-lg {
+    width: min(920px, calc(100vw - 32px));
+  }
+
+  /* Картки вибору (строк продовження) — у ряд, скільки влізе */
+  .dialog__body :global(.choice__items.is-cards) {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 
   .dialog::backdrop {

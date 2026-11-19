@@ -11,7 +11,9 @@
   import Self from './UiNode.svelte';
   import UiActions from './UiActions.svelte';
   import UiButtonNode from './UiButtonNode.svelte';
+  import { goto } from '$app/navigation';
   import UiDataGrid from './UiDataGrid.svelte';
+  import UiDialog from './UiDialog.svelte';
   import UiForm from './UiForm.svelte';
   import UiInline from './UiInline.svelte';
   import UiMenu from './UiMenu.svelte';
@@ -159,6 +161,9 @@
       </div>
     {/if}
   </section>
+{:else if node.type === 'modal'}
+  {@const close = node.close}
+  <UiDialog title={node.title} nodes={node.children} size={node.size} onclose={() => goto(close, { noScroll: true, keepFocus: true })} />
 {:else if node.type === 'empty'}
   <EmptyState text={node.text} />
 {:else if node.type === 'code'}

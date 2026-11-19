@@ -138,6 +138,11 @@ export type UiNode =
   /** Кольорова плитка: медіа ліворуч, вміст, кнопка-футер */
   | { type: 'tile'; tone: Tone; media?: UiNode; children: UiNode[]; footer?: UiButton }
   | { type: 'empty'; text: string }
+  /**
+   * Модальне вікно, відкрите самою сторінкою (напр. `?panel=renew`): закриття — перехід на `close`.
+   * Посилання на стан (з листа, сповіщення, інших сторінок) відкривають одразу вікно.
+   */
+  | { type: 'modal'; title: string; close: string; size?: 'md' | 'lg'; children: UiNode[] }
   /** Картка-привітання: аватар, заголовок, рядок відомостей; праворуч — дата / стан */
   | { type: 'welcome'; title: string; subtitle?: Inline; avatar?: { seed: string; src?: string | null }; aside?: Inline; status?: { tone: Tone; text: string } }
   | { type: 'code'; text: string; block?: boolean }
