@@ -1,9 +1,13 @@
 # Плагіни
 
-| | Де | Інтерфейс | Вимикається |
-|-|----|-----------|-------------|
-| **Модуль ядра** | `api/src/modules/<name>` + `web/src/lib/plugins/<name>` | компоненти Svelte | ні |
-| **Плагін (addon)** | **лише** `api/src/plugins/<name>` | схема з API → конструктор web | так — `/admin/plugins`, без перезапуску |
+| | Де | Вимикається |
+|-|----|-------------|
+| **Ядро Flowaxy** | `api/src/flowaxy` — фреймворк, нічого не знає про застосунок | — |
+| **Розширення** | `api/src/extensions/<name>` — системний функціонал (`ui`, `plugins`) | ні |
+| **Плагін** | `api/src/plugins/<name>` (+ для старих — `web/src/lib/plugins/<name>`) | так — `/admin/plugins`, без перезапуску |
+
+Плагіни між собою звʼязуються портами (`flowaxy/services`: `provide` / `use`) і хуками (`flowaxy/hooks`);
+вимкнений плагін — його порти дають 503. Нові плагіни не мають коду в web.
 
 Плагін не має коду в web. API описує сторінки деревом вузлів з даними (server-driven UI),
 а `web/src/lib/constructor/remote` рендерить їх універсальними компонентами UI-kit.
@@ -17,10 +21,11 @@ web: /app/hosting/12 ──GET /ui/manifest──▶ маршрути, меню,
 
 ## Як працює увімкнення
 
-- Стан — `plugin_states` + кеш у памʼяті; новий addon зʼявляється **вимкненим**.
+- Стан — `plugin_states` + кеш у памʼяті; новий плагін зʼявляється **вимкненим** (або `defaultEnabled: true`).
 - Вимкнено → маршрути й `/ui/page` дають 404, маніфест без сторінок / меню, події не викликаються.
 - Міграції й права (`permissions`) реєструються завжди — дані й рівні в ролях зберігаються.
-- Не завантажувати взагалі — `api/src/core/plugins/disabled.ts`.
+- Не завантажувати взагалі — `api/src/flowaxy/plugins/disabled.ts`.
+- Збій `init` плагіна не зупиняє застосунок — лише лог.
 
 ## Плагін
 
@@ -52,7 +57,7 @@ export const plugin: Plugin = {
 };
 ```
 
-## Схема ([api/src/core/ui/schema.ts](../../api/src/core/ui/schema.ts))
+## Схема ([api/src/flowaxy/ui/schema.ts](../../api/src/flowaxy/ui/schema.ts))
 
 | Група | Вузли |
 |-------|-------|
@@ -70,7 +75,21 @@ export const plugin: Plugin = {
 - **Стан сторінки** — query URL (`?tab=deleted`, `?panel=renew`) + значення живої форми → `ctx.state`.
 - Новий тип вузла — у `schema.ts` (API), дзеркалі `web/src/lib/constructor/remote/schema.ts` і `UiNode.svelte`.
 
-## Хуки й фільтри (`core/hooks`)
+## Огляди з внесків плагінів (`ui.dashboard`)
+
+Панель адмінки (і згодом кабінету) не знає про дані плагінів — кожен плагін додає свої показники й панелі фільтром:
+
+```ts
+hooks.addFilter('ui.dashboard', async (sections, { ctx, area }): Promise<DashboardSection[]> => {
+  if (area !== 'admin' || !ctx.can('logs', 'view')) return sections;
+  const t = withMessages(ctx, messages).t;          // тексти — зі словника свого плагіна
+  return [...sections, { order: 50, stats: [...], panels: [...] }];
+}, { owner: 'activity', when: () => isEnabled('activity') });
+```
+
+Вимкнений плагін зникає з огляду сам (`when`). Сторінки розділу `admin` будь-якого плагіна вимагають `admin.panel:view`.
+
+## Хуки й фільтри (`flowaxy/hooks`)
 
 ```ts
 hooks.addAction('hosting.account.created', async ({ account }) => { /* CRM, вебхук… */ }, { owner: 'crm', priority: 20 });
@@ -80,13 +99,13 @@ const price = await hooks.applyFilters('my.filter', value, context);
 ```
 
 - Пріоритет: менший — раніше; помилка підписника ізольована (лог), решта виконуються.
-- `when: () => isEnabled('<плагін>')` — підписка addon діє лише поки увімкнено.
+- `when: () => isEnabled('<плагін>')` — підписка плагіна діє лише поки він увімкнений.
 - Типи — declaration merging `interface HookActions / HookFilters` у файлі `hooks.ts` плагіна.
-- `plugin.events` і `core/events` (`on` / `emit`) — сумісні аліаси дій.
+- `plugin.events` і `flowaxy/events` (`on` / `emit`) — сумісні аліаси дій.
 
 ## Еталонна структура плагіна
 
-Див. [hosting.md](hosting.md): `index.ts` (маніфест) → `module.ts` (корінь композиції, класи-сервіси) →
+Див. [hosting.md](hosting/hosting.md): `index.ts` (маніфест) → `module.ts` (корінь композиції, класи-сервіси) →
 `domain/` (моделі, чисті правила) · `providers/` (зовнішні системи за контрактом) · `services/` · `http/` · `ui/` · `hooks.ts`.
 
 ## Безпека
@@ -100,4 +119,4 @@ const price = await hooks.applyFilters('my.filter', value, context);
 
 | Плагін | Що | ТЗ |
 |--------|----|----|
-| `hosting` | Хостинг: тарифи, замовлення з балансу, керування акаунтами, повна консоль панелі; провайдери ISPmanager 6 і Sandbox | [hosting.md](hosting.md) |
+| `hosting` | Хостинг: тарифи, замовлення з балансу, керування акаунтами й серверами, копія даних панелі з синхронізацією; провайдер ISPmanager 6 | [hosting.md](hosting/hosting.md) |

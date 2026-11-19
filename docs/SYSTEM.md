@@ -20,20 +20,24 @@ desktop / SDK ───/api/client/v1 (ключ)───▶       │
 
 | Тека | Що |
 |------|----|
-| `config/` | змінні середовища |
-| `core/access` | рівні прав `none < view < edit < manage`, `can`, `isWithin`, каталог ресурсів |
-| `core/activity` | `track(req, userId, action, meta)` → подія `activity` |
-| `core/db` | Sequelize, міграції (umzug) |
-| `core/events` | шина подій `on` / `emit` |
-| `core/hooks` | дії (`doAction`) і фільтри (`applyFilters`) з пріоритетами, типізація через declaration merging; `core/events` — аліас |
-| `core/ui` | server-driven UI: схема вузлів, реєстр сторінок плагінів, маніфест, переклади мовою запиту |
-| `core/plugins` | автозавантаження модулів з `modules/*` (ядро) і `plugins/*` (addon, вмикаються в адмінці) — [docs/plugins](plugins/README.md) |
-| `shared/` | crypto (bcrypt, AES-GCM, TOTP, підписані тікети), http (помилки, ліміти, cookies), i18n помилок |
-| `modules/` | плагіни (нижче) |
+| `flowaxy/` | **ядро-фреймворк** (незалежне, згодом — npm-пакети): нічого не імпортує з решти `src` (перевірка — `tsconfig.flowaxy.json` у `npm run typecheck`) |
+| `flowaxy/access` | рівні прав `none < view < edit < manage`, `can`, `isWithin`, каталог ресурсів |
+| `flowaxy/activity` | `track(req, userId, action, meta)` → подія `activity` |
+| `flowaxy/db` | Sequelize (підключення — змінні `DB_*`), міграції (umzug) |
+| `flowaxy/events` · `flowaxy/hooks` | шина подій; дії (`doAction`) і фільтри (`applyFilters`) з пріоритетами |
+| `flowaxy/services` | **порти**: `provide` / `use` — звʼязок плагінів без імпортів (`wallet`, `users`, `access`, `notifications`); вимкнений власник → 503 |
+| `flowaxy/ui` | server-driven UI: схема вузлів, реєстр сторінок, маніфест, переклади мовою запиту; кит таблиць (`gridQuery`, `datagrid`, `person`…) з вбудованими перекладами; огляди з внесків плагінів (`ui.dashboard`) |
+| `flowaxy/plugins` | завантаження розширень і плагінів, стан, маршрути за «воротами» — [docs/plugins](plugins/README.md) |
+| `flowaxy/settings.ts` | `configure({ extensionsDir, pluginsDir })` — застосунок каже ядру, де його теки; `errors.ts`, `fs.ts` |
+| `env.ts` · `paths.ts` | точки входу: `.env` і `configure()` — імпортувати першими (сервер `index.ts`, `cli/migrate.ts`) |
+| `config/` | налаштування застосунку (порт, секрет, сесії, валюта) |
+| `shared/` | спільне застосунку: crypto, http (ліміти, cookies; `HttpError` — з ядра), i18n помилок, гроші |
+| `extensions/` | **розширення** — системний функціонал, завжди діють (нижче) |
+| `plugins/` | **плагіни** — вмикаються / вимикаються в `/admin/plugins` без перезапуску (нижче) |
 
-### Плагін
+### Розширення й плагіни
 
-Тека в `modules/` (ядро, завжди увімкнено) або `plugins/` (addon: вмикається в `/admin/plugins` без перезапуску, див. [docs/plugins](plugins/README.md)) з `index.ts`:
+Тека в `extensions/` (завжди діє) або `plugins/` (вмикається в адмінці, див. [docs/plugins](plugins/README.md)) з `index.ts`:
 
 ```ts
 export const plugin: Plugin = {
@@ -46,25 +50,24 @@ export const plugin: Plugin = {
 ```
 
 - Ресурси прав з `permissions` автоматично зʼявляються в матриці ролей адмінки.
-- Плагіни вантажаться за алфавітом — тому кожен маршрут сам ставить `requireUser` / `requirePermission`.
-- Моделі імпортують сервіси; схему задають лише міграції `modules/<name>/migrations/<YYYYMMDD-NN-опис>.ts`.
+- Спершу розширення, потім плагіни (за алфавітом). Маршрути ставлять перевірки доступу самі — через порт: `guards.user`, `guards.permission(…)` з `flowaxy/services`.
+- Плагіни один одного не імпортують: звʼязок — порти й хуки. Плагін владіє своїми екранами (REST і сторінки адмінки / кабінету своїх даних).
+- Моделі імпортують сервіси; схему задають лише міграції `<extensions|plugins>/<name>/migrations/<YYYYMMDD-NN-опис>.ts`.
 - Чернетка міграції — `*.draft.ts`: застосовується лише з `MIGRATIONS_DRAFTS=1` (тестова БД під час розробки).
 
-### Модулі
+### Склад
 
-| Модуль | Відповідає за |
-|--------|---------------|
-| `auth` | користувачі, ролі, сесії, вхід / реєстрація, 2FA, аватари, налаштування, капча (extensions) |
-| `cabinet` | власний акаунт: профіль, пароль, налаштування, сесії, 2FA, аватар, реферали, видалення |
-| `admin` | користувачі й ролі (CRUD, призначення), показники панелі |
-| `activity` | журнал дій (слухає `activity`), власний і загальний |
-| `notifications` | сповіщення з подій `activity`, прочитано / ні |
-| `billing` | тарифи, рахунок (тариф + баланс), операції балансу |
-| `client-api` | черга завдань для desktop (скелет, у памʼяті) |
-| `plugins` | список плагінів, увімкнення / вимкнення addon, `GET /plugins` для web |
-| `ui` | `GET /ui/manifest` (маршрути, меню, сервіси, переклади), `POST /ui/page` (схема сторінки плагіна) |
-
-Addon (`api/src/plugins`): `hosting` — хостинг, консоль панелі, провайдери ISPmanager 6 і Sandbox — еталонна структура плагіна ([опис](plugins/hosting.md)).
+| | Назва | Відповідає за |
+|-|-------|---------------|
+| плагін | `auth` | користувачі, ролі, сесії, вхід / реєстрація, 2FA, аватари, налаштування, капча (`plugins/auth/extensions`); «мій акаунт» (`/cabinet/*`); адмінка користувачів і ролей; порти `access`, `users` |
+| плагін | `admin` | доступ до адмінки (`admin.panel`, шлюз `/admin/*`), панель-огляд з внесків плагінів, керування плагінами |
+| плагін | `activity` | журнал дій (слухає `activity`), власний і загальний; сторінка й віджет адмінки |
+| плагін | `notifications` | сповіщення з подій `activity`, прочитано / ні |
+| плагін | `billing` | баланс для оплати послуг, поповнення заявками (на картку / банківський переказ) з підтвердженням адміном, реквізити, журнал операцій; порт `wallet` |
+| плагін | `client-api` | черга завдань для desktop (скелет, у памʼяті) |
+| розширення | `plugins` | список, увімкнення / вимкнення плагінів, `GET /plugins` для web |
+| розширення | `ui` | `GET /ui/manifest` (маршрути, меню, сервіси, переклади), `POST /ui/page` (схема сторінки плагіна) |
+| плагін | `hosting` | хостинг, копія даних панелі з синхронізацією, провайдер ISPmanager 6 — еталонна структура плагіна ([опис](plugins/hosting/hosting.md)) |
 
 ## Дані (MariaDB)
 
@@ -76,14 +79,15 @@ Addon (`api/src/plugins`): `hosting` — хостинг, консоль пане
 | `sessions` | auth | `tokenHash` (SHA-256), IP, пристрій, `lastSeenAt`, `expiresAt`, `revokedAt` |
 | `activity_log` | activity | `action`, IP, пристрій, `meta` |
 | `notifications` | notifications | `kind`, `params`, `readAt` |
-| `plans` | billing | ціна в копійках, `isDefault`, `isActive` |
-| `billing_accounts` | billing | `userId` → `planId`, `balanceCents` |
+| `billing_accounts` | billing | `userId`, `balanceCents` |
+| `billing_topups` | billing | заявки на поповнення: спосіб, сума, призначення `FX-…`, стан |
+| `billing_settings` | billing | реквізити (картка, IBAN), мінімальна сума |
 | `balance_transactions` | billing | незмінний журнал: сума, баланс після, тип, хто |
-| `plugin_states` | plugins | стан addon: `name`, `enabled` |
+| `plugin_states` | plugins | стан плагінів: `name`, `enabled` |
 | `hosting_servers` | hosting | панелі: провайдер, URL, логін, пароль (AES-GCM), `verifyTls`, країна, IP |
 | `hosting_plans` | hosting | ціна за місяць → шаблон панелі |
 | `hosting_accounts` | hosting | `userId` ↔ логін панелі, стан, `paidUntil`, `autoRenew`, використання |
-| `migrations` | core | застосовані міграції |
+| `migrations` | flowaxy | застосовані міграції |
 
 Усі `id` — `INT UNSIGNED AUTO_INCREMENT`; дочірні рядки видаляються каскадом разом з користувачем.
 
@@ -150,7 +154,7 @@ export const admin: WebPlugin = {
 | admin | `GET /admin/overview` · `GET /admin/users` · `PATCH /admin/users/:id` · `GET /admin/permissions` · `GET\|POST /admin/roles` · `PATCH\|DELETE /admin/roles/:id` · `GET /admin/activity` · `GET /admin/billing` · `POST /admin/billing/adjust` · `POST\|PATCH\|DELETE /admin/billing/plans[/:id]` |
 | ui | `GET /ui/manifest` (гість — без сторінок) · `POST /ui/page` `{path, state}` → `{nodes}` |
 | plugins | `GET /plugins` (публічно, `{enabled}`) · `GET /admin/plugins` · `PATCH /admin/plugins/:name` `{enabled}` |
-| hosting | `/cabinet/hosting…`, `/admin/hosting/{servers,plans,accounts,stats}…`, консоль `/admin/hosting/servers/:id/panel/{overview,users,sites,dns,mail,databases,ftp,ssl,cron}` — [опис](plugins/hosting.md) |
+| hosting | `/cabinet/hosting…` (ресурси акаунта — `/cabinet/hosting/:id/panel/{sites,dns,mail,databases,ftp,ssl,cron}`), `/admin/hosting/{servers,plans,accounts,stats}…` (сервер: `sync`, `overview`, `users`) — [опис](plugins/hosting/hosting.md) |
 | client | `GET /status` · `GET /work/next` · `POST /work/:id/result` |
 
 Помилки: `{ error }` з HTTP-статусом; 401 — немає сесії, 403 — прав / CSRF, 429 — ліміт.
