@@ -10,6 +10,7 @@ import { loadPlugins } from './flowaxy/plugins/index.js';
 if (config.isProduction) {
   if (config.secret === 'dev-only-change-me' || config.secret.length < 32) throw new Error('APP_SECRET: унікальний рядок ≥ 32 символів обовʼязковий у production');
   if (config.clientApiKey === 'dev-client-key') throw new Error('CLIENT_API_KEY: задайте власний ключ у production');
+  if (config.debug) console.warn('[api] APP_DEBUG увімкнено в production — стеки помилок видно назовні. Вимкніть: APP_DEBUG=false');
 }
 
 await connectDb();

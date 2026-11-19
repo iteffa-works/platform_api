@@ -15,6 +15,11 @@ export const config = {
   /** Простий rate limit клієнтського контуру (запитів / хвилину на ключ) */
   clientRateLimitPerMinute: Number(process.env.CLIENT_RATE_LIMIT_PER_MINUTE || 120),
   isProduction: process.env.NODE_ENV === 'production',
+  /**
+   * Режим налагодження (APP_DEBUG): помилки 500 повертають клас, повідомлення й стек з кодом.
+   * Не задано — увімкнено в розробці, вимкнено в production.
+   */
+  debug: process.env.APP_DEBUG ? ['1', 'true', 'yes', 'on'].includes(process.env.APP_DEBUG.toLowerCase()) : process.env.NODE_ENV !== 'production',
   /** Файли застосунку (аватари); api/data у .gitignore */
   dataDir: process.env.DATA_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data'),
   /** Валюта балансу (ISO 4217) */

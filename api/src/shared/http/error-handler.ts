@@ -1,8 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
+import { config } from '../../config/index.js';
 import { HttpError } from '../errors/http-error.js';
+import { debugInfo } from './debug.js';
 import { pickLanguage, translate } from '../i18n/messages.js';
 
-/** Помилки → JSON `{ error }` мовою з Accept-Language; 500 — без деталей назовні */
+/** Помилки → JSON `{ error }` мовою з Accept-Language; 500 — без деталей назовні (крім APP_DEBUG: `debug`) */
 export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction): void {
   if (res.headersSent) {
     next(err);
@@ -22,5 +24,8 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     : status === 413 ? 'Запит завеликий'
       : status === 400 ? 'Некоректний запит'
         : 'Внутрішня помилка';
-  res.status(status).json({ error: translate(message, pickLanguage(req.headers['accept-language'])) });
+  res.status(status).json({
+    error: translate(message, pickLanguage(req.headers['accept-language'])),
+    ...(status === 500 && config.debug ? { debug: debugInfo(err, req) } : {}),
+  });
 }
