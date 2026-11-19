@@ -1,8 +1,2 @@
-export class HttpError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
+/** Помилка HTTP — з ядра Flowaxy (застосунок і плагіни можуть імпортувати й звідси) */
+export { HttpError } from '../../flowaxy/errors.js';

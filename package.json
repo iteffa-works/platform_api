@@ -6,6 +6,8 @@
     "dev": "concurrently -k -n api,web -c cyan,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
     "build": "npm run build -w api && npm run build -w web",
     "start": "npm run start -w api",
+    "start:web": "npm run start -w web",
+    "migrate": "npm run migrate -w api",
     "typecheck": "npm run typecheck -w api && npm run check -w web"
   },
   "engines": { "node": ">=24" },

@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
+import { sequelize } from './flowaxy/db/sequelize.js';
 import { errorHandler, HttpError } from './shared/http/index.js';
 
 /** Platform API для web: сесія в httpOnly-cookie, same-origin (Vite proxy / Nginx) */
@@ -21,6 +22,15 @@ function requireAppRequest(req: Request, _res: Response, next: NextFunction): vo
   next(new HttpError(403, 'Запит відхилено (CSRF)'));
 }
 
+/** Заголовки безпеки API (відповіді JSON; HTML віддає web) */
+function securityHeaders(_req: Request, res: Response, next: NextFunction): void {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+  next();
+}
+
 /** Збірка Express-додатку */
 export function createApp() {
   const app = express();
@@ -29,7 +39,20 @@ export function createApp() {
   app.set('trust proxy', 'loopback');
   app.disable('x-powered-by');
 
+  app.use(securityHeaders);
   app.use(express.json({ limit: '1mb' }));
+
+  // Моніторинг (uptime, балансувальник): API живий і БД відповідає
+  app.get('/api/health', async (_req, res) => {
+    try {
+      await sequelize.authenticate();
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ ok: true, db: true, uptime: Math.round(process.uptime()) });
+    } catch {
+      res.status(503).json({ ok: false, db: false });
+    }
+  });
+
   app.use('/api/v1', requireAppRequest, platformApi);
   app.use('/api/client/v1', cors(), clientApi);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Не знайдено' }));

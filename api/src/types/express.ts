@@ -1,4 +1,4 @@
-import type { Permissions } from '../core/access/index.js';
+import type { Permissions } from '../flowaxy/access/index.js';
 
 declare global {
   namespace Express {

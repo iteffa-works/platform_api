@@ -4,16 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --include \"src/plugins/**\" --include \"src/modules/**\" src/index.ts",
+    "dev": "tsx watch --include \"src/plugins/**\" --include \"src/extensions/**\" --include \"src/flowaxy/**\" src/index.ts",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "npm run clean && tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.flowaxy.json",
     "test": "vitest run",
-    "migrate": "tsx src/core/db/cli.ts",
-    "roles:set-developer": "tsx src/modules/auth/cli/set-developer.ts",
-    "hosting:probe": "tsx src/plugins/hosting/cli/probe.ts",
-    "hosting:demo": "tsx src/plugins/hosting/cli/demo.ts"
+    "migrate": "tsx src/cli/migrate.ts",
+    "roles:set-developer": "tsx src/plugins/auth/cli/set-developer.ts",
+    "hosting:probe": "tsx src/plugins/hosting/cli/probe.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

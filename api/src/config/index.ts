@@ -1,8 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import '../env.js';
 
 /** Назва для зовнішніх систем (застосунок 2FA, листи) */
 export const APP_TITLE = process.env.APP_TITLE || 'Platform';
@@ -16,13 +14,6 @@ export const config = {
   clientApiKey: process.env.CLIENT_API_KEY || 'dev-client-key',
   /** Простий rate limit клієнтського контуру (запитів / хвилину на ключ) */
   clientRateLimitPerMinute: Number(process.env.CLIENT_RATE_LIMIT_PER_MINUTE || 120),
-  db: {
-    host: process.env.DB_HOST || '127.0.1.19',
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || 'usr_internal',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'db_sandbox',
-  },
   isProduction: process.env.NODE_ENV === 'production',
   /** Файли застосунку (аватари); api/data у .gitignore */
   dataDir: process.env.DATA_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data'),
