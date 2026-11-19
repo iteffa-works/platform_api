@@ -2,7 +2,6 @@
 import { HttpError } from '../../../shared/http/index.js';
 import type { HostingProvider } from './contracts.js';
 import { IspManager6Provider } from './ispmanager6/provider.js';
-import { SandboxProvider } from './sandbox/provider.js';
 
 export class ProviderRegistry {
   private readonly providers = new Map<string, HostingProvider>();
@@ -28,7 +27,7 @@ export class ProviderRegistry {
 }
 
 export function createProviderRegistry(): ProviderRegistry {
-  return new ProviderRegistry([new IspManager6Provider(), new SandboxProvider()]);
+  return new ProviderRegistry([new IspManager6Provider()]);
 }
 
 export * from './contracts.js';

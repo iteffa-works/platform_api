@@ -1,5 +1,5 @@
 /** Конструктори вузлів сторінок хостингу: панелі, модальні форми, дії, вкладки консолі; таблиці — grid.ts */
-import { ui, type Inline, type Tone, type UiAction, type UiButton, type UiContext, type UiField, type UiNode } from '../../../core/ui/index.js';
+import { ui, type Inline, type Tone, type UiAction, type UiButton, type UiContext, type UiField, type UiNode } from '../../../flowaxy/ui/index.js';
 import type { ServerView } from '../services/presenter.js';
 
 export const ADMIN = '/admin/hosting';
@@ -81,27 +81,6 @@ export function serverForm(ctx: UiContext, providers: Array<{ id: string; title:
         : { method: 'POST', url: `${ADMIN}/servers`, success: { notice: ctx.t('serverConnected'), redirect: `${ADMIN}/servers/{server.id}` } },
     },
   };
-}
-
-export const CONSOLE_TABS = ['overview', 'users', 'sites', 'dns', 'mail', 'databases', 'ftp', 'ssl', 'cron', 'settings'] as const;
-export type ConsoleTab = (typeof CONSOLE_TABS)[number];
-
-/** Вкладки консолі сервера; owner зберігається між вкладками */
-export function consoleTabs(ctx: UiContext, serverId: number, active: ConsoleTab, owner?: string): UiNode {
-  const query = (tab: ConsoleTab) => {
-    const params = new URLSearchParams();
-    if (tab !== 'overview') params.set('tab', tab);
-    if (owner && tab !== 'overview' && tab !== 'users' && tab !== 'settings') params.set('owner', owner);
-    const search = params.toString();
-    return `${ADMIN}/servers/${serverId}${search ? `?${search}` : ''}`;
-  };
-  return { type: 'tabs', items: CONSOLE_TABS.map((tab) => ({ label: ctx.t(`tab.${tab}`), href: query(tab), active: tab === active })) };
-}
-
-/** Відсоток використання для смуги; без ліміту — null */
-export function usagePercent(used: number | null, limit: number | null): number | null {
-  if (used === null || !limit) return null;
-  return Math.min(100, Math.round((used / limit) * 100));
 }
 
 export function usageTone(percent: number | null): Tone {

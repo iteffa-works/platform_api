@@ -48,7 +48,8 @@ export class IspManager6Client implements PanelClient {
   }
 
   async check() {
-    const [accounts, packages] = await Promise.all([this.accounts.list(), this.accounts.packages()]);
+    // Лише списки: форми шаблонів відкриває синхронізація
+    const [accounts, packages] = await Promise.all([this.accounts.list(), this.isp.list('preset')]);
     return { accounts: accounts.length, packages: packages.length };
   }
 
@@ -59,6 +60,8 @@ export class IspManager6Client implements PanelClient {
     return redact({
       userListFields: Object.keys(users[0] ?? {}),
       presetFields: Object.keys(presets[0] ?? {}),
+      // Форма першого шаблону — звірити назви полів лімітів (limit_*) зі збіркою панелі
+      samplePresetForm: presets[0] ? await this.isp.call('preset.edit', { elid: field(presets[0], 'name') }) : null,
       sampleUser: user ?? null,
       sampleSite: name ? (await this.isp.list('webdomain', { su: name }))[0] ?? null : null,
     }) as Record<string, unknown>;

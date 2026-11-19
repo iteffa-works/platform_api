@@ -7,7 +7,7 @@
  */
 
 export type PanelConnection = {
-  /** Адреса панелі, напр. `https://isp.example.com:1500` або `sandbox://demo` */
+  /** Адреса панелі, напр. `https://isp.example.com:1500` */
   url: string;
   username: string;
   password: string;
@@ -37,6 +37,24 @@ export type PanelAccount = {
   /** null — без ліміту */
   diskLimitMb: number | null;
   trafficUsedMb: number | null;
+};
+
+/**
+ * Шаблон користувача панелі (тариф у панелі). Ліміти: null — без обмеження, 0 — заборонено.
+ * `limits` — усі сирі поля обмежень панелі (для звірки назв полів і показу в адмінці).
+ */
+export type PanelPackage = {
+  name: string;
+  comment: string | null;
+  diskMb: number | null;
+  sites: number | null;
+  databases: number | null;
+  mailboxes: number | null;
+  mailDomains: number | null;
+  ftpUsers: number | null;
+  cronJobs: number | null;
+  features: { backup: boolean; ssh: boolean; nodejs: boolean; git: boolean; ssl: boolean };
+  limits: Record<string, string>;
 };
 
 export type NewAccount = { login: string; password: string; package: string | null; name: string };
@@ -96,7 +114,8 @@ export type PhpVersion = { key: string; name: string; installed: boolean };
 
 export interface AccountsApi {
   list(): Promise<PanelAccount[]>;
-  packages(): Promise<string[]>;
+  /** Шаблони користувачів з лімітами */
+  packages(): Promise<PanelPackage[]>;
   create(input: NewAccount): Promise<void>;
   setPackage(login: string, pkg: string): Promise<void>;
   setPassword(login: string, password: string): Promise<void>;

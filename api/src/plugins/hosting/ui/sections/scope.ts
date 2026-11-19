@@ -1,108 +1,37 @@
 /**
- * Область розділів панелі (сайти, DNS, пошта, БД, FTP, SSL, cron) — одні й ті самі розділи для:
- * - консолі адміністратора: усі власники, фільтр `?owner=`, REST `/admin/hosting/servers/:id/panel`;
- * - кабінету клієнта: власник зафіксований (логін його акаунта), REST `/cabinet/hosting/:id/panel`.
+ * Область розділів кабінету (сайти, DNS, пошта, БД, FTP, SSL, cron) для одного хостинг-акаунта:
+ * дані — з копії в БД (`hosting.resources`), дії — REST `/cabinet/hosting/:id/panel/<розділ>`.
  */
-import type { GridTone, UiContext, UiField, UiNode } from '../../../../core/ui/index.js';
+import type { GridTone, UiContext, UiNode } from '../../../../flowaxy/ui/index.js';
+import type { HostingAccount } from '../../domain/models.js';
 import { datagrid, gridQuery, localGrid, searchBox, type GridColumn, type GridToolbar } from '../grid.js';
-import { hosting } from '../../module.js';
-import type { Column } from '../kit.js';
-
-export type ScopeOptions = {
-  /** REST розділів панелі */
-  api: string;
-  /** Сторінка, на якій показано розділи (вкладки — `?tab=`) */
-  page: string;
-  /** Зафіксований власник (кабінет); без нього — фільтр з URL */
-  owner?: string;
-  manage: boolean;
-};
 
 export class PanelScope {
+  /** REST розділів акаунта */
   readonly api: string;
+  /** Сторінка акаунта (вкладки — `?tab=`) */
   readonly page: string;
-  readonly manage: boolean;
-  private readonly fixedOwner?: string;
-  private ownersCache: Promise<string[]> | null = null;
+  /** Зміни дозволені (акаунт активний — перевірено сторінкою) */
+  readonly manage = true;
 
-  constructor(readonly ctx: UiContext, readonly serverId: number, options: ScopeOptions) {
+  constructor(readonly ctx: UiContext, readonly account: HostingAccount, options: { api: string; page: string }) {
     this.api = options.api;
     this.page = options.page;
-    this.manage = options.manage;
-    this.fixedOwner = options.owner;
   }
 
   get t() {
     return this.ctx.t;
   }
 
-  /** Кабінет клієнта: власник зафіксований, вибору немає */
-  get fixed(): boolean {
-    return Boolean(this.fixedOwner);
-  }
-
-  get owner(): string | undefined {
-    return this.fixedOwner ?? (this.ctx.state.owner || undefined);
-  }
-
-  /** `?owner=` для REST (в кабінеті сервер усе одно підставляє власника сам) */
-  get ownerQuery(): string {
-    return this.owner ? `?owner=${encodeURIComponent(this.owner)}` : '';
-  }
-
-  /** Користувачі панелі — для вибору власника; у кабінеті — лише свій */
-  owners(): Promise<string[]> {
-    if (this.fixedOwner) return Promise.resolve([this.fixedOwner]);
-    this.ownersCache ??= hosting.servers.panelAccounts(this.serverId)
-      .then((data) => data.accounts.map((account) => account.login).sort())
-      .catch(() => []);
-    return this.ownersCache;
-  }
-
-  /** Посилання на сторінку з параметрами (вкладка, власник-фільтр, зона…) */
+  /** Посилання на сторінку акаунта з параметрами (вкладка, зона, домен…) */
   href(params: Record<string, string | undefined>): string {
     const query = new URLSearchParams();
-    if (!this.fixed && this.owner) query.set('owner', this.owner);
     for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
     const search = query.toString();
     return `${this.page}${search ? `?${search}` : ''}`;
   }
 
-  /** Колонки таблиці: у кабінеті без «Власник» */
-  columns<C extends Column>(columns: C[]): C[] {
-    return this.fixed ? columns.filter((column) => column.key !== 'owner') : columns;
-  }
-
-  /** Поле власника форми: у кабінеті — приховане */
-  ownerField(): UiField {
-    if (this.fixedOwner) return { name: 'owner', kind: 'hidden', value: this.fixedOwner };
-    return { name: 'owner', kind: 'select', label: this.t('owner'), required: true, value: this.owner ?? '', options: [] };
-  }
-
-  /** Поле власника з варіантами (адмінка) */
-  async ownerFieldWithOptions(preferred?: string): Promise<UiField> {
-    const field = this.ownerField();
-    if (field.kind === 'hidden') return field;
-    const owners = await this.owners();
-    return { ...field, value: preferred ?? this.owner ?? owners[0] ?? '', options: owners.map((owner) => ({ value: owner, label: owner })) };
-  }
-
-  /** Фільтр власника для панелі інструментів таблиці (адмінка); у кабінеті — немає */
-  async ownerFilters(): Promise<NonNullable<NonNullable<GridToolbar>['filters']>> {
-    if (this.fixed) return [];
-    const owners = await this.owners();
-    return [{
-      name: 'owner',
-      label: this.t('ownerFilter'),
-      value: this.owner ?? '',
-      options: [{ value: '', label: this.t('allOwners') }, ...owners.map((item) => ({ value: item, label: item }))],
-    }];
-  }
-
-  /**
-   * Таблиця розділу над списком панелі: фільтр власника (адмінка), пошук, сортування й сторінка на сервері.
-   * Розділ описує лише колонки й рядок.
-   */
+  /** Таблиця розділу: пошук, сортування й сторінка на сервері над списком з копії; розділ описує колонки й рядок */
   async grid<T>(items: T[], options: {
     columns: GridColumn[];
     defaultSort: string;
@@ -110,23 +39,20 @@ export class PanelScope {
     text: (item: T) => string;
     row: (item: T) => { key: string | number; tone?: GridTone; cells: Record<string, UiNode[]> };
     empty: string;
-    extraFilters?: NonNullable<NonNullable<GridToolbar>['filters']>;
     segments?: NonNullable<GridToolbar>['segments'];
   }): Promise<UiNode> {
     const query = gridQuery(this.ctx.state, Object.keys(options.sort), options.defaultSort);
     const page = localGrid(items, query, { text: options.text, sort: options.sort });
-    const filters = [...(await this.ownerFilters()), ...(options.extraFilters ?? [])];
     return datagrid({
       ctx: this.ctx,
       query: page.query,
       total: page.total,
-      toolbar: { segments: options.segments, filters: filters.length ? filters : undefined, search: searchBox(this.ctx, query) },
-      columns: this.columns(options.columns.map((column) => ({ ...column, sortable: column.key in options.sort }))),
+      toolbar: { segments: options.segments, search: searchBox(this.ctx, query) },
+      columns: options.columns.map((column) => ({ ...column, sortable: column.key in options.sort })),
       rows: page.rows.map(options.row),
       empty: options.empty,
     });
   }
-
 }
 
 export type PanelSectionRenderer = (scope: PanelScope) => Promise<UiNode[]>;

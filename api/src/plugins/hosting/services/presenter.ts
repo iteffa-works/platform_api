@@ -1,5 +1,7 @@
 /** Подання моделей для API / сторінок: без секретів і службових полів */
-import { formatAmount } from '../../../modules/billing/money.js';
+import type { UserRef } from '../../../flowaxy/services/index.js';
+import { formatAmount } from '../../../shared/money/index.js';
+import { splitIps } from '../domain/input.js';
 import type { HostingAccount, HostingPlan, HostingServer } from '../domain/models.js';
 
 export function presentPlan(plan: HostingPlan) {
@@ -14,15 +16,12 @@ export function presentPlan(plan: HostingPlan) {
     diskMb: plan.diskMb,
     sites: plan.sites,
     isActive: plan.isActive,
+    isFeatured: plan.isFeatured,
     sortOrder: plan.sortOrder,
   };
 }
 
 export type PlanView = ReturnType<typeof presentPlan>;
-
-export function splitIps(value: string | null): string[] {
-  return (value ?? '').split(/[\s,]+/).filter(Boolean);
-}
 
 /** Розташування для користувача: без логіна адміністратора панелі */
 export function presentLocation(server: HostingServer) {
@@ -45,13 +44,16 @@ export function presentServer(server: HostingServer, accounts = 0) {
     ipv4: server.ipv4,
     ipv6: server.ipv6,
     maxAccounts: server.maxAccounts,
+    syncedAt: server.syncedAt,
+    syncError: server.syncError,
     accounts,
   };
 }
 
 export type ServerView = ReturnType<typeof presentServer>;
 
-export function presentAccount(account: HostingAccount, admin = false) {
+/** Акаунт; `owner` — для адмінки (email власника з порту users) */
+export function presentAccount(account: HostingAccount, owner?: UserRef | null) {
   return {
     id: account.id,
     login: account.panelUser,
@@ -67,15 +69,12 @@ export function presentAccount(account: HostingAccount, admin = false) {
       diskLimitMb: account.diskLimitMb ?? account.plan?.diskMb ?? null,
       sitesUsed: account.sitesUsed,
       sitesLimit: account.sitesLimit ?? account.plan?.sites ?? null,
-      updatedAt: account.usageAt,
+      updatedAt: account.usageAt ?? account.server?.syncedAt ?? null,
     },
     server: account.server ? presentLocation(account.server) : null,
     createdAt: account.createdAt,
     deletedAt: account.deletedAt,
-    ...(admin ? {
-      serverId: account.serverId,
-      user: account.user ? { id: account.user.id, email: account.user.email } : null,
-    } : {}),
+    ...(owner !== undefined ? { serverId: account.serverId, userId: account.userId, user: owner } : {}),
   };
 }
 

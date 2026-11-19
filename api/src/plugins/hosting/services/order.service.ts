@@ -1,5 +1,5 @@
 /**
- * Замовлення й оплата хостингу через баланс (модуль billing).
+ * Замовлення й оплата хостингу через баланс (порт `wallet` платформи).
  * Гроші списуються в транзакції БД разом зі зміною акаунта; дія в панелі — після.
  * Панель відмовила — компенсація: повернення коштів (refund) і відкат стану.
  * Ціна проходить фільтр `hosting.order.price` (знижки, промокоди — без змін тут).
@@ -7,12 +7,11 @@
 import type { Request } from 'express';
 import { Op } from 'sequelize';
 import { config as appConfig } from '../../../config/index.js';
-import { sequelize } from '../../../core/db/index.js';
-import { hooks } from '../../../core/hooks/index.js';
-import { User } from '../../../modules/auth/models/user.js';
-import { formatAmount } from '../../../modules/billing/money.js';
-import { balanceCents, chargeService, refundService } from '../../../modules/billing/service.js';
+import { sequelize } from '../../../flowaxy/db/index.js';
+import { hooks } from '../../../flowaxy/hooks/index.js';
+import { use } from '../../../flowaxy/services/index.js';
 import { createRateLimiter, HttpError } from '../../../shared/http/index.js';
+import { formatAmount } from '../../../shared/money/index.js';
 import type { HostingConfig } from '../config.js';
 import { HostingAccount, type HostingPlan, type HostingServer } from '../domain/models.js';
 import { addMonths, generatePassword, readLogin, readPeriod, upgradeCost } from '../domain/rules.js';
@@ -22,6 +21,9 @@ import { panelCall } from './panel-call.js';
 import type { PlanService } from './plan.service.js';
 import { presentAccount, presentPlan } from './presenter.js';
 import type { ServerService } from './server.service.js';
+import type { SyncService } from './sync.service.js';
+
+const wallet = () => use('wallet');
 
 const orderLimiter = createRateLimiter({ windowMs: 10 * 60_000, max: 5, message: 'Забагато замовлень — спробуйте пізніше' });
 
@@ -33,6 +35,7 @@ export class OrderService {
     private readonly servers: ServerService,
     private readonly plans: PlanService,
     private readonly accounts: AccountService,
+    private readonly sync: SyncService,
     private readonly config: HostingConfig,
   ) {}
 
@@ -54,7 +57,7 @@ export class OrderService {
 
   /** Каталог для форми замовлення */
   async catalog(userId: number) {
-    const [plans, servers, balance] = await Promise.all([this.plans.models(true), this.servers.available(), balanceCents(userId)]);
+    const [plans, servers, balance] = await Promise.all([this.plans.models(true), this.servers.available(), wallet().balance(userId)]);
     return {
       currency: appConfig.currency,
       balance: formatAmount(balance),
@@ -87,13 +90,13 @@ export class OrderService {
       if (!server) throw new HttpError(503, 'Немає вільних серверів у цьому розташуванні');
       await this.ensureLoginFree(server, login);
 
-      const user = await User.findByPk(userId, { attributes: ['id', 'email'] });
+      const user = (await use('users').byIds([userId])).get(userId);
       if (!user) throw new HttpError(401, 'Сесія недійсна');
 
       const price = await this.price(plan, months, userId, 'order');
       const note = `Хостинг «${plan.name}» ${login}, ${months} міс.`;
       const account = await sequelize.transaction(async (transaction) => {
-        await chargeService(userId, price, note, transaction);
+        await wallet().charge(userId, price, note, transaction);
         return HostingAccount.create({
           serverId: server.id, userId, planId: plan.id, panelUser: login, preset: plan.package,
           status: 'pending', paidUntil: addMonths(new Date(), months),
@@ -106,7 +109,7 @@ export class OrderService {
           .finally(() => this.servers.cache.invalidate(server.id));
       } catch (error) {
         await sequelize.transaction(async (transaction) => {
-          await refundService(userId, price, `Повернення: ${note}`, transaction);
+          await wallet().refund(userId, price, `Повернення: ${note}`, transaction);
           await account.destroy({ transaction });
         });
         if (error instanceof PanelError) throw new HttpError(502, `Панель хостингу: ${error.message}. Кошти повернено на баланс.`);
@@ -114,8 +117,11 @@ export class OrderService {
       }
 
       await account.update({ status: 'active' });
-      await hooks.doAction('hosting.account.created', { account, req, actorId: userId, source: 'order' });
-      return { account: presentAccount(await this.accounts.find(account.id)), password };
+      const created = await this.accounts.find(account.id);
+      // Копія ресурсів нового акаунта — одразу (кабінет показує її без очікування фонового завдання)
+      await this.sync.syncAccount(created).catch(() => undefined);
+      await hooks.doAction('hosting.account.created', { account: created, req, actorId: userId, source: 'order' });
+      return { account: presentAccount(created), password };
     });
   }
 
@@ -125,7 +131,7 @@ export class OrderService {
     await sequelize.transaction(async (transaction) => {
       const locked = await HostingAccount.findByPk(account.id, { transaction, lock: transaction.LOCK.UPDATE });
       if (!locked) throw new HttpError(404, 'Хостинг-акаунт не знайдено');
-      await chargeService(userId, price, `Продовження хостингу ${locked.panelUser}, ${months} міс.`, transaction);
+      await wallet().charge(userId, price, `Продовження хостингу ${locked.panelUser}, ${months} міс.`, transaction);
       const now = new Date();
       const from = locked.paidUntil && locked.paidUntil > now ? locked.paidUntil : now;
       await locked.update({ paidUntil: addMonths(from, months), remindedAt: null }, { transaction });
@@ -163,13 +169,13 @@ export class OrderService {
 
       const cost = upgradeCost(account.plan?.priceCents ?? 0, plan.priceCents, account.paidUntil);
       const note = `Зміна тарифу хостингу ${account.panelUser}: «${plan.name}»`;
-      if (cost > 0) await sequelize.transaction((transaction) => chargeService(userId, cost, note, transaction));
+      if (cost > 0) await sequelize.transaction((transaction) => wallet().charge(userId, cost, note, transaction));
 
       try {
-        await this.accounts.client(account).accounts.setPackage(account.panelUser, plan.package)
+        await this.servers.client(account.server!).accounts.setPackage(account.panelUser, plan.package)
           .finally(() => this.servers.cache.invalidate(account.serverId));
       } catch (error) {
-        if (cost > 0) await sequelize.transaction((transaction) => refundService(userId, cost, `Повернення: ${note}`, transaction));
+        if (cost > 0) await sequelize.transaction((transaction) => wallet().refund(userId, cost, `Повернення: ${note}`, transaction));
         if (error instanceof PanelError) throw new HttpError(502, `Панель хостингу: ${error.message}`);
         throw error;
       }

@@ -1,15 +1,15 @@
 /** Пошта: поштові домени (сегменти-фільтр) і скриньки (таблиця з квотами, новий пароль, видалення) */
-import { ui, type UiNode } from '../../../../core/ui/index.js';
+import { ui, type UiNode } from '../../../../flowaxy/ui/index.js';
 import { hosting } from '../../module.js';
-import { formatSize } from '../format.js';
-import { badge, dialogButton, enc, panel, passwordField, secretResult, usagePercent, usageTone } from '../kit.js';
+import { formatSize, percent } from '../format.js';
+import { badge, dialogButton, enc, panel, passwordField, secretResult, usageTone } from '../kit.js';
 import type { PanelSectionRenderer } from './scope.js';
 
 export const mailSection: PanelSectionRenderer = async (scope) => {
   const { t } = scope;
   const [domains, boxes] = await Promise.all([
-    hosting.panel.mailDomains(scope.serverId, scope.owner),
-    hosting.panel.mailboxes(scope.serverId, scope.owner),
+    hosting.resources.list(scope.account, 'maildomain'),
+    hosting.resources.list(scope.account, 'mailbox'),
   ]);
   const domain = domains.some((item) => item.name === scope.ctx.state.domain) ? scope.ctx.state.domain! : '';
   const selected = domains.find((item) => item.name === domain);
@@ -20,7 +20,7 @@ export const mailSection: PanelSectionRenderer = async (scope) => {
     actions.push(dialogButton(t('newMailDomain'), t('newMailDomain'), [{
       type: 'form',
       layout: 'stack',
-      fields: [await scope.ownerFieldWithOptions(), { name: 'name', kind: 'text', label: t('domain'), required: true, placeholder: 'example.com', autocomplete: 'off', hint: t('mailDomainHint') }],
+      fields: [{ name: 'name', kind: 'text', label: t('domain'), required: true, placeholder: 'example.com', autocomplete: 'off', hint: t('mailDomainHint') }],
       submit: { label: t('create'), action: { method: 'POST', url: `${scope.api}/mail/domains`, success: { notice: t('saved') } } },
     }], 'plus', 'ghost'));
     if (domains.length) {
@@ -28,7 +28,6 @@ export const mailSection: PanelSectionRenderer = async (scope) => {
         type: 'form',
         layout: 'stack',
         fields: [
-          await scope.ownerFieldWithOptions(scope.owner ?? selected?.owner ?? domains[0]?.owner),
           { name: 'name', kind: 'text', label: t('mailboxName'), required: true, placeholder: 'info', autocomplete: 'off' },
           { name: 'domain', kind: 'select', label: t('domain'), required: true, value: domain || domains[0]!.name, options: domains.map((item) => ({ value: item.name, label: `@${item.name}` })) },
           passwordField(scope.ctx),
@@ -40,15 +39,15 @@ export const mailSection: PanelSectionRenderer = async (scope) => {
     if (selected) {
       actions.push({
         type: 'button', variant: 'danger', label: t('deleteDomain'), icon: 'trash',
-        action: { method: 'DELETE', url: `${scope.api}/mail/domains/${enc(selected.name)}?owner=${enc(selected.owner)}`, confirm: t('deleteMailDomainConfirm', { name: selected.name }), success: { redirect: scope.href({ tab: 'mail' }) } },
+        action: { method: 'DELETE', url: `${scope.api}/mail/domains/${enc(selected.name)}`, confirm: t('deleteMailDomainConfirm', { name: selected.name }), success: { redirect: scope.href({ tab: 'mail' }) } },
       });
     }
   }
 
   const grid = await scope.grid(visible, {
     defaultSort: 'address',
-    sort: { address: (box) => box.address, owner: (box) => box.owner, size: (box) => box.usedMb },
-    text: (box) => `${box.address} ${box.owner} ${box.forward ?? ''} ${box.note ?? ''}`,
+    sort: { address: (box) => box.address, size: (box) => box.usedMb },
+    text: (box) => `${box.address} ${box.forward ?? ''} ${box.note ?? ''}`,
     segments: domains.length ? {
       name: 'domain',
       value: domain,
@@ -59,33 +58,31 @@ export const mailSection: PanelSectionRenderer = async (scope) => {
     } : undefined,
     columns: [
       { key: 'address', label: t('mailbox') },
-      { key: 'owner', label: t('owner') },
       { key: 'size', label: t('quota'), width: '180px' },
       { key: 'forward', label: t('forward') },
       { key: 'actions', label: '', align: 'right', width: '1%' },
     ],
     row: (box) => {
       const url = `${scope.api}/mail/boxes/${enc(box.address)}`;
-      const percent = usagePercent(box.usedMb, box.quotaMb);
+      const fill = percent(box.usedMb, box.quotaMb);
       return {
         key: box.address,
         tone: box.active ? undefined : 'muted',
         cells: {
           address: [ui.text({ b: box.address }), ...(box.note ? [ui.muted(box.note)] : [])],
-          owner: [ui.text(box.owner, { size: 'sm' })],
-          size: [{ type: 'progress', value: percent, tone: usageTone(percent), label: `${formatSize(box.usedMb)} / ${box.quotaMb ? formatSize(box.quotaMb) : '∞'}` }],
+          size: [{ type: 'progress', value: fill, tone: usageTone(fill), label: `${formatSize(box.usedMb)} / ${box.quotaMb ? formatSize(box.quotaMb) : '∞'}` }],
           forward: [ui.muted(box.forward ?? '—')],
           actions: [{
             type: 'actions',
             items: scope.manage ? [
-              { type: 'button', label: t('resetPassword'), icon: 'key', action: { method: 'POST', url: `${url}/password?owner=${enc(box.owner)}`, confirm: t('resetPasswordConfirm', { login: box.address }), success: { result: secretResult(scope.ctx), reload: false } } },
-              { type: 'button', label: t('delete'), icon: 'trash', variant: 'danger', action: { method: 'DELETE', url: `${url}?owner=${enc(box.owner)}`, confirm: t('deleteMailboxConfirm', { name: box.address }) } },
+              { type: 'button', label: t('resetPassword'), icon: 'key', action: { method: 'POST', url: `${url}/password`, confirm: t('resetPasswordConfirm', { login: box.address }), success: { result: secretResult(scope.ctx), reload: false } } },
+              { type: 'button', label: t('delete'), icon: 'trash', variant: 'danger', action: { method: 'DELETE', url: `${url}`, confirm: t('deleteMailboxConfirm', { name: box.address }) } },
             ] : [],
           }],
         },
       };
     },
-    empty: domains.length ? (scope.fixed ? t('noMailboxesYet') : t('empty')) : t('mailNeedDomain'),
+    empty: domains.length ? t('noMailboxesYet') : t('mailNeedDomain'),
   });
 
   const title = `${t('mailboxes')} · ${boxes.length}`;

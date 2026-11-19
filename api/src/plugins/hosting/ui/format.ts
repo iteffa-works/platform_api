@@ -1,5 +1,5 @@
 /** Подання даних хостингу для сторінок (рендер на сервері) */
-import type { Inline, Language, Tone, UiContext } from '../../../core/ui/index.js';
+import type { Inline, Language, Tone, UiContext } from '../../../flowaxy/ui/index.js';
 import type { AccountView } from '../services/presenter.js';
 
 export type { AccountView };

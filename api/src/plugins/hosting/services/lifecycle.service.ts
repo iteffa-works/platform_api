@@ -1,20 +1,23 @@
 /**
- * Фонове завдання (раз на `jobIntervalMinutes`): строки оплати, блокування, самовідновлення.
+ * Фонове завдання (раз на `jobIntervalMinutes`): строки оплати, блокування, самовідновлення,
+ * синхронізація копії даних панелей.
  * Кроки ідемпотентні — збій панелі повторюється наступного разу.
  * Один процес API; для кількох інстансів — винести у воркер / блокування в БД.
  */
 import { Op } from 'sequelize';
-import { sequelize } from '../../../core/db/index.js';
-import { hooks } from '../../../core/hooks/index.js';
-import { isEnabled } from '../../../core/plugins/index.js';
-import { balanceCents, refundService } from '../../../modules/billing/service.js';
+import { sequelize } from '../../../flowaxy/db/index.js';
+import { hooks } from '../../../flowaxy/hooks/index.js';
+import { isEnabled } from '../../../flowaxy/plugins/index.js';
+import { use } from '../../../flowaxy/services/index.js';
 import type { HostingConfig } from '../config.js';
 import { HostingAccount } from '../domain/models.js';
 import { addDays } from '../domain/rules.js';
-import { PanelError } from '../providers/contracts.js';
 import { withRelations, type AccountService } from './account.service.js';
 import type { OrderService } from './order.service.js';
+import { isExpectedError } from './panel-call.js';
 import type { ServerService } from './server.service.js';
+import type { PlanService } from './plan.service.js';
+import type { SyncService } from './sync.service.js';
 
 const BATCH = 100;
 
@@ -26,6 +29,8 @@ export class LifecycleService {
     private readonly servers: ServerService,
     private readonly accounts: AccountService,
     private readonly orders: OrderService,
+    private readonly sync: SyncService,
+    private readonly plans: PlanService,
   ) {}
 
   /** Помилка панелі в кроці — у лог, без зупинки інших акаунтів */
@@ -35,7 +40,7 @@ export class LifecycleService {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.warn(`[hosting] ${label} ${account.panelUser}#${account.id}: ${message}`);
-      if (!(error instanceof PanelError) && !(error instanceof Error && 'status' in error)) throw error;
+      if (!isExpectedError(error)) throw error;
     }
   }
 
@@ -58,7 +63,7 @@ export class LifecycleService {
           : 0;
         await sequelize.transaction(async (transaction) => {
           if (account.plan && months) {
-            await refundService(account.userId, account.plan.priceCents * months, `Повернення: хостинг ${account.panelUser} не створено`, transaction);
+            await use('wallet').refund(account.userId, account.plan.priceCents * months, `Повернення: хостинг ${account.panelUser} не створено`, transaction);
           }
           await account.destroy({ transaction });
         });
@@ -84,7 +89,7 @@ export class LifecycleService {
     for (const account of expired) {
       await this.safely('expire', account, async () => {
         const plan = account.plan;
-        if (account.autoRenew && plan && (await balanceCents(account.userId)) >= (await this.orders.price(plan, 1, account.userId, 'renew'))) {
+        if (account.autoRenew && plan && (await use('wallet').balance(account.userId)) >= (await this.orders.price(plan, 1, account.userId, 'renew'))) {
           try {
             await this.orders.extend(account, plan, 1, account.userId);
             await hooks.doAction('hosting.account.renewed', { account, months: 1, automatic: true });
@@ -114,19 +119,6 @@ export class LifecycleService {
     for (const account of old) await this.safely('purge', account, () => this.accounts.remove(account.id, true));
   }
 
-  /** Кеш використання ресурсів: давніше за usageRefreshHours — оновити порцією */
-  private async syncUsage(now: Date): Promise<void> {
-    const stale = await HostingAccount.findAll({
-      where: { status: 'active', [Op.or]: [{ usageAt: null }, { usageAt: { [Op.lt]: this.accounts.staleUsageBefore(now) } }] },
-      include: withRelations,
-      order: [['usageAt', 'ASC']],
-      limit: 20,
-    });
-    for (const account of stale) {
-      if (account.server?.isActive) await this.safely('usage', account, () => this.accounts.refreshUsage(account));
-    }
-  }
-
   async run(): Promise<void> {
     if (this.running || !isEnabled('hosting')) return;
     this.running = true;
@@ -137,7 +129,10 @@ export class LifecycleService {
       await this.expire(now);
       await this.resumePaid(now);
       await this.purge(now);
-      await this.syncUsage(now);
+      // Копія даних панелей (обʼєкти, використання, IP серверів) — після змін стану акаунтів
+      await this.sync.syncAll();
+      // Ліміти тарифів — з їхніх шаблонів панелі (оновлених синхронізацією)
+      await this.plans.applyTemplates();
     } catch (error) {
       console.error('[hosting] фонове завдання', error);
     } finally {
@@ -146,7 +141,7 @@ export class LifecycleService {
   }
 
   start(): void {
-    setTimeout(() => void this.run(), 60_000).unref();
+    setTimeout(() => void this.run(), 30_000).unref();
     setInterval(() => void this.run(), this.config.jobIntervalMinutes * 60_000).unref();
   }
 }

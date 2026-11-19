@@ -1,13 +1,13 @@
 /** Налаштування сервера: підключення, розташування, ліміти; небезпечна зона */
-import { ui, type UiNode } from '../../../../../../core/ui/index.js';
+import { ui, type UiNode } from '../../../../../../flowaxy/ui/index.js';
 import { action, ADMIN, panel, removeAction, serverForm } from '../../../kit.js';
-import type { ConsoleSection } from './context.js';
+import type { ServerTab } from './context.js';
 
-export const settingsSection: ConsoleSection = async (console) => {
-  const { t, server } = console;
-  if (!console.manage) return [panel(t('tab.settings'), [ui.muted(t('noManage'))])];
+export const settingsTab: ServerTab = async (page) => {
+  const { t, server } = page;
+  if (!page.manage) return [panel(t('tab.settings'), [ui.muted(t('noManage'))])];
 
-  const nodes: UiNode[] = [panel(t('editServer'), [serverForm(console.ctx, console.providers, server, `${console.page}?tab=settings`)])];
+  const nodes: UiNode[] = [panel(t('editServer'), [serverForm(page.ctx, page.providers, server, `${page.page}?tab=settings`)])];
   nodes.push(panel(t('danger'), [
     ui.row([
       action(server.isActive ? t('disableServer') : t('enableServer'), { method: 'PATCH', url: `${ADMIN}/servers/${server.id}`, body: { isActive: !server.isActive }, confirm: server.isActive ? t('disableServerConfirm') : undefined }),

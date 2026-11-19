@@ -1,24 +1,24 @@
 /**
- * Хуки хостингу: типи (declaration merging у core/hooks) і підписники за замовчуванням.
+ * Хуки хостингу: типи (declaration merging у flowaxy/hooks) і підписники за замовчуванням.
  *
  * Сервіси лише оголошують подію (`hooks.doAction('hosting.account.created', …)`) — побічні ефекти
  * (журнал дій, сповіщення, у майбутньому — CRM, вебхуки, інші модулі) підписуються тут або в інших плагінах.
  * Фільтри дають змінити дані без правок сервісу: ціна замовлення, каталог, подання акаунта.
  */
 import type { Request } from 'express';
-import { track } from '../../core/activity/index.js';
-import { hooks } from '../../core/hooks/index.js';
-import { isEnabled } from '../../core/plugins/index.js';
-import { registerNotification } from '../../modules/notifications/index.js';
+import { track } from '../../flowaxy/activity/index.js';
+import { hooks } from '../../flowaxy/hooks/index.js';
+import { isEnabled } from '../../flowaxy/plugins/index.js';
+import { registered } from '../../flowaxy/services/index.js';
 import type { HostingAccount, HostingPlan } from './domain/models.js';
 
 type Actor = { req?: Request | null; actorId?: number | null };
 type AccountEvent = Actor & { account: HostingAccount };
 
-/** Розділ консолі панелі, у якому змінено обʼєкт */
+/** Розділ панелі, у якому змінено обʼєкт */
 export type PanelSection = 'accounts' | 'sites' | 'dns' | 'mail' | 'databases' | 'ftp' | 'cron';
 
-declare module '../../core/hooks/index.js' {
+declare module '../../flowaxy/hooks/index.js' {
   interface HookActions {
     'hosting.account.created': AccountEvent & { source: 'order' | 'admin' };
     'hosting.account.renewed': AccountEvent & { months: number; automatic: boolean };
@@ -30,7 +30,7 @@ declare module '../../core/hooks/index.js' {
     'hosting.account.expiring': AccountEvent;
     'hosting.account.password_changed': AccountEvent;
     'hosting.account.panel_login': AccountEvent;
-    /** Зміна в консолі панелі (адмінка): створення / видалення обʼєкта */
+    /** Зміна обʼєкта панелі: кабінет (`client: true`) або адміністратор (вхід від імені)  */
     'hosting.panel.changed': Actor & { serverId: number; section: PanelSection; action: 'create' | 'delete' | 'update'; name: string; client?: boolean };
   }
   interface HookFilters {
@@ -54,7 +54,8 @@ export function registerHostingSubscribers(): void {
     'hosting.resumed': ['login'],
     'hosting.deleted': ['login'],
   })) {
-    registerNotification(kind, keys);
+    // Типи сповіщень — декларація: діє й після пізнішого ввімкнення плагіна notifications
+    registered('notifications')?.register(kind, keys);
   }
 
   const options = { owner: OWNER, when };

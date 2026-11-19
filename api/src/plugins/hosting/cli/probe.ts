@@ -2,7 +2,8 @@
  * Діагностика інтеграції з панеллю: назви полів і приклад користувача (паролі приховано).
  * npm run hosting:probe -w api -- <serverId> [login]
  */
-import { sequelize } from '../../../core/db/sequelize.js';
+import '../../../env.js';
+import { sequelize } from '../../../flowaxy/db/sequelize.js';
 import { hosting } from '../module.js';
 
 const [id, login] = process.argv.slice(2);

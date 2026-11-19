@@ -1,5 +1,5 @@
 import { DataTypes, QueryTypes } from 'sequelize';
-import type { MigrationContext } from '../../../core/db/index.js';
+import type { MigrationContext } from '../../../flowaxy/db/index.js';
 
 /**
  * ispmanager → hosting: панель стає провайдером, зʼявляються тарифи хостингу, оплата й використання ресурсів.

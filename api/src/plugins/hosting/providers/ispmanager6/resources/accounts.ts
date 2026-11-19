@@ -1,8 +1,47 @@
 import { randomBytes } from 'node:crypto';
-import type { AccountsApi, AccountUsage, NewAccount, PanelAccount } from '../../contracts.js';
-import { limit, mb } from '../mapper.js';
+import type { AccountsApi, AccountUsage, NewAccount, PanelAccount, PanelPackage } from '../../contracts.js';
+import { limit, mb, parseMb } from '../mapper.js';
 import { field, type IspElem } from '../transport.js';
 import { IspResource } from './base.js';
+
+/** Ліміт з форми шаблону: порожньо — без обмеження (null), число (МіБ / шт.) — як є, 0 — заборонено */
+function count(form: IspElem, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const raw = field(form, key).trim();
+    if (!raw) continue;
+    const value = parseMb(raw);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+/** Прапорець з форми: перше знайдене поле */
+function flag(form: IspElem, ...keys: string[]): boolean {
+  return keys.some((key) => field(form, key) === 'on');
+}
+
+export function toPackage(name: string, form: IspElem): PanelPackage {
+  const limits = Object.fromEntries(Object.keys(form).filter((key) => key.startsWith('limit_')).map((key) => [key, field(form, key)]));
+  return {
+    name,
+    comment: field(form, 'comment') || field(form, 'note') || null,
+    diskMb: count(form, 'limit_quota'),
+    sites: count(form, 'limit_webdomains'),
+    databases: count(form, 'limit_db'),
+    mailboxes: count(form, 'limit_emails'),
+    mailDomains: count(form, 'limit_emaildomains'),
+    ftpUsers: count(form, 'limit_ftp_users'),
+    cronJobs: count(form, 'limit_scheduler', 'limit_cron'),
+    features: {
+      backup: flag(form, 'backup', 'limit_backup'),
+      ssh: flag(form, 'limit_shell'),
+      nodejs: flag(form, 'limit_nodejs'),
+      git: flag(form, 'limit_git', 'limit_gitrepos'),
+      ssl: flag(form, 'limit_ssl'),
+    },
+    limits,
+  };
+}
 
 /** Користувачі панелі (`user`), шаблони (`preset`), вхід без пароля (`session.newkey`) */
 export class IspAccounts extends IspResource implements AccountsApi {
@@ -22,8 +61,13 @@ export class IspAccounts extends IspResource implements AccountsApi {
     return (await this.isp.list('user')).map((elem) => this.toAccount(elem)).filter((account) => account.login);
   }
 
-  async packages(): Promise<string[]> {
-    return (await this.isp.list('preset')).map((elem) => field(elem, 'name')).filter(Boolean);
+  /**
+   * Шаблони (`preset`) з лімітами з форми `preset.edit` (ті самі поля, що й у користувача: `limit_quota`,
+   * `limit_webdomains`, …). У формі порожньо — без обмеження, `0` — заборонено.
+   */
+  async packages(): Promise<PanelPackage[]> {
+    const names = (await this.isp.list('preset')).map((elem) => field(elem, 'name')).filter(Boolean);
+    return Promise.all(names.map(async (name) => toPackage(name, await this.isp.call('preset.edit', { elid: name }))));
   }
 
   async create(input: NewAccount): Promise<void> {

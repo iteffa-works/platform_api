@@ -10,3 +10,19 @@ export async function panelCall<T>(action: () => Promise<T>): Promise<T> {
     throw error;
   }
 }
+
+export type Settled<T> = { ok: true; value: T } | { ok: false; error: string };
+
+/** Незалежна частина запиту до панелі: збій однієї не ховає інші (огляд сервера, синхронізація) */
+export async function settle<T>(fn: () => Promise<T>): Promise<Settled<T>> {
+  try {
+    return { ok: true, value: await fn() };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/** Помилка «службова» (панель, HTTP-відповідь) — не зупиняє фонове завдання */
+export function isExpectedError(error: unknown): boolean {
+  return error instanceof PanelError || (error instanceof Error && 'status' in error);
+}

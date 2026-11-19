@@ -1,6 +1,8 @@
 /** Налаштування хостингу (env) — один обʼєкт, що передається сервісам */
 import { PERIODS } from './domain/rules.js';
 
+const minutes = (name: string, fallback: number) => Math.max(1, Number(process.env[name] || fallback));
+
 export class HostingConfig {
   /** Дозволені строки оплати, міс. */
   readonly periods: readonly number[] = PERIODS;
@@ -11,8 +13,6 @@ export class HostingConfig {
    * 0 — ніколи (автоматичне видалення даних клієнта — лише свідомо).
    */
   readonly deleteAfterDays = Math.max(0, Number(process.env.HOSTING_DELETE_AFTER_DAYS || 0));
-  /** Як часто фонове завдання перевіряє строки оплати, хв */
-  readonly jobIntervalMinutes = Math.max(1, Number(process.env.HOSTING_JOB_INTERVAL_MINUTES || 15));
-  /** Оновлювати кеш використання ресурсів не частіше, год */
-  readonly usageRefreshHours = 6;
+  /** Фонове завдання: строки оплати й синхронізація копії даних панелей, хв */
+  readonly jobIntervalMinutes = minutes('HOSTING_JOB_INTERVAL_MINUTES', 10);
 }

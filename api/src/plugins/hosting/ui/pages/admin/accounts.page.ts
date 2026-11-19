@@ -2,13 +2,13 @@
  * /admin/hosting/accounts — акаунти платформи. Фільтри (стан, сервер, тариф), пошук, сортування й сторінка —
  * у SQL; рядок — тон за станом / строком; дії — іконки; створення / привʼязка — модальне вікно в шапці.
  */
-import { ui, type GridTone, type UiButton, type UiContext, type UiField, type UiNode, type UiPage } from '../../../../../core/ui/index.js';
+import { ui, type GridTone, type UiButton, type UiContext, type UiField, type UiNode, type UiPage } from '../../../../../flowaxy/ui/index.js';
 import { hosting } from '../../../module.js';
 import { ACCOUNT_SORT_KEYS } from '../../../services/account.service.js';
 import type { AccountView } from '../../../services/presenter.js';
-import { daysLeft, formatSize } from '../../format.js';
+import { daysLeft, formatSize, percent } from '../../format.js';
 import { datagrid, gridQuery, searchBox } from '../../grid.js';
-import { ADMIN, badge, errorBanner, secretResult, usagePercent, usageTone } from '../../kit.js';
+import { ADMIN, badge, errorBanner, secretResult, usageTone } from '../../kit.js';
 
 const STATUSES = ['active', 'suspended', 'pending', 'deleted'] as const;
 const STATUS_TONE: Record<string, 'green' | 'blue' | 'orange' | 'slate'> = { active: 'green', pending: 'blue', suspended: 'orange', deleted: 'slate' };
@@ -27,15 +27,14 @@ function icon(label: string, iconName: string, extra: Partial<UiButton>): UiButt
 function rowActions(ctx: UiContext, account: AccountView): UiButton[] {
   if (account.status === 'deleted') return [];
   const url = `${ADMIN}/accounts/${account.id}`;
+  // Швидкі дії рядка; строк, тариф, видалення — у картці акаунта
   return [
-    icon(ctx.t('loginAs'), 'external', { action: { method: 'POST', url: `${url}/login`, openUrl: 'url', success: { reload: false } } }),
-    icon(ctx.t('refresh'), 'refresh', { action: { method: 'POST', url: `${url}/usage` } }),
+    icon(ctx.t('openAccount'), 'arrow', { href: url }),
     icon(ctx.t('term'), 'calendar', { action: { method: 'PATCH', url, prompt: { message: ctx.t('paidUntilPrompt'), field: 'paidUntil', value: account.paidUntil ? new Date(account.paidUntil).toISOString().slice(0, 10) : '' } } }),
     account.status === 'active'
       ? icon(ctx.t('suspend'), 'lock', { action: { method: 'POST', url: `${url}/suspend`, confirm: ctx.t('suspendConfirm', { login: account.login }) } })
       : icon(ctx.t('resume'), 'check', { action: { method: 'POST', url: `${url}/resume` } }),
-    icon(ctx.t('deleteKeep'), 'close', { action: { method: 'DELETE', url, body: { removeFromPanel: false }, confirm: ctx.t('adminDeleteConfirm', { login: account.login }) } }),
-    icon(ctx.t('deleteWithPanel'), 'trash', { variant: 'danger', action: { method: 'DELETE', url, body: { removeFromPanel: true }, confirm: ctx.t('deleteFromPanelConfirm', { login: account.login }) } }),
+    icon(ctx.t('loginAs'), 'external', { action: { method: 'POST', url: `${url}/login`, openUrl: 'url', success: { reload: false } } }),
   ];
 }
 
@@ -49,7 +48,7 @@ async function createDialog(ctx: UiContext, servers: Array<{ id: number; name: s
   const extra: UiNode[] = [];
   if (mode === 'link') {
     try {
-      const free = (await hosting.servers.panelAccounts(serverId)).accounts.filter((item) => !item.linked);
+      const free = (await hosting.servers.panelAccounts(serverId)).accounts.filter((item) => !item.accountId);
       loginField = { name: 'login', kind: 'select', label: ctx.t('panelUser'), required: true, options: free.map((item) => ({ value: item.login, label: item.package ? `${item.login} · ${item.package}` : item.login })) };
     } catch (error) {
       extra.push(errorBanner(ctx, error));
@@ -76,7 +75,7 @@ async function createDialog(ctx: UiContext, servers: Array<{ id: number; name: s
         footer: extra,
         submit: {
           label: mode === 'create' ? ctx.t('create') : ctx.t('link'),
-          action: { method: 'POST', url: `${ADMIN}/accounts`, success: { notice: ctx.t('created', { login: '{account.login}' }), result: secretResult(ctx) } },
+          action: { method: 'POST', url: `${ADMIN}/accounts`, success: { notice: ctx.t('created', { login: '{account.login}' }), result: secretResult(ctx), redirect: `${ADMIN}/accounts/{account.id}` } },
         },
       }],
     },
@@ -135,18 +134,18 @@ export const accountsPage: UiPage = {
       ],
       rows: found.accounts.map((account) => {
         const days = daysLeft(account.paidUntil);
-        const percent = usagePercent(account.usage.diskUsedMb, account.usage.diskLimitMb);
+        const fill = percent(account.usage.diskUsedMb, account.usage.diskLimitMb);
         return {
           key: account.id,
           tone: rowTone(account),
           cells: {
             login: [
-              ui.text({ b: account.login }),
-              account.serverId ? { type: 'link', text: account.server?.name ?? '—', href: `${ADMIN}/servers/${account.serverId}?tab=users` } : ui.muted('—'),
+              { type: 'link', text: account.login, href: `${ADMIN}/accounts/${account.id}` },
+              account.serverId ? { type: 'link', text: account.server?.name ?? '—', href: `${ADMIN}/servers/${account.serverId}` } : ui.muted('—'),
             ],
             user: account.user ? [{ type: 'person', name: account.user.email, caption: account.note ?? undefined, seed: account.user.email }] : [ui.muted('—')],
             plan: [ui.text(account.plan?.name ?? account.package ?? '—')],
-            disk: [{ type: 'progress', value: percent, tone: usageTone(percent), label: `${formatSize(account.usage.diskUsedMb)} / ${formatSize(account.usage.diskLimitMb)}` }],
+            disk: [{ type: 'progress', value: fill, tone: usageTone(fill), label: `${formatSize(account.usage.diskUsedMb)} / ${formatSize(account.usage.diskLimitMb)}` }],
             paid: account.paidUntil
               ? [ui.text(ui.date(account.paidUntil)), ui.text(days !== null && days >= 0 ? ctx.t('daysLeft', { days }) : ctx.t('overdue', { days: -(days ?? 0) }), { size: 'sm', tone: days !== null && days <= 7 ? 'warn' : 'muted' })]
               : [ui.muted(ctx.t('noTerm'))],

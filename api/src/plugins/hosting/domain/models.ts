@@ -6,8 +6,7 @@ import {
   Model,
   NonAttribute,
 } from 'sequelize';
-import { sequelize } from '../../../core/db/sequelize.js';
-import { User } from '../../../modules/auth/models/user.js';
+import { sequelize } from '../../../flowaxy/db/sequelize.js';
 
 /** Сервер панелі хостингу; пароль адміністратора — зашифрований (AES-GCM) */
 export class HostingServer extends Model<InferAttributes<HostingServer>, InferCreationAttributes<HostingServer>> {
@@ -27,6 +26,9 @@ export class HostingServer extends Model<InferAttributes<HostingServer>, InferCr
   declare ipv4: CreationOptional<string | null>;
   declare ipv6: CreationOptional<string | null>;
   declare maxAccounts: CreationOptional<number | null>;
+  /** Остання успішна синхронізація з панеллю; помилка останньої спроби */
+  declare syncedAt: CreationOptional<Date | null>;
+  declare syncError: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -46,6 +48,8 @@ HostingServer.init({
   ipv4: { type: DataTypes.STRING(255), allowNull: true },
   ipv6: { type: DataTypes.STRING(255), allowNull: true },
   maxAccounts: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+  syncedAt: { type: DataTypes.DATE, allowNull: true },
+  syncError: { type: DataTypes.STRING(255), allowNull: true },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
 }, { sequelize, tableName: 'hosting_servers' });
@@ -61,6 +65,8 @@ export class HostingPlan extends Model<InferAttributes<HostingPlan>, InferCreati
   declare diskMb: CreationOptional<number | null>;
   declare sites: CreationOptional<number | null>;
   declare isActive: CreationOptional<boolean>;
+  /** «Популярний» — виділення на головній і в замовленні */
+  declare isFeatured: CreationOptional<boolean>;
   declare sortOrder: CreationOptional<number>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
@@ -76,6 +82,7 @@ HostingPlan.init({
   diskMb: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   sites: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
   isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+  isFeatured: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   sortOrder: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
   createdAt: DataTypes.DATE,
   updatedAt: DataTypes.DATE,
@@ -113,7 +120,6 @@ export class HostingAccount extends Model<InferAttributes<HostingAccount>, Infer
   declare updatedAt: CreationOptional<Date>;
   declare server?: NonAttribute<HostingServer>;
   declare plan?: NonAttribute<HostingPlan | null>;
-  declare user?: NonAttribute<User>;
 }
 
 HostingAccount.init({
@@ -141,4 +147,38 @@ HostingAccount.init({
 
 HostingAccount.belongsTo(HostingServer, { as: 'server', foreignKey: 'serverId' });
 HostingAccount.belongsTo(HostingPlan, { as: 'plan', foreignKey: 'planId' });
-HostingAccount.belongsTo(User, { as: 'user', foreignKey: 'userId' });
+
+/** Розділи панелі, копія яких зберігається в БД */
+export const RESOURCE_KINDS = ['user', 'package', 'site', 'zone', 'maildomain', 'mailbox', 'database', 'ftp', 'ssl', 'cron'] as const;
+/** Ресурси клієнтів (без службових розділів: користувачі й шаблони панелі) */
+export const CLIENT_KINDS = ['site', 'zone', 'maildomain', 'mailbox', 'database', 'ftp', 'ssl', 'cron'] as const;
+export type ResourceKindName = (typeof RESOURCE_KINDS)[number];
+
+/**
+ * Копія обʼєкта панелі (сайт, зона, скринька…): читання кабінету й адмінки — з БД, без запиту до панелі.
+ * Оновлюється синхронізацією (раз на `syncIntervalMinutes`) і одразу після змін через платформу;
+ * рядок перезаписується лише коли змінився `hash` даних.
+ */
+export class HostingResource extends Model<InferAttributes<HostingResource>, InferCreationAttributes<HostingResource>> {
+  declare id: CreationOptional<number>;
+  declare serverId: number;
+  declare kind: ResourceKindName;
+  /** Ключ обʼєкта в панелі (імʼя домену, адреса скриньки, ключ бази…) */
+  declare key: string;
+  /** Користувач панелі-власник; null — системний обʼєкт */
+  declare owner: string | null;
+  declare data: Record<string, unknown>;
+  declare hash: string;
+  declare syncedAt: Date;
+}
+
+HostingResource.init({
+  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+  serverId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+  kind: { type: DataTypes.STRING(16), allowNull: false },
+  key: { type: DataTypes.STRING(255), allowNull: false },
+  owner: { type: DataTypes.STRING(64), allowNull: true },
+  data: { type: DataTypes.JSON, allowNull: false },
+  hash: { type: DataTypes.CHAR(40), allowNull: false },
+  syncedAt: { type: DataTypes.DATE, allowNull: false },
+}, { sequelize, tableName: 'hosting_resources', timestamps: false });

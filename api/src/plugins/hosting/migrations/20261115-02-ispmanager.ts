@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import type { MigrationContext } from '../../../core/db/index.js';
+import type { MigrationContext } from '../../../flowaxy/db/index.js';
 
 /** Сервери ISPmanager і хостинг-акаунти користувачів */
 export async function up({ queryInterface }: MigrationContext): Promise<void> {

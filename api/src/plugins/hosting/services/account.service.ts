@@ -1,19 +1,22 @@
 /**
- * Хостинг-акаунти: пошук, адмінські дії (створити без оплати / привʼязати, строк, блокування, видалення)
- * і дії власника (сайти, вхід у панель, пароль, примітка, видалення). Побічні ефекти — через хуки.
+ * Хостинг-акаунти: пошук і дії адміністратора (створити / привʼязати, строк, тариф, блокування, видалення)
+ * та дії власника (вхід у панель, пароль, примітка, видалення). Побічні ефекти — через хуки.
+ * Користувачі платформи — лише через порт `users` (без моделі модуля auth).
  */
 import type { Request } from 'express';
 import { col, fn, Op, type WhereOptions } from 'sequelize';
-import { sequelize } from '../../../core/db/index.js';
-import { hooks } from '../../../core/hooks/index.js';
-import { User } from '../../../modules/auth/models/user.js';
+import { sequelize } from '../../../flowaxy/db/index.js';
+import { hooks } from '../../../flowaxy/hooks/index.js';
+import { use, type UserRef } from '../../../flowaxy/services/index.js';
 import { createRateLimiter, HttpError } from '../../../shared/http/index.js';
-import type { HostingConfig } from '../config.js';
+import { readDate } from '../domain/input.js';
 import { HostingAccount, HostingPlan, HostingServer, type AccountStatus } from '../domain/models.js';
 import { addDays, generatePassword, readLogin, readNote, readPassword } from '../domain/rules.js';
+import type { PanelClient } from '../providers/contracts.js';
 import { panelCall } from './panel-call.js';
 import { presentAccount } from './presenter.js';
 import type { ServerService } from './server.service.js';
+import type { SyncService } from './sync.service.js';
 
 const STATUSES: AccountStatus[] = ['pending', 'active', 'suspended', 'deleted'];
 
@@ -42,15 +45,10 @@ export const withRelations = [
   { model: HostingPlan, as: 'plan' },
 ];
 
-function readDate(input: unknown): Date | null {
-  if (input === null || input === '' || input === undefined) return null;
-  const date = new Date(String(input));
-  if (Number.isNaN(date.getTime())) throw new HttpError(400, 'Некоректна дата');
-  return date;
-}
+type Actor = { req?: Request | null; actorId?: number | null };
 
 export class AccountService {
-  constructor(private readonly servers: ServerService, private readonly config: HostingConfig) {}
+  constructor(private readonly servers: ServerService, private readonly sync: SyncService) {}
 
   /** Акаунт з сервером і тарифом; userId — лише власний (інакше 404, без розкриття існування) */
   async find(id: number, userId?: number): Promise<HostingAccount> {
@@ -59,29 +57,22 @@ export class AccountService {
     return account;
   }
 
-  client(account: HostingAccount) {
-    return this.servers.client(account.server!);
+  /** Дія в панелі над акаунтом: помилка панелі → 502, кеш сервера скидається */
+  private panel<T>(account: HostingAccount, action: (client: PanelClient) => Promise<T>): Promise<T> {
+    return panelCall(() => action(this.servers.client(account.server!))).finally(() => this.servers.cache.invalidate(account.serverId));
+  }
+
+  /** Подання для адмінки: email власників одним запитом */
+  private async presentAdmin(accounts: HostingAccount[]) {
+    const owners = await use('users').byIds(accounts.map((account) => account.userId));
+    return accounts.map((account) => presentAccount(account, owners.get(account.userId) ?? null));
   }
 
   /* ---------- Адмінка ---------- */
 
-  async list(filter: { status?: unknown; serverId?: number } = {}) {
-    const where: Record<string, unknown> = STATUSES.includes(filter.status as AccountStatus)
-      ? { status: filter.status }
-      : { status: { [Op.ne]: 'deleted' } };
-    if (filter.serverId) where.serverId = filter.serverId;
-    const accounts = await HostingAccount.findAll({
-      where,
-      order: [['id', 'DESC']],
-      limit: 500,
-      include: [...withRelations, { model: User, as: 'user', attributes: ['id', 'email'] }],
-    });
-    return { accounts: accounts.map((account) => presentAccount(account, true)) };
-  }
-
   /**
-   * Таблиця акаунтів адмінки: фільтри, пошук, сортування й сторінка — у SQL (LIMIT / OFFSET, COUNT),
-   * без завантаження всього списку. Пошук — логін, примітка, email власника.
+   * Таблиця акаунтів: фільтри, пошук, сортування й сторінка — у SQL (LIMIT / OFFSET, COUNT).
+   * Пошук — логін, примітка, email власника (id власників — з порту users).
    */
   async search(query: AccountQuery) {
     const where: WhereOptions = query.status && STATUSES.includes(query.status as AccountStatus)
@@ -91,21 +82,21 @@ export class AccountService {
     if (query.planId) Object.assign(where, { planId: query.planId });
     if (query.q) {
       const like = likeOf(query.q);
-      Object.assign(where, { [Op.or]: [{ panelUser: { [Op.like]: like } }, { note: { [Op.like]: like } }, { '$user.email$': { [Op.like]: like } }] });
+      const owners = await use('users').idsByEmailLike(query.q);
+      Object.assign(where, { [Op.or]: [{ panelUser: { [Op.like]: like } }, { note: { [Op.like]: like } }, ...(owners.length ? [{ userId: { [Op.in]: owners } }] : [])] });
     }
     const dir = query.sort.dir === 'desc' ? 'DESC' : 'ASC';
     const column = ACCOUNT_SORT[query.sort.key] ?? 'id';
     const { rows, count } = await HostingAccount.findAndCountAll({
       where,
-      include: [...withRelations, { model: User, as: 'user', attributes: ['id', 'email'], required: false }],
+      include: withRelations,
       // NULL (без строку / без даних) — в кінці незалежно від напрямку
       order: [[sequelize.literal(`\`HostingAccount\`.\`${column}\` IS NULL`), 'ASC'], [column, dir], ['id', 'DESC']],
       limit: query.limit,
       offset: query.offset,
       distinct: true,
-      subQuery: false,
     });
-    return { accounts: rows.map((account) => presentAccount(account, true)), total: count };
+    return { accounts: await this.presentAdmin(rows), total: count };
   }
 
   /** Кількість акаунтів за станами (сегменти таблиці) — одним GROUP BY */
@@ -117,18 +108,31 @@ export class AccountService {
     return Object.fromEntries(rows.map((row) => [row.status, Number(row.total)]));
   }
 
-  /** Показники для огляду адмінки */
+  /** Показники огляду: стани (GROUP BY), строки на тиждень, місячний дохід (SUM у SQL) */
   async stats() {
     const now = new Date();
-    const [active, suspended, pending, expiring, revenue] = await Promise.all([
-      HostingAccount.count({ where: { status: 'active' } }),
-      HostingAccount.count({ where: { status: 'suspended' } }),
-      HostingAccount.count({ where: { status: 'pending' } }),
+    const [counts, expiring, revenue] = await Promise.all([
+      this.statusCounts(),
       HostingAccount.count({ where: { status: 'active', paidUntil: { [Op.between]: [now, addDays(now, 7)] } } }),
-      HostingAccount.findAll({ where: { status: 'active' }, include: [{ model: HostingPlan, as: 'plan', attributes: ['priceCents'] }], attributes: ['id'] }),
+      HostingAccount.findOne({
+        where: { status: 'active' },
+        include: [{ model: HostingPlan, as: 'plan', attributes: [] }],
+        attributes: [[fn('COALESCE', fn('SUM', col('plan.priceCents')), 0), 'total']],
+        raw: true,
+      }) as unknown as Promise<{ total: number | string } | null>,
     ]);
-    const monthlyCents = revenue.reduce((sum, account) => sum + (account.plan?.priceCents ?? 0), 0);
-    return { active, suspended, pending, expiring, monthlyCents };
+    return {
+      active: counts.active ?? 0,
+      suspended: counts.suspended ?? 0,
+      pending: counts.pending ?? 0,
+      expiring,
+      monthlyCents: Number(revenue?.total ?? 0),
+    };
+  }
+
+  async view(id: number) {
+    const [account] = await this.presentAdmin([await this.find(id)]);
+    return account!;
   }
 
   /**
@@ -140,8 +144,7 @@ export class AccountService {
     const server = await this.servers.find(Number(input.serverId));
     if (!server.isActive) throw new HttpError(400, 'Сервер вимкнено');
 
-    const email = String(input.email ?? '').trim().toLowerCase();
-    const user = await User.findOne({ where: { email }, attributes: ['id', 'email'] });
+    const user: UserRef | null = await use('users').byEmail(String(input.email ?? ''));
     if (!user) throw new HttpError(404, 'Користувача не знайдено');
 
     const plan = input.planId ? await HostingPlan.findByPk(Number(input.planId)) : null;
@@ -170,7 +173,7 @@ export class AccountService {
     }
 
     this.servers.cache.invalidate(server.id);
-    const account = await HostingAccount.create({
+    const created = await HostingAccount.create({
       serverId: server.id,
       userId: user.id,
       planId: plan?.id ?? null,
@@ -180,8 +183,11 @@ export class AccountService {
       suspendReason: suspended ? 'admin' : null,
       paidUntil: readDate(input.paidUntil),
     });
+    const account = await this.find(created.id);
+    // Копія ресурсів нового власника — одразу (не чекаючи фонового завдання)
+    await this.sync.syncAccount(account).catch(() => undefined);
     await hooks.doAction('hosting.account.created', { account, req, actorId, source: 'admin' });
-    return { account: presentAccount(await this.find(account.id), true), password: input.password ? null : password };
+    return { account: await this.view(account.id), password: input.password ? null : password };
   }
 
   /** Строк оплати, тариф (з шаблоном у панелі), примітка, автопродовження */
@@ -193,7 +199,7 @@ export class AccountService {
     if (input.planId !== undefined && input.planId !== '' && Number(input.planId) !== account.planId) {
       const plan = await HostingPlan.findByPk(Number(input.planId));
       if (!plan) throw new HttpError(404, 'Тариф не знайдено');
-      await panelCall(() => this.client(account).accounts.setPackage(account.panelUser, plan.package)).finally(() => this.servers.cache.invalidate(account.serverId));
+      await this.panel(account, (client) => client.accounts.setPackage(account.panelUser, plan.package));
       Object.assign(patch, { planId: plan.id, preset: plan.package, diskLimitMb: null, sitesLimit: null });
     }
     if (input.paidUntil !== undefined) Object.assign(patch, { paidUntil: readDate(input.paidUntil), remindedAt: null });
@@ -202,16 +208,14 @@ export class AccountService {
 
     await account.update(patch);
     await hooks.doAction('hosting.account.updated', { account, req, actorId });
-    return { account: presentAccount(await this.find(id), true) };
+    return { account: await this.view(id) };
   }
 
   /** Блокування / розблокування в панелі; reason=billing — фонове завдання */
-  async setStatus(id: number, action: 'suspend' | 'resume', actor: { req?: Request | null; actorId?: number | null; reason?: 'admin' | 'billing' } = {}) {
+  async setStatus(id: number, action: 'suspend' | 'resume', actor: Actor & { reason?: 'admin' | 'billing' } = {}) {
     const account = await this.find(id);
     if (account.status === 'deleted' || account.status === 'pending') throw new HttpError(400, 'Акаунт недоступний');
-    const accounts = this.client(account).accounts;
-    await panelCall(() => (action === 'suspend' ? accounts.suspend(account.panelUser) : accounts.resume(account.panelUser)))
-      .finally(() => this.servers.cache.invalidate(account.serverId));
+    await this.panel(account, (client) => (action === 'suspend' ? client.accounts.suspend(account.panelUser) : client.accounts.resume(account.panelUser)));
     if (action === 'suspend') {
       const reason = actor.reason ?? 'admin';
       await account.update({ status: 'suspended', suspendReason: reason });
@@ -220,36 +224,29 @@ export class AccountService {
       await account.update({ status: 'active', suspendReason: null });
       await hooks.doAction('hosting.account.resumed', { account, req: actor.req, actorId: actor.actorId });
     }
-    return { account: presentAccount(account, true) };
+    return { account: presentAccount(account, null) };
   }
 
   /** Видалення: акаунт лишається в історії (status=deleted); `removeFromPanel` — також у панелі */
-  async remove(id: number, removeFromPanel: boolean, actor: { req?: Request | null; actorId?: number | null } = {}) {
+  async remove(id: number, removeFromPanel: boolean, actor: Actor = {}) {
     const account = await this.find(id);
     if (account.status === 'deleted') return;
-    if (removeFromPanel) {
-      await panelCall(() => this.client(account).accounts.remove(account.panelUser)).finally(() => this.servers.cache.invalidate(account.serverId));
-    }
+    if (removeFromPanel) await this.panel(account, (client) => client.accounts.remove(account.panelUser));
     await account.update({ status: 'deleted', deletedAt: new Date(), autoRenew: false });
     await hooks.doAction('hosting.account.deleted', { account, removeFromPanel, ...actor });
   }
 
-  /** Оновити кеш використання ресурсів з панелі */
-  async refreshUsage(account: HostingAccount): Promise<void> {
-    const usage = await this.client(account).accounts.usage(account.panelUser);
-    await account.update({ ...usage, usageAt: new Date() });
-  }
-
-  async adminRefreshUsage(id: number) {
+  /** Оновити копію даних акаунта з панелі (використання + ресурси) */
+  async adminSync(id: number) {
     const account = await this.find(id);
-    await panelCall(() => this.refreshUsage(account));
-    return { account: presentAccount(account, true) };
+    await panelCall(() => this.sync.syncAccount(account));
+    return { account: await this.view(id) };
   }
 
   /** Вхід адміністратора в панель від імені користувача (підтримка) */
   async adminLoginUrl(req: Request, actorId: number, id: number) {
     const account = await this.find(id);
-    const url = await panelCall(() => this.client(account).accounts.loginUrl(account.panelUser));
+    const url = await this.panel(account, (client) => client.accounts.loginUrl(account.panelUser));
     await hooks.doAction('hosting.panel.changed', { req, actorId, serverId: account.serverId, section: 'accounts', action: 'update', name: `login-as ${account.panelUser}` });
     return { url };
   }
@@ -261,29 +258,24 @@ export class AccountService {
     return { accounts: accounts.map((account) => presentAccount(account)) };
   }
 
-  async viewMine(userId: number, id: number) {
-    return { account: presentAccount(await this.find(id, userId)) };
-  }
-
-  /** Акаунт, з яким можна працювати в панелі: власний, активний, сервер увімкнено */
-  async usable(userId: number, id: number): Promise<HostingAccount> {
+  /** Власний акаунт, з яким можна працювати в панелі: активний, сервер увімкнено; запити — з лімітом */
+  assertUsable(userId: number, account: HostingAccount): HostingAccount {
+    if (account.userId !== userId) throw new HttpError(404, 'Хостинг-акаунт не знайдено');
     panelLimiter.hit(`panel:${userId}`);
-    const account = await this.find(id, userId);
     if (account.status === 'suspended') throw new HttpError(403, 'Хостинг-акаунт заблоковано');
     if (account.status !== 'active') throw new HttpError(400, 'Хостинг-акаунт недоступний');
     if (!account.server!.isActive) throw new HttpError(503, 'Сервер тимчасово недоступний');
     return account;
   }
 
-  async sitesMine(userId: number, id: number) {
-    const account = await this.usable(userId, id);
-    return { sites: await panelCall(() => this.client(account).sites.list(account.panelUser)) };
+  async usable(userId: number, id: number): Promise<HostingAccount> {
+    return this.assertUsable(userId, await this.find(id, userId));
   }
 
   /** Одноразове посилання входу в панель (ключ живе секунди й використовується один раз) */
   async loginUrlMine(req: Request, userId: number, id: number) {
     const account = await this.usable(userId, id);
-    const url = await panelCall(() => this.client(account).accounts.loginUrl(account.panelUser));
+    const url = await this.panel(account, (client) => client.accounts.loginUrl(account.panelUser));
     await hooks.doAction('hosting.account.panel_login', { account, req, actorId: userId });
     return { url };
   }
@@ -291,13 +283,14 @@ export class AccountService {
   async changePasswordMine(req: Request, userId: number, id: number, input: unknown) {
     const password = readPassword(input);
     const account = await this.usable(userId, id);
-    await panelCall(() => this.client(account).accounts.setPassword(account.panelUser, password));
+    await this.panel(account, (client) => client.accounts.setPassword(account.panelUser, password));
     await hooks.doAction('hosting.account.password_changed', { account, req, actorId: userId });
   }
 
-  async refreshUsageMine(userId: number, id: number) {
+  /** «Оновити дані»: використання й ресурси власника з панелі в копію */
+  async syncMine(userId: number, id: number) {
     const account = await this.usable(userId, id);
-    await panelCall(() => this.refreshUsage(account));
+    await panelCall(() => this.sync.syncAccount(account));
     return { account: presentAccount(account) };
   }
 
@@ -316,10 +309,5 @@ export class AccountService {
     const account = await this.usable(userId, id);
     if (String(confirm ?? '') !== account.panelUser) throw new HttpError(400, 'Для підтвердження введіть імʼя акаунта');
     await this.remove(id, true, { req, actorId: userId });
-  }
-
-  /** Строк оновлення кешу використання */
-  staleUsageBefore(now = new Date()): Date {
-    return addDays(now, -this.config.usageRefreshHours / 24);
   }
 }

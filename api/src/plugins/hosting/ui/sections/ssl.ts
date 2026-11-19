@@ -1,5 +1,5 @@
 /** SSL-сертифікати: строк дії (попередження за 14 днів), Let's Encrypt, домени; сегменти за станом */
-import { ui } from '../../../../core/ui/index.js';
+import { ui } from '../../../../flowaxy/ui/index.js';
 import { hosting } from '../../module.js';
 import { daysLeft } from '../format.js';
 import { badge, panel } from '../kit.js';
@@ -9,7 +9,7 @@ type CertState = 'valid' | 'expiring' | 'expired';
 
 export const sslSection: PanelSectionRenderer = async (scope) => {
   const { t } = scope;
-  const certificates = await hosting.panel.certificates(scope.serverId, scope.owner);
+  const certificates = await hosting.resources.list(scope.account, 'ssl');
   const stateOf = (validUntil: string | null): CertState => {
     const days = daysLeft(validUntil);
     return days === null ? 'valid' : days < 0 ? 'expired' : days <= 14 ? 'expiring' : 'valid';
@@ -20,8 +20,8 @@ export const sslSection: PanelSectionRenderer = async (scope) => {
 
   const grid = await scope.grid(visible, {
     defaultSort: 'valid',
-    sort: { name: (cert) => cert.name, owner: (cert) => cert.owner, valid: (cert) => cert.validUntil },
-    text: (cert) => `${cert.name} ${cert.owner} ${cert.domains.join(' ')}`,
+    sort: { name: (cert) => cert.name, valid: (cert) => cert.validUntil },
+    text: (cert) => `${cert.name} ${cert.domains.join(' ')}`,
     segments: {
       name: 'cert',
       value: filter,
@@ -34,7 +34,6 @@ export const sslSection: PanelSectionRenderer = async (scope) => {
     },
     columns: [
       { key: 'name', label: t('certificate') },
-      { key: 'owner', label: t('owner') },
       { key: 'domains', label: t('domains') },
       { key: 'valid', label: t('validUntil') },
       { key: 'type', label: t('type') },
@@ -47,7 +46,6 @@ export const sslSection: PanelSectionRenderer = async (scope) => {
         tone: !cert.active ? 'muted' : state === 'expired' ? 'danger' : state === 'expiring' ? 'warn' : undefined,
         cells: {
           name: [ui.text({ b: cert.name })],
-          owner: [ui.text(cert.owner, { size: 'sm' })],
           domains: [ui.muted(cert.domains.join(', ') || '—')],
           valid: cert.validUntil
             ? [ui.text(ui.date(cert.validUntil)), badge(days !== null && days < 0 ? t('expired') : t('daysLeft', { days: days ?? 0 }), state === 'expired' ? 'red' : state === 'expiring' ? 'orange' : 'green')]

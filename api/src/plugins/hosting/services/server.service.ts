@@ -1,30 +1,25 @@
-/** Сервери панелей: облік, підключення, перевірка, шаблони, діагностика */
-import { isIP } from 'node:net';
+/** Сервери панелей: облік, підключення, перевірка, огляд системи, користувачі панелі (з копії), діагностика */
 import { Op } from 'sequelize';
 import { decrypt, encrypt } from '../../../shared/crypto/index.js';
 import { HttpError } from '../../../shared/http/index.js';
+import { optionalCount, optionalText, readCountry, readIps, readText } from '../domain/input.js';
 import { HostingAccount, HostingServer } from '../domain/models.js';
-import { PanelError, type PanelClient } from '../providers/contracts.js';
+import { PanelError, type PanelAccount, type PanelClient } from '../providers/contracts.js';
 import type { ProviderRegistry } from '../providers/registry.js';
+import type { MirrorService } from './mirror.service.js';
 import { PanelCache } from './panel-cache.js';
-import { panelCall } from './panel-call.js';
+import { panelCall, settle } from './panel-call.js';
 import { presentServer } from './presenter.js';
 
 type ServerInput = Partial<Pick<HostingServer,
   'provider' | 'name' | 'url' | 'username' | 'verifyTls' | 'isActive' | 'isPublic' | 'defaultPreset' | 'location' | 'ipv4' | 'ipv6' | 'maxAccounts'
 >> & { password?: string };
 
-function readIps(input: unknown, family: 4 | 6): string | null {
-  const list = String(input ?? '').split(/[\s,]+/).filter(Boolean);
-  for (const ip of list) {
-    if (isIP(ip) !== family) throw new HttpError(400, `Некоректна IPv${family}-адреса: ${ip.slice(0, 45)}`);
-  }
-  return list.length ? list.slice(0, 8).join(', ') : null;
-}
-
 export class ServerService {
-  /** Кеш читань панелей — спільний для сервісів (скидається після змін) */
-  constructor(readonly providers: ProviderRegistry, readonly cache = new PanelCache()) {}
+  /** Кеш читань панелей, яких немає в копії (записи DNS, огляд системи, шаблони); скидається після змін */
+  readonly cache = new PanelCache();
+
+  constructor(readonly providers: ProviderRegistry, private readonly mirror: MirrorService) {}
 
   async find(id: number): Promise<HostingServer> {
     const server = await HostingServer.findByPk(id);
@@ -42,11 +37,6 @@ export class ServerService {
     });
   }
 
-  async clientById(id: number): Promise<{ server: HostingServer; client: PanelClient }> {
-    const server = await this.find(id);
-    return { server, client: this.client(server) };
-  }
-
   private forget(server: HostingServer): void {
     this.providers.get(server.provider).forgetSession?.(server.url, server.username);
     this.cache.invalidate(server.id);
@@ -54,46 +44,26 @@ export class ServerService {
 
   private read(input: Record<string, unknown>, partial: boolean, current?: HostingServer): ServerInput {
     const data: ServerInput = {};
-    const providerId = String(input.provider ?? current?.provider ?? 'ispmanager6');
-    const provider = this.providers.get(providerId);
-    if (!partial || input.provider !== undefined) data.provider = provider.id;
-    if (!partial || input.name !== undefined) {
-      const name = String(input.name ?? '').trim();
-      if (!name || name.length > 80) throw new HttpError(400, 'Назва сервера: 1–80 символів');
-      data.name = name;
-    }
-    if (!partial || input.url !== undefined) data.url = provider.normalizeUrl(input.url);
-    if (!partial || input.username !== undefined) {
-      const username = String(input.username ?? '').trim();
-      if (!username || username.length > 64) throw new HttpError(400, 'Логін адміністратора панелі: 1–64 символи');
-      data.username = username;
-    }
+    const has = (key: string) => !partial || input[key] !== undefined;
+    const provider = this.providers.get(String(input.provider ?? current?.provider ?? 'ispmanager6'));
+    if (has('provider')) data.provider = provider.id;
+    if (has('name')) data.name = readText(input.name, 'Назва сервера', 80);
+    if (has('url')) data.url = provider.normalizeUrl(input.url);
+    if (has('username')) data.username = readText(input.username, 'Логін адміністратора панелі', 64);
     // При оновленні пароль — лише якщо передано непорожній
-    if (!partial || (input.password !== undefined && input.password !== '')) {
-      const password = String(input.password ?? '');
-      if (!password || password.length > 128) throw new HttpError(400, 'Пароль адміністратора панелі: 1–128 символів');
-      data.password = password;
-    }
+    if (!partial || (input.password !== undefined && input.password !== '')) data.password = readText(input.password, 'Пароль адміністратора панелі', 128);
     if (input.verifyTls !== undefined) data.verifyTls = Boolean(input.verifyTls);
     if (input.isActive !== undefined) data.isActive = Boolean(input.isActive);
     if (input.isPublic !== undefined) data.isPublic = Boolean(input.isPublic);
-    if (input.defaultPreset !== undefined) data.defaultPreset = String(input.defaultPreset ?? '').trim().slice(0, 64) || null;
-    if (input.location !== undefined) {
-      const location = String(input.location ?? '').trim().toUpperCase();
-      if (location && !/^[A-Z]{2}$/.test(location)) throw new HttpError(400, 'Країна: код ISO з 2 літер (UA, DE, …)');
-      data.location = location || null;
-    }
+    if (input.defaultPreset !== undefined) data.defaultPreset = optionalText(input.defaultPreset, 64);
+    if (input.location !== undefined) data.location = readCountry(input.location);
     if (input.ipv4 !== undefined) data.ipv4 = readIps(input.ipv4, 4);
     if (input.ipv6 !== undefined) data.ipv6 = readIps(input.ipv6, 6);
-    if (input.maxAccounts !== undefined) {
-      const max = input.maxAccounts === null || input.maxAccounts === '' ? null : Math.trunc(Number(input.maxAccounts));
-      if (max !== null && (!Number.isFinite(max) || max < 1)) throw new HttpError(400, 'Ліміт акаунтів: ціле число ≥ 1 або порожньо');
-      data.maxAccounts = max;
-    }
+    if (input.maxAccounts !== undefined) data.maxAccounts = optionalCount(input.maxAccounts, 'Ліміт акаунтів', 1);
     return data;
   }
 
-  /** Кількість невидалених акаунтів на серверах */
+  /** Кількість невидалених акаунтів на серверах — одним GROUP BY */
   async accountCounts(): Promise<Map<number, number>> {
     const rows = await HostingAccount.count({ where: { status: { [Op.ne]: 'deleted' } }, group: ['serverId'] }) as unknown as Array<{ serverId: number; count: number }>;
     return new Map(rows.map((row) => [row.serverId, Number(row.count)]));
@@ -108,7 +78,8 @@ export class ServerService {
   }
 
   async view(id: number) {
-    return presentServer(await this.find(id), (await this.accountCounts()).get(id) ?? 0);
+    const [server, counts] = await Promise.all([this.find(id), this.accountCounts()]);
+    return presentServer(server, counts.get(id) ?? 0);
   }
 
   async create(input: Record<string, unknown>) {
@@ -148,20 +119,40 @@ export class ServerService {
     }
   }
 
-  async packages(id: number) {
-    const { client } = await this.clientById(id);
-    return { packages: await panelCall(() => this.cache.get(id, 'packages', () => client.accounts.packages())) };
+  /** Система панелі (версія, ліцензія, служби, PHP) — живий запит через кеш; частини незалежні */
+  async overview(id: number) {
+    const server = await this.find(id);
+    const client = this.client(server);
+    return this.cache.get(id, 'overview', async () => {
+      const [info, services, php] = await Promise.all([
+        settle(() => client.system.info()),
+        settle(() => client.system.services()),
+        settle(() => client.system.php()),
+      ]);
+      return { info, services, php };
+    });
   }
 
-  /** Користувачі панелі + чи привʼязані до платформи */
+  async packages(id: number) {
+    const server = await this.find(id);
+    const packages = await panelCall(() => this.cache.get(id, 'packages', () => this.client(server).accounts.packages()));
+    return { packages: packages.map((item) => item.name) };
+  }
+
+  /** Користувачі панелі (з копії) + привʼязка до акаунтів платформи */
   async panelAccounts(id: number) {
-    const { client } = await this.clientById(id);
     const [accounts, linked] = await Promise.all([
-      panelCall(() => this.cache.get(id, 'accounts', () => client.accounts.list())),
+      this.mirror.list<PanelAccount>(id, 'user'),
       HostingAccount.findAll({ where: { serverId: id, status: { [Op.ne]: 'deleted' } }, attributes: ['id', 'panelUser'] }),
     ]);
     const byLogin = new Map(linked.map((account) => [account.panelUser, account.id]));
-    return { accounts: accounts.map((account) => ({ ...account, linked: byLogin.has(account.login), accountId: byLogin.get(account.login) ?? null })) };
+    return { accounts: accounts.map((account) => ({ ...account, accountId: byLogin.get(account.login) ?? null })) };
+  }
+
+  /** Вхід у панель від імені користувача (підтримка) */
+  async loginUrl(id: number, login: string) {
+    const server = await this.find(id);
+    return { url: await panelCall(() => this.client(server).accounts.loginUrl(login)) };
   }
 
   async diagnostics(id: number, login?: string) {
