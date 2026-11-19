@@ -52,7 +52,7 @@
     min-width: 17px;
     height: 17px;
     padding: 0 4px;
-    border-radius: 9px;
+    border-radius: var(--ui-radius-md, 9px);
     background: var(--ui-danger);
     color: #fff;
     font-size: 10px;
