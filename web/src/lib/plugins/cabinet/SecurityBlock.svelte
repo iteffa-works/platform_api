@@ -1,7 +1,7 @@
 <script lang="ts">
-  /** Безпека: двофакторна автентифікація (TOTP) і активні сесії (пристрої) */
+  /** Безпека: 2FA (TOTP), антифішинговий код, активні сесії та історія входів */
   import { onMount } from 'svelte';
-  import { loadMe } from '$lib/domain/auth';
+  import { loadMe, user } from '$lib/domain/auth';
   import { useI18n } from '$lib/i18n';
   import { describeAgent, errorMessage, formatDateTime } from '$lib/shared/utils';
   import { DataTable, ErrorText, Field, Panel, PasswordField } from '$lib/ui/components';
@@ -70,11 +70,14 @@
 
   /* ---------- Сесії ---------- */
   let sessions = $state<SessionItem[]>([]);
+  let history = $state<SessionItem[]>([]);
   let sessionsError = $state('');
 
   async function loadSessions() {
     try {
-      sessions = (await cabinetApi.fetchSessions()).sessions;
+      const data = await cabinetApi.fetchSessions();
+      sessions = data.sessions;
+      history = data.history;
     } catch (err) {
       sessionsError = errorMessage(err);
     }
@@ -92,6 +95,28 @@
   }
 
   onMount(loadSessions);
+
+  /* ---------- Антифішинговий код ---------- */
+  let antiOpen = $state(false);
+  let antiCode = $state($user?.preferences.antiPhishingCode ?? '');
+  let antiBusy = $state(false);
+  let antiError = $state('');
+  const antiSet = $derived(Boolean($user?.preferences.antiPhishingCode));
+
+  async function saveAnti(event: Event) {
+    event.preventDefault();
+    antiBusy = true;
+    antiError = '';
+    try {
+      await cabinetApi.updatePreferences({ antiPhishingCode: antiCode.trim() || null });
+      await loadMe();
+      antiOpen = false;
+    } catch (err) {
+      antiError = errorMessage(err);
+    } finally {
+      antiBusy = false;
+    }
+  }
 </script>
 
 <Panel title={$t('security.twoFactor')}>
@@ -137,38 +162,76 @@
   <ErrorText message={twoFaError} />
 </Panel>
 
-<Panel
-  title={$t('security.sessions')}
-  flush
->
-  <DataTable>
-    {#snippet head()}
-      <tr><th>{$t('security.device')}</th><th>IP</th><th>{$t('security.lastSeen')}</th><th></th></tr>
-    {/snippet}
-    {#snippet body()}
-      {#each sessions as session (session.id)}
-        <tr>
-          <td>
-            <span class="device"><Icon name="monitor" />{describeAgent(session.userAgent)}</span>
-            {#if session.current}<Badge tone="green">{$t('security.current')}</Badge>{/if}
-          </td>
-          <td class="muted">{session.ip ?? '—'}</td>
-          <td class="muted">{$formatDateTime(session.lastSeenAt)}</td>
-          <td class="end">
-            {#if !session.current}
-              <Button variant="ghost" onclick={() => end(session.id)}>{$t('security.end')}</Button>
-            {/if}
-          </td>
-        </tr>
-      {/each}
-    {/snippet}
-  </DataTable>
-  <div class="foot">
-    <ErrorText message={sessionsError} />
-    {#if sessions.length > 1}
-      <Button variant="ghost" onclick={endOthers}>{$t('security.endOthers')}</Button>
-    {/if}
+<Panel title={$t('prefs.antiPhishing')}>
+  <div class="status">
+    <Badge tone={antiSet ? 'green' : 'orange'}>{antiSet ? $t('security.antiPhishingOn') : $t('security.antiPhishingOff')}</Badge>
+    <Text tone="muted">{$t('prefs.antiPhishingHint')}</Text>
   </div>
+  {#if antiOpen}
+    <form class="row" onsubmit={saveAnti}>
+      <Field label={$t('prefs.antiPhishingCode')} bind:value={antiCode} />
+      <Button type="submit" disabled={antiBusy}>{$t('common.save')}</Button>
+      <Button variant="ghost" onclick={() => (antiOpen = false)}>{$t('common.cancel')}</Button>
+    </form>
+  {:else}
+    <div><Button variant={antiSet ? 'ghost' : 'primary'} onclick={() => (antiOpen = true)}>{$t('security.configure')}</Button></div>
+  {/if}
+  <ErrorText message={antiError} />
+</Panel>
+
+<p class="info"><Icon name="help" size={18} />{$t('security.sessionsInfo')}</p>
+
+{#snippet sessionRows(list: SessionItem[], active: boolean)}
+  {#each list as session (session.id)}
+    <tr class:is-current={session.current} class:is-weak={!session.twoFactor && Boolean($profile?.twoFactor.enabled)}>
+      <td class="mono">{session.ip ?? '—'}</td>
+      <td class="mono">{session.lastIp ?? '—'}</td>
+      <td>
+        {#if session.twoFactor}<Badge tone="green">{$t('security.with2fa')}</Badge>{:else}<Badge tone="slate">{$t('security.without2fa')}</Badge>{/if}
+      </td>
+      <td class="muted">{$formatDateTime(session.createdAt)}</td>
+      <td class="muted">{#if session.current}<b class="cur">{$t('security.currentSession')}</b>{:else}{$formatDateTime(session.lastSeenAt)}{/if}</td>
+      <td class="muted">{$formatDateTime(active ? session.expiresAt : (session.endedAt ?? session.expiresAt))}</td>
+      <td><span class="device"><Icon name="monitor" />{describeAgent(session.userAgent)}</span></td>
+      {#if active}
+        <td class="end">
+          {#if !session.current}
+            <button type="button" class="kill" title={$t('security.end')} aria-label={$t('security.end')} onclick={() => end(session.id)}><Icon name="close" size={14} /></button>
+          {/if}
+        </td>
+      {/if}
+    </tr>
+  {/each}
+{/snippet}
+
+<Panel title={$t('security.sessions')} flush>
+  {#if sessions.length > 1}
+    <div class="bar"><Button variant="danger" onclick={endOthers}>{$t('security.endOthers')}</Button></div>
+  {/if}
+  <div class="scroll">
+    <DataTable>
+      {#snippet head()}
+        <tr><th>{$t('security.loginIp')}</th><th>{$t('security.lastIp')}</th><th>{$t('security.check')}</th><th>{$t('security.loginAt')}</th><th>{$t('security.lastSeen')}</th><th>{$t('security.validUntil')}</th><th>{$t('security.device')}</th><th></th></tr>
+      {/snippet}
+      {#snippet body()}{@render sessionRows(sessions, true)}{/snippet}
+    </DataTable>
+  </div>
+  <div class="foot"><ErrorText message={sessionsError} /></div>
+</Panel>
+
+<Panel title={$t('security.history')} flush>
+  {#if history.length}
+    <div class="scroll">
+      <DataTable>
+        {#snippet head()}
+          <tr><th>{$t('security.loginIp')}</th><th>{$t('security.lastIp')}</th><th>{$t('security.check')}</th><th>{$t('security.loginAt')}</th><th>{$t('security.lastSeen')}</th><th>{$t('security.ended')}</th><th>{$t('security.device')}</th></tr>
+        {/snippet}
+        {#snippet body()}{@render sessionRows(history, false)}{/snippet}
+      </DataTable>
+    </div>
+  {:else}
+    <p class="empty">{$t('security.historyEmpty')}</p>
+  {/if}
 </Panel>
 
 <style>
@@ -254,12 +317,81 @@
     text-align: right;
   }
 
-  .foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
+  .foot:has(:global(*)) {
     padding: 12px 16px;
     border-top: 1px solid var(--ui-border);
+  }
+
+  .bar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .scroll {
+    overflow-x: auto;
+  }
+
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  td.muted {
+    white-space: nowrap;
+  }
+
+  tr.is-current td {
+    background: color-mix(in srgb, var(--ui-success) 7%, transparent);
+  }
+
+  tr.is-weak td {
+    background: color-mix(in srgb, #eab308 9%, transparent);
+  }
+
+  .cur {
+    color: var(--ui-text);
+  }
+
+  .kill {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-sm, 4px);
+    background: none;
+    color: var(--ui-danger, #dc2626);
+    cursor: pointer;
+  }
+
+  .kill:hover {
+    border-color: var(--ui-danger, #dc2626);
+  }
+
+  .info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px solid var(--ui-border);
+    border-left: 3px solid var(--ui-info, #3b82f6);
+    border-radius: var(--ui-radius-lg, var(--ui-radius));
+    background: var(--ui-surface);
+    color: var(--ui-muted);
+    font-size: 13px;
+  }
+
+  .info :global(.ui-icon) {
+    flex: none;
+    color: var(--ui-info, #3b82f6);
+  }
+
+  .empty {
+    margin: 0;
+    padding: 14px 16px;
+    color: var(--ui-muted);
+    font-size: 13px;
   }
 </style>
